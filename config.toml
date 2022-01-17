@@ -4,7 +4,7 @@ languageCode = "en"
 # [en, zh, ...] determines which i18n file to use
 defaultContentLanguage = "en"
 # website title
-title = "Shuzang's Blog"
+title = "XuShun's Blog"
 # theme
 theme = "LoveIt"
 # whether to use git commit log to generate lastmod record
@@ -18,7 +18,7 @@ enableEmoji = true
 # whether to use robots.txt
 enableRobotsTXT = true
 # [UA-XXXXXXXX-X] google analytics code
-googleAnalytics = "UA-209130979-1"
+#googleAnalytics = "UA-209130979-1"
 # copyright description used only for seo schema
 copyright = "This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License."
 # date format
@@ -56,8 +56,8 @@ dateFormatToUse = "2006-01-02"
 
 # Author Info
 [author]
-  name = "shuzang"
-  link = "https://shuzang.github.io/about/"
+  name = "xushun"
+  link = "https://xushun1221.github.io/about/"
 
 # Sitemap Info
 [sitemap]
@@ -107,9 +107,9 @@ dateFormatToUse = "2006-01-02"
   # LoveIt theme version
   version = "0.1.X"
   # site description
-  description = "书藏的个人博客，包括Golang、数据结构、算法的学习记录，各类生活技能的学习，每周五发布一期自己的生活周刊"
+  description = "XuShun的个人博客，包括各种学习和生活记录。"
   # site keywords
-  keywords = ["blog", "Golang", "Hugo", "blockchain", "go", "life"]
+  keywords = ["blog", "C++", "blockchain", "Golang", "Hugo", "life"]
   toc = true
   autoCollapseToc = true
 
@@ -121,14 +121,14 @@ dateFormatToUse = "2006-01-02"
   ## URL of avatar shown in home page
   avatar = "images/avatar.png"
   ## subtitle shown in home page
-  subtitle = "随心所向，素履以往"
+  subtitle = "开心果壳好硬"
 
   # whether to show social share links in post page
   socialShare = true
 
   # Footer CopyRight Info
   ## Site creation time
-  since = 2018
+  since = 2022
   ## ICP info only in China (HTML format is allowed)
   icp = ""
   ## license info (HTML format is allowed)
@@ -181,11 +181,11 @@ dateFormatToUse = "2006-01-02"
 
   # Social Info in home page
   [params.social]
-    Email = "lylw1996@qq.com"
-    Skype = "live:844327696"
-    GitHub = "shuzang"  
-    bilibili = "15452558"
+    Email = "xushun1221@outlook.com"
+    GitHub = "xushun1221"  
     
+	#bilibili = "15452558"
+    #Skype = "live:844327696"
     #Linkedin = "xxxx"
     #Twitter = "xxxx"
     #Instagram = "xxxx"
@@ -260,7 +260,7 @@ dateFormatToUse = "2006-01-02"
 
   # Publisher Info just for SEO
   [params.publisher]
-    name = "shuzang"
+    name = "xushun"
     [params.publisher.logo]
       url = "logo.png"
       width = 127
