@@ -12,7 +12,7 @@ music: true
 
 ## 关于我
 
-- 研究生在读，研究方向为 IoT 和 blockchain
+- 研究生在读，研究方向为blockchain
 
 ## 关于版权
 
