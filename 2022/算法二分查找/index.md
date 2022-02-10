@@ -1,0 +1,90 @@
+# 算法——二分查找
+
+
+## 前言
+二分查找算法，思想比较简单，但是实现上有许多细节需要考虑，尤其是在边界条件的判断上，很容易出错。最近看了一个关于二分查找的总结，用另一种视角来分析二分查找，清晰易懂，代码简洁，也能避免很多细节问题。特此记录。
+
+-----
+
+## 红蓝边界法
+用两个指针`l`和`r`分别标记蓝色区域和红色区域，`isBlue`作为划分蓝红区域的条件，用二分的思想不断扩大指针标记的范围，直到`l + 1 == r`，即蓝色和红色区域接壤。
+我们要这样子：
+- 蓝红指针初始值在数组范围之外（`l = -1`，`r = n`），因为可能数组中没有蓝或红；
+- 循环条件是`l != r +1`；
+- `mid = (l + r) / 2`，向下取整；
+- 更新蓝红边界时，如`mid`符合`isBlue`，`l = mid`，否则`r = mid`。
+
+-----
+
+## 图示
+初始状态：
+![](/post_images/posts/Coding/算法——二分查找/二分查找初始状态.jpg "二分查找初始状态")
+终止状态：
+![](/post_images/posts/Coding/算法——二分查找/二分查找终止状态.jpg "二分查找终止状态")
+大于、大于等于、小于、小于等于目标元素对应的蓝红划分方法：
+![](/post_images/posts/Coding/算法——二分查找/各种情况划分红蓝方法.jpg "各种情况划分红蓝方法")
+
+------
+
+## C++标准库函数
+补充一下，C++STL中提供了几个底层实现为二分查找的查找函数，定义在`<algorithm>`头文件中，有`lower_bound()`、`upper_bound()`等等。我们可以直接调用它们来对有序数组进行二分查找。
+
+### lower_bound()
+该函数用于在指定区域内查找**不小于>=**目标值的第一个元素。
+语法格式为：
+```C++
+//在 [first, last) 区域内查找不小于 val 的元素
+ForwardIterator lower_bound (ForwardIterator first, ForwardIterator last, const T& val);
+//在 [first, last) 区域内查找第一个不符合 comp 规则的元素
+ForwardIterator lower_bound (ForwardIterator first, ForwardIterator last, const T& val, Compare comp);
+```
+*第一终语法格式的默认比较规则是`<`，函数要找第一个违背这个比较规则的元素*
+
+### upper_bound()
+该函数用于在指定区域内查找**大于>**目标值的第一个元素。
+语法格式为：
+```C++
+//查找[first, last)区域中第一个大于 val 的元素。
+ForwardIterator upper_bound (ForwardIterator first, ForwardIterator last, const T& val);
+//查找[first, last)区域中第一个不符合 comp 规则的元素
+ForwardIterator upper_bound (ForwardIterator first, ForwardIterator last, const T& val, Compare comp);
+```
+
+-----
+
+学了这么多，找个题目做一下吧。
+
+## 题目1：在排序数组中查找元素的第一个和最后一个位置
+[LeetCode34](https://leetcode-cn.com/problems/find-first-and-last-position-of-element-in-sorted-array/)<br>给定一个按照升序排列的整数数组`nums`，和一个目标值`target`。找出给定目标值在数组中的开始位置和结束位置。如果数组中不存在目标值 target，返回 `[-1, -1]`。
+
+代码：
+```C++
+vector<int> searchRange(vector<int>& nums, int target) {
+	int len = nums.size();
+	int l = -1, r = len, mid;
+	while (l + 1 != r) {
+		mid = (l + r) / 2;
+		if (nums[mid] < target)
+			l = mid;
+		else
+			r = mid;
+	}
+	if (r >= len) return {-1, -1};
+	if (nums[r] != target) return {-1, -1};
+	int lowerbound = r;
+	l = -1;
+	r = len;
+	while (l + 1 != r) {
+		mid = (l + r) / 2;
+		if (nums[mid] <= target)
+			l = mid;
+		else
+			r = mid;
+	}
+	int upperbound = l;
+	return {lowerbound, upperbound};
+ }
+```
+时间复杂度：$O\left(logn\right)$
+空间复杂度：$O\left(1\right)$
+
