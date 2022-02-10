@@ -88,3 +88,8 @@ vector<int> searchRange(vector<int>& nums, int target) {
 时间复杂度：$O\left(logn\right)$
 空间复杂度：$O\left(1\right)$
 
+-----
+
+## 参考资料
+1. https://www.bilibili.com/video/BV1d54y1q7k7
+2. https://leetcode-cn.com/problems/find-first-and-last-position-of-element-in-sorted-array/solution/lan-hong-hua-fen-fa-dan-mo-ban-miao-sha-e7r40/
