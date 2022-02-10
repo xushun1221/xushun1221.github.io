@@ -160,5 +160,5 @@ int main() {
 ```
 
 输出：
-![](/post_images/posts/Coding/C++对数器运行结果.jpg "图片")
+![](/post_images/posts/Coding/算法——C++对数器/C++对数器运行结果.jpg "对数器运行结果")
 
