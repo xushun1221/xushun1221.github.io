@@ -1,0 +1,158 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>Linux下使用VSCode和CMake进行C++开发【1】 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/%E7%AE%97%E6%B3%95%E4%BA%8C%E5%88%86%E6%9F%A5%E6%89%BE/><link rel=canonical href=https://xushun1221.github.io/2022/linux%E4%B8%8B%E4%BD%BF%E7%94%A8vscode%E5%92%8Ccmake%E8%BF%9B%E8%A1%8Cc-%E5%BC%80%E5%8F%911/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="Linux下使用VSCode和CMake进行C++开发【1】"><meta name=twitter:description content="安装Linux系统 这里用的是虚拟机 Ubuntu 18.04 LTS 安装过程略。 安装GCC、GDB、CMake 安装GCC，GDB 1 2 3 sudo apt update sudo apt install build-essential gdb 安装CMake 1 sudo"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"Linux下使用VSCode和CMake进行C\x2b\x2b开发【1】","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/linux%E4%B8%8B%E4%BD%BF%E7%94%A8vscode%E5%92%8Ccmake%E8%BF%9B%E8%A1%8Cc-%E5%BC%80%E5%8F%911\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"Linux, CMake, C\x2b\x2b","wordcount":1910,"url":"https:\/\/xushun1221.github.io\/2022\/linux%E4%B8%8B%E4%BD%BF%E7%94%A8vscode%E5%92%8Ccmake%E8%BF%9B%E8%A1%8Cc-%E5%BC%80%E5%8F%911\/","datePublished":"2022-02-12T00:00:00\x2b00:00","dateModified":"2022-02-12T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">Linux下使用VSCode和CMake进行C++开发【1】</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-02-12>2022-02-12</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 1910 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#安装linux系统>安装Linux系统</a></li><li><a href=#安装gccgdbcmake>安装GCC、GDB、CMake</a></li><li><a href=#gcc编译器介绍>GCC编译器介绍</a><ul><li><a href=#编译过程>编译过程</a></li><li><a href=#g重要的编译参数>g++重要的编译参数</a><ul><li><a href=#-g编译带有调试嘻嘻的可执行文件>-g 编译带有调试嘻嘻的可执行文件</a></li><li><a href=#-on优化源代码>-O[n] 优化源代码</a></li><li><a href=#-l-和--l指定库文件--指定库文件路径>-l 和 -L 指定库文件 | 指定库文件路径</a></li><li><a href=#-i指定头文件搜索目录>-I 指定头文件搜索目录</a></li><li><a href=#-wall打印警告信息>-Wall 打印警告信息</a></li><li><a href=#-w关闭警告信息>-w 关闭警告信息</a></li><li><a href=#-stdc11设置编译标准>-std=c++11 设置编译标准</a></li><li><a href=#-o指定输出文件名>-o 指定输出文件名</a></li><li><a href=#-d定义宏>-D 定义宏</a></li><li><a href=#gcc使用手册>gcc使用手册</a></li></ul></li></ul></li><li><a href=#gcc编译示例>GCC编译示例</a><ul><li><a href=#直接编译>直接编译</a></li><li><a href=#生成静态库文件-a>生成静态库文件 .a</a></li><li><a href=#生成动态库文件-so>生成动态库文件 .so</a></li><li><a href=#运行可执行文件>运行可执行文件</a></li></ul></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#安装linux系统>安装Linux系统</a></li><li><a href=#安装gccgdbcmake>安装GCC、GDB、CMake</a></li><li><a href=#gcc编译器介绍>GCC编译器介绍</a><ul><li><a href=#编译过程>编译过程</a></li><li><a href=#g重要的编译参数>g++重要的编译参数</a><ul><li><a href=#-g编译带有调试嘻嘻的可执行文件>-g 编译带有调试嘻嘻的可执行文件</a></li><li><a href=#-on优化源代码>-O[n] 优化源代码</a></li><li><a href=#-l-和--l指定库文件--指定库文件路径>-l 和 -L 指定库文件 | 指定库文件路径</a></li><li><a href=#-i指定头文件搜索目录>-I 指定头文件搜索目录</a></li><li><a href=#-wall打印警告信息>-Wall 打印警告信息</a></li><li><a href=#-w关闭警告信息>-w 关闭警告信息</a></li><li><a href=#-stdc11设置编译标准>-std=c++11 设置编译标准</a></li><li><a href=#-o指定输出文件名>-o 指定输出文件名</a></li><li><a href=#-d定义宏>-D 定义宏</a></li><li><a href=#gcc使用手册>gcc使用手册</a></li></ul></li></ul></li><li><a href=#gcc编译示例>GCC编译示例</a><ul><li><a href=#直接编译>直接编译</a></li><li><a href=#生成静态库文件-a>生成静态库文件 .a</a></li><li><a href=#生成动态库文件-so>生成动态库文件 .so</a></li><li><a href=#运行可执行文件>运行可执行文件</a></li></ul></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=安装linux系统></a><h2>安装Linux系统</h2><p>这里用的是虚拟机</p><blockquote><p>Ubuntu 18.04 LTS</p></blockquote><p>安装过程略。</p><hr><a class=post-dummy-target id=安装gccgdbcmake></a><h2>安装GCC、GDB、CMake</h2><p>安装GCC，GDB</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell>sudo apt update
+
+sudo apt install build-essential gdb
+</code></pre></td></tr></table></div></div><p>安装CMake</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell>sudo apt install cmake
+</code></pre></td></tr></table></div></div><p>确认安装成功</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell>gcc --version
+g++ --version
+gdb --version
+cmake --version
+</code></pre></td></tr></table></div></div><hr><a class=post-dummy-target id=gcc编译器介绍></a><h2>GCC编译器介绍</h2><p>GCC编译器支持多种语言的编译，使用Linux开发C/C++需要熟悉GCC，VSCode也是通过调用GCC编译器来实现C/C++的编译工作的。</p><ul><li>使用gcc命令编译C代码</li><li>使用g++命令编译C++代码</li></ul><a class=post-dummy-target id=编译过程></a><h3>编译过程</h3><ol><li>预处理 Pre-Processing .i文件</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell><span class=c1># -E 选项表示编译器只对输入文件进行预处理</span>
+g++ -E test.cpp -o test.i
+</code></pre></td></tr></table></div></div><ol start=2><li>编译 Compiling .s文件</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell><span class=c1># -S 选项表示g++在为C++代码生成汇编文件后停止编译</span>
+<span class=c1># g++生成的汇编语言文件的缺省扩展名是.s</span>
+g++ -S test.i -o test.s
+</code></pre></td></tr></table></div></div><ol start=3><li>汇编 Assembling .o文件</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell><span class=c1># -c 选项表示g++仅把源代码编译为机器语言的目标代码</span>
+<span class=c1># 缺省时g++建立的目标代码文件扩展名是.o</span>
+g++ -c test.s -o test.o
+</code></pre></td></tr></table></div></div><ol start=4><li>链接 Linking bin文件</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell><span class=c1># -o 选项表示为将生成的可执行文件使用指定的文件名</span>
+g++ test.o -o <span class=nb>test</span>
+</code></pre></td></tr></table></div></div><p>也可以使用简略写法，自动完成上述步骤</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell>g++ test.cpp -o <span class=nb>test</span>
+</code></pre></td></tr></table></div></div><hr><a class=post-dummy-target id=g重要的编译参数></a><h3>g++重要的编译参数</h3><a class=post-dummy-target id=-g编译带有调试嘻嘻的可执行文件></a><h4><code>-g</code> 编译带有调试嘻嘻的可执行文件</h4><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell><span class=c1># -g 表示g++生成可以被GNU调试器GDB使用的调试信息，以便调试程序</span>
+<span class=c1># 生成带调试信息的可执行文件test</span>
+g++ -g test.cpp -o <span class=nb>test</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=-on优化源代码></a><h4><code>-O[n]</code> 优化源代码</h4><p>优化指进行一些操作，以缩减目标文件所包含的代码量，提高最终生成的可执行文件的运行效率，如省略代码中从未使用的变量、将常量表达式用结果值代替等。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span><span class=lnt>9
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell><span class=c1># -O 选项表示g++对源代码进行基本优化 -O2 选项表示g++生成尽可能小和尽可能块的代码，通常使用O2即可。</span>
+<span class=c1># -O 同时减小代码长度和执行时间，等价于O1</span>
+<span class=c1># -O0 不做优化</span>
+<span class=c1># -O1 默认优化</span>
+<span class=c1># -O2 除了完成 -O1 的优化之外，还进行一些额外的调整工作，如指令调整等</span>
+<span class=c1># -O3 包括循环展开和其他一些与处理特性相关的优化工作</span>
+
+<span class=c1># 使用 -O2 优化源代码，并输出可执行文件</span>
+g++ -O2 test.cpp -o <span class=nb>test</span>
+</code></pre></td></tr></table></div></div><p><em>可以通过time指令查看执行时间，<code>time ./test</code></em></p><a class=post-dummy-target id=-l-和--l指定库文件--指定库文件路径></a><h4><code>-l</code> 和 <code>-L</code> 指定库文件 | 指定库文件路径</h4><p><code>-l</code> 选项是用来指定程序要链接的库，<code>-l</code>后紧跟库名，在<code>/lib</code>和<code>/usr/lib</code>以及<code>usr/local/lib</code>中的库就可以直接使用<code>-l</code>选项链接。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell><span class=c1># 链接glog库</span>
+g++ -lglog test.cpp
+</code></pre></td></tr></table></div></div><p>如果库文件没有在上述三个目录中，需要使用<code>-L</code>选项指定库文件所在目录，<code>-L</code>后紧跟库文件目录。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell><span class=c1># 链接mytest库，libmytest.so在/home/xushun/mytetlibfolder目录下</span>
+g++ -L/home/xushun/mytestlibfolder -lmytest test.cpp
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=-i指定头文件搜索目录></a><h4><code>-I</code> 指定头文件搜索目录</h4><p><code>/usr/include</code>目录下的头文件一般不用指定的，如果头文件不在该目录下，我们就需要用<code>I</code>选项指定头文件的目录，如头文件放在<code>/myinclude</code>目录下，那编译指令加上<code>-I/myinclude</code>即可，也可以使用相对路径，如头文件在当前目录下，则只需<code>-I.</code>即可。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell>g++ -I/myinclude test.cpp
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=-wall打印警告信息></a><h4><code>-Wall</code> 打印警告信息</h4><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell><span class=c1># 打印g++提供的警告信息</span>
+g++ -Wall test.cpp
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=-w关闭警告信息></a><h4><code>-w</code> 关闭警告信息</h4><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell><span class=c1># 关闭所有警告信息</span>
+g++ -w test.cpp
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=-stdc11设置编译标准></a><h4><code>-std=c++11</code> 设置编译标准</h4><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell><span class=c1># 使用c++11标准编译test.cpp</span>
+g++ -std<span class=o>=</span>c++11 test.cpp
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=-o指定输出文件名></a><h4><code>-o</code> 指定输出文件名</h4><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell><span class=c1># 指定即将生成的文件名</span>
+g++ test.cpp -o <span class=nb>test</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=-d定义宏></a><h4><code>-D</code> 定义宏</h4><p>在使用gcc/g++编译的使用定义宏，常用的场景：<code>-DDEBUG</code>定义DEBUG宏，可能文件中有DEBUG宏部分的相关信息，用DDEBUG来选择开启或关闭DEBUG。
+示例代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+   <span class=cp>#</span><span class=cp>ifdef DEBUG</span><span class=cp>
+</span><span class=cp></span>       <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>DEBUG LOG</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+   <span class=cp>#</span><span class=cp>endif</span><span class=cp>
+</span><span class=cp></span>   <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>in</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=c1>// 如果在编译的时候使用 g++ -DDEBUG main.cpp
+</span><span class=c1></span><span class=c1>// 语句printf(&#34;DEBUG LOG\n&#34;);则可以被执行
+</span></code></pre></td></tr></table></div></div><a class=post-dummy-target id=gcc使用手册></a><h4>gcc使用手册</h4><p>可以使用<code>man gcc</code>指令查看gcc的英文使用手册。</p><hr><a class=post-dummy-target id=gcc编译示例></a><h2>GCC编译示例</h2><p>我们来看一下怎么编译一个简单的项目。</p><p>先写一个简单的项目，目录结构如下：<figure><img src=/svg/loading.min.svg data-sizes=auto data-src=/post_images/posts/Coding/Linux%e4%b8%8b%e4%bd%bf%e7%94%a8VSCode%e5%92%8cCMake%e8%bf%9b%e8%a1%8cC++%e5%bc%80%e5%8f%91%e3%80%901%e3%80%91/%e7%9b%ae%e5%bd%95.jpg alt title=目录结构 class=lazyload><figcaption class=image-caption>目录结构</figcaption></figure><figure><img src=/svg/loading.min.svg data-sizes=auto data-src=/post_images/posts/Coding/Linux%e4%b8%8b%e4%bd%bf%e7%94%a8VSCode%e5%92%8cCMake%e8%bf%9b%e8%a1%8cC++%e5%bc%80%e5%8f%91%e3%80%901%e3%80%91/main.jpg alt title=main.cpp class=lazyload><figcaption class=image-caption>main.cpp</figcaption></figure><figure><img src=/svg/loading.min.svg data-sizes=auto data-src=/post_images/posts/Coding/Linux%e4%b8%8b%e4%bd%bf%e7%94%a8VSCode%e5%92%8cCMake%e8%bf%9b%e8%a1%8cC++%e5%bc%80%e5%8f%91%e3%80%901%e3%80%91/swaph.jpg alt title=swap.h class=lazyload><figcaption class=image-caption>swap.h</figcaption></figure><figure><img src=/svg/loading.min.svg data-sizes=auto data-src=/post_images/posts/Coding/Linux%e4%b8%8b%e4%bd%bf%e7%94%a8VSCode%e5%92%8cCMake%e8%bf%9b%e8%a1%8cC++%e5%bc%80%e5%8f%91%e3%80%901%e3%80%91/swapcpp.jpg alt title=swap.cpp class=lazyload><figcaption class=image-caption>swap.cpp</figcaption></figure></p><a class=post-dummy-target id=直接编译></a><h3>直接编译</h3><p>直接编译会报错：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell>g++ main.cpp src/swap.cpp -o demo
+</code></pre></td></tr></table></div></div><p>需要加上头文件目录：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell>g++ main.cpp src/swap.cpp -Iinclude -o demo
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=生成静态库文件-a></a><h3>生成静态库文件 .a</h3><p>进入src目录下</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell><span class=c1># 汇编，生成swap.o文件</span>
+g++ swap.cpp -c -I../include
+<span class=c1># 生成静态库文件libswap.a</span>
+ar rs libswap.a swap.o
+</code></pre></td></tr></table></div></div><p>生成了静态库文件，我们就可以把<code>main.cpp</code>和静态库链接起来，生成可执行文件<code>static_main</code></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell><span class=c1># 切换到demo目录下</span>
+g++ main.cpp -lswap -Lsrc -Iinclude -o static_main
+</code></pre></td></tr></table></div></div><p>这时，我们运行可执行文件，可以正确运行，因为静态库在编译时已经链接了。</p><a class=post-dummy-target id=生成动态库文件-so></a><h3>生成动态库文件 .so</h3><p>进入src目录下</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell><span class=c1># 生成swap.o</span>
+g++ swap.cpp -c -I../include -fPIC
+<span class=c1># 生成动态库文件libswap.so</span>
+g++ -shared -o libswap.so swap.o
+
+
+<span class=c1># 也可以将上面两条指令合并</span>
+g++ swap.cpp -I../include -fPIC -shared -o libswap.so
+</code></pre></td></tr></table></div></div><p>生成了动态库文件，我们可以把<code>main.cpp</code>和动态库链接起来，生成可执行文件<code>dyna_main</code></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell><span class=c1># 切换到demo目录下</span>
+g++ main.cpp -Iinclude -Lsrc -lswap -o dyna_main
+</code></pre></td></tr></table></div></div><p>现在，我们运行这个可执行文件会报错，可执行文件找不到动态库。</p><a class=post-dummy-target id=运行可执行文件></a><h3>运行可执行文件</h3><ul><li>静态库：直接运行</li></ul><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell>./static_main
+</code></pre></td></tr></table></div></div><ul><li>动态库：需要给定动态库的目录</li></ul><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell><span class=nv>LD_LIBRARY_PATH</span><span class=o>=</span>src ./dyna_main
+</code></pre></td></tr></table></div></div><p>这样链接到动态库的可执行文件也可以正确运行了。</p></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+<span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
+<span>2022-02-12</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
+<span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2flinux%25E4%25B8%258B%25E4%25BD%25BF%25E7%2594%25A8vscode%25E5%2592%258Ccmake%25E8%25BF%259B%25E8%25A1%258Cc-%25E5%25BC%2580%25E5%258F%25911%2f&text=Linux%e4%b8%8b%e4%bd%bf%e7%94%a8VSCode%e5%92%8cCMake%e8%bf%9b%e8%a1%8cC%2b%2b%e5%bc%80%e5%8f%91%e3%80%901%e3%80%91&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2flinux%25E4%25B8%258B%25E4%25BD%25BF%25E7%2594%25A8vscode%25E5%2592%258Ccmake%25E8%25BF%259B%25E8%25A1%258Cc-%25E5%25BC%2580%25E5%258F%25911%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2flinux%25E4%25B8%258B%25E4%25BD%25BF%25E7%2594%25A8vscode%25E5%2592%258Ccmake%25E8%25BF%259B%25E8%25A1%258Cc-%25E5%25BC%2580%25E5%258F%25911%2f&title=Linux%e4%b8%8b%e4%bd%bf%e7%94%a8VSCode%e5%92%8cCMake%e8%bf%9b%e8%a1%8cC%2b%2b%e5%bc%80%e5%8f%91%e3%80%901%e3%80%91" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/linux/><i class="fas fa-tag fa-fw"></i>&nbsp;Linux</a>&nbsp;
+</span><span class=tag><a href=https://xushun1221.github.io/tags/cmake/><i class="fas fa-tag fa-fw"></i>&nbsp;CMake</a>&nbsp;
+</span><span class=tag><a href=https://xushun1221.github.io/tags/c++/><i class="fas fa-tag fa-fw"></i>&nbsp;C++</a>&nbsp;</span></section><section><span><a href=javascript:window.history.back();>Back</a></span>&nbsp;|&nbsp;<span><a href=https://xushun1221.github.io>Home</a></span></section></div><div class=post-nav><a href=https://xushun1221.github.io/2022/%E7%AE%97%E6%B3%95%E4%BA%8C%E5%88%86%E6%9F%A5%E6%89%BE/ class=prev rel=prev title=算法——二分查找><i class="fas fa-angle-left fa-fw"></i>算法——二分查找</a></div><div class=post-comment></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2022</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=https://xushun1221.github.io/about/ target=_blank>xushun</a> | </span>Powered by <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> & <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer">LoveIt</a></div></div></footer></div><a href=# class=dynamic-to-top id=dynamic-to-top data-scroll><span>&nbsp;</span>
+</a><script src=/js/lib/jquery/jquery.slim.min.js></script><script src=/js/lib/lazysizes/lazysizes.min.js></script><script src=/js/lib/smooth-scroll/smooth-scroll.polyfills.min.js></script><script>window.scroll=new SmoothScroll('[data-scroll]',{speed:300,speedAsDuration:true});</script><link rel=stylesheet href=/css/lib/katex/katex.min.css><script src=/js/lib/katex/katex.min.js></script><script defer src=/js/lib/katex/auto-render.min.js></script><link rel=stylesheet href=/css/lib/katex/copy-tex.min.css><script defer src=/js/lib/katex/copy-tex.min.js></script><script defer src=/js/lib/katex/mhchem.min.js></script><script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true},{left:"$",right:"$",display:false},]});});</script><script src=/js/blog.min.js></script></body></html>
