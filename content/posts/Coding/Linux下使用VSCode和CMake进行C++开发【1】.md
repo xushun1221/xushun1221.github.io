@@ -231,3 +231,8 @@ g++ main.cpp -Iinclude -Lsrc -lswap -o dyna_main
 LD_LIBRARY_PATH=src ./dyna_main
 ```
 这样链接到动态库的可执行文件也可以正确运行了。
+
+-----
+
+## 参考资料
+1. https://www.bilibili.com/video/BV1fy4y1b7TC
