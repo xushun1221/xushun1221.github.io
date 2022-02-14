@@ -30,9 +30,9 @@
 
 ### 稍微复杂一点的项目
 用类写一个简单的swap功能，如下：  
-![](\post_images\posts\Coding\Linux下使用VSCode和CMake进行C++开发【3】\swap目录.jpg "swap目录")  
-![](\post_images\posts\Coding\Linux下使用VSCode和CMake进行C++开发【3】\swap结果.jpg "swap结果")
-
+![](/post_images/posts/Coding/Linux下使用VSCode和CMake进行C++开发【3】/swap目录.jpg "swap目录")
+![](/post_images/posts/Coding/Linux下使用VSCode和CMake进行C++开发【3】/swap结果.jpg "swap结果")
+![](/post_images/posts/Coding/Linux下使用VSCode和CMake进行C++开发【1】/swapcpp.jpg "swap.cpp")
 
 ## 参考资料
 1. https://www.bilibili.com/video/BV1fy4y1b7TC
