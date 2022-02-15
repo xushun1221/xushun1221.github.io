@@ -90,7 +90,7 @@ add_compile_options(-Wall -std=c++11 -O2)
 add_executable(main main.cpp)
 ```
 
-`target_link_libraries`	向当前工程添加存放源文件的子目录，并可以指定中间二进制和目标二进制 存放的位置
+`add_subdirectory`	向当前工程添加存放源文件的子目录，并可以指定中间二进制和目标二进制 存放的位置
 语法：`add_subdirectory(source_dir [binary_dir] [EXCLUDE_FROM_ALL])`  
 示例：  
 ```cmake

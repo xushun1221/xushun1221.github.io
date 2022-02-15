@@ -45,7 +45,7 @@
 </span><span class=lnt>2
 </span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cmake data-lang=cmake><span class=c># 编译main.cpp生成可执行文件main 
 </span><span class=c></span><span class=nb>add_executable</span><span class=p>(</span><span class=s>main</span> <span class=s>main.cpp</span><span class=p>)</span><span class=err>
-</span></code></pre></td></tr></table></div></div><p><code>target_link_libraries</code> 向当前工程添加存放源文件的子目录，并可以指定中间二进制和目标二进制 存放的位置
+</span></code></pre></td></tr></table></div></div><p><code>add_subdirectory</code> 向当前工程添加存放源文件的子目录，并可以指定中间二进制和目标二进制 存放的位置
 语法：<code>add_subdirectory(source_dir [binary_dir] [EXCLUDE_FROM_ALL])</code><br>示例：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2
 </span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cmake data-lang=cmake><span class=c># 添加src子目录，src中需有一个CMakeLists.txt 
