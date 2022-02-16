@@ -2,38 +2,22 @@
 
 
 ## 前言
-我的`Ubuntu18.04`安装的`build-essential`默认的`gcc/g++`版本为7.5，现在需要8版本的，切换版本的操作如下。
+记录一些Coding的技巧。
 
-## 操作
+## 取数组下标中点
+常规的取下标中点方法：`mid = (left + right) / 2`，这种方法在数组很大的时候，可能会溢出，所以用这种方法：`mid = left + (right - left) / 2`，不溢出的原因是：  
+`left`、`right`本身不溢出，且`right >= left`，`(right - left) / 2`肯定不溢出。  
+更简化一点的写法：`mid = left + ((right - left) >> 1)`。*右移操作比除法快*
 
-查看`gcc g++`版本  
-```shell
-ls /usr/bin/gcc*
-ls /usr/bin/g++*
-```
+-----
 
-安装`gcc-8, g++-8`  
-```shell
-sudo apt install gcc-8 g++-8
-```
+## master公式
+计算子问题等规模的递归问题的时间复杂度。  
+- 如果一个递归过程满足：$T\left(N\right)=aT\left(\frac{N}{b}\right)+O\left(N^{d}\right)$
+- 如果：$log_{b}a<d$，那么时间复杂度为：$O\left(N^{d}\right)$
+- 如果：$log_{b}a>d$，那么时间复杂度为：$O\left(N^{log_{b}a}\right)$
+- 如果：$log_{b}a=d$，那么时间复杂度为：$O\left(N^{d}log_{2}N\right)$
 
-切换默认版本（将要用的编译器优先级设置高一点）  
-```shell
-sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 80
-sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 70
-
-sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 80
-sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 70
-```
-
-也可以直接删了旧版本，然后为新版本创建一个软连接
-```shell
-sudo apt remove gcc-7 g++-7
-
-sudo rm /usr/bin/gcc
-sudo rm /usr/bin/g++
-sudo ln -s /usr/bin/gcc-8 /usr/bin/gcc
-sudo ln -s /usr/bin/g++-8 /usr/bin/g++
-```
+-----
 
 
