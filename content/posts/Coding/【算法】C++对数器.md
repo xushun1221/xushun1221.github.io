@@ -1,5 +1,5 @@
 ---
-title: 算法——C++对数器
+title: 【算法】C++对数器
 date: 2022-02-07
 tags: [算法与数据结构]
 categories: [Coding]
