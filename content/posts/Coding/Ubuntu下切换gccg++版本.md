@@ -1,5 +1,5 @@
 ---
-title: Coding之小技巧
+title: Ubuntu下切换gccg++版本
 date: 2022-02-16
 tags: [Linux]
 categories: [Coding]
