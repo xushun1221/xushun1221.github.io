@@ -26,9 +26,14 @@ sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 80
 sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 70
 ```
 
-做完上一步也可以直接删了旧版本
+也可以直接删了旧版本，然后为新版本创建一个软连接
 ```shell
 sudo apt remove gcc-7 g++-7
+
+sudo rm /usr/bin/gcc
+sudo rm /usr/bin/g++
+sudo ln -s /usr/bin/gcc-8 /usr/bin/gcc
+sudo ln -s /usr/bin/g++-8 /usr/bin/g++
 ```
 
 
