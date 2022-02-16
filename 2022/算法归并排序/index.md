@@ -1,0 +1,119 @@
+# 【算法】归并排序
+
+
+## 归并排序
+直接代码：  
+```cpp
+void merge(vector<int>& nums, int left, int mid, int right)  
+{  
+	if (left == right)  
+		return;  
+	vector<int> temp(right - left + 1);  
+	int l = left, r = mid + 1, i = 0;  
+	while (l <= mid && r <= right)  
+		temp[i ++] = nums[l] <= nums[r] ? nums[l ++] : nums[r ++];  
+	while (l <= mid)  
+		temp[i ++] = nums[l ++];  
+	while (r <= right)  
+		temp[i ++] = nums[r ++];  
+	for (auto x : temp)  
+		nums[left ++] = x;  
+}  
+void mergeSort(vector<int>& nums, int left, int right)  
+{  
+	if (left == right)  
+		return;  
+	int mid = left + ((right - left) >> 1);  
+	mergeSort(nums, left, mid);  
+	mergeSort(nums, mid + 1, right);  
+	merge(nums, left, mid, right);  
+}
+```
+
+-----
+
+## 相关题目
+
+### 题目1：小和问题
+题目描述：在一个数组中， 每一个数左边比当前数小的数累加起来，叫做这个数组的小和，求一个数组的小和。  
+例子：[1,3,4,2,5]，小和为：$1+1+3+1+1+3+4+2=16$。  
+思路：暴力解法很容易想到，但是复杂度太高（$O\left(n\right)$)。可以考虑用归并排序的思想来解题，归并过程中我们进行元素间的比较，不会重复比较，也不会漏，比较之后需要和归并排序一样进行排序，这样可以保证，每个待排序（待计算小和）的元素，可以以$O\left(1\right)$的时间得到小和的计算次数。  
+代码：  
+```cpp
+int mergeSum(vector<int>& nums, int left, int mid, int right)  
+{  
+	if (left == right)  
+		return 0;  
+	vector<int> temp(right - left + 1);  
+	int l = left, r = mid + 1, i = 0, sum = 0;  
+	while (l <= mid && r <= right)  
+	{  
+		sum += nums[l] < nums[r] ? nums[l] * (right - r + 1) : 0;  
+		temp[i ++] = nums[l] < nums[r] ? nums[l ++] : nums[r ++];  
+	}  
+	while (l <= mid)  
+		temp[i ++] = nums[l ++];  
+	while (r <= right)  
+		temp[i ++] = nums[r ++];  
+	for (auto x : temp)  
+		nums[left ++] = x;  
+	return sum;  
+}  
+int smallSum(vector<int>& nums, int left, int right)  
+{  
+	if (left == right)  
+		return 0;  
+	int mid = left + ((right - left) >> 1);  
+	return smallSum(nums, left, mid) + smallSum(nums, mid + 1, right) + mergeSum(nums, left, mid, right);  
+}
+```
+时间复杂度：$O\left(nlogn\right)$  
+空间复杂度：$O\left(n\right)$
+
+-----
+
+### 题目2：逆序对
+[LeetCode-剑指Offer51](https://leetcode-cn.com/problems/shu-zu-zhong-de-ni-xu-dui-lcof/)  
+题目表述：在数组中的两个数字，如果前面一个数字大于后面的数字，则这两个数字组成一个逆序对。输入一个数组，求出这个数组中的逆序对的总数。
+例子：输入: [7,5,6,4]，输出: 5。  
+思路：和问题1一样，只不过要求的是数量，以及大小关系相反。  
+代码：  
+```cpp
+int mergePair(vector<int>& nums, int left, int mid, int right)  
+{  
+	if (left == right)  
+		return 0;  
+	vector<int> temp(right - left + 1);  
+	int res = 0, l = left, r = mid + 1, i = 0;  
+	while (l <= mid && r <= right) {  
+		res += nums[l] > nums[r] ? (right - r + 1) : 0;  
+		temp[i ++] = nums[l] > nums[r] ? nums[l ++] : nums[r ++];  
+	}  
+	while (l <= mid)  
+		temp[i ++] = nums[l ++];  
+	while (r <= right)  
+		temp[r ++] = nums[r ++];  
+	for (auto x : temp)   
+		nums[left ++] = x;  
+	return res;  
+}  
+int reversePairsNum(vector<int>& nums, int left, int right)  
+{  
+	if (left == right)  
+		return 0;  
+	int mid = left + ((right - left) >> 1);  
+	return reversePairsNum(nums, left, mid) + reversePairsNum(nums, mid + 1, right) + mergePair(nums, left, mid, right);  
+}  
+int reversePairs(vector<int>& nums) {  
+	int len = nums.size();  
+	if (len < 2)  
+		return 0;  
+	return reversePairsNum(nums, 0, len - 1);  
+}
+```
+时间复杂度：$O\left(nlogn\right)$  
+空间复杂度：$O\left(n\right)$  
+
+-----
+
+
