@@ -163,5 +163,6 @@ void quickSort3(vector<int>& nums, int left, int right)
 	}  
 }
 ```
-
+时间复杂度：$O\left(nlogn\right)$  
+空间复杂度：$O\left(logn\right)$
 
