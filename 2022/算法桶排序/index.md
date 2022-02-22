@@ -1,0 +1,96 @@
+# 【算法】桶排序
+
+
+## 桶排序
+使用桶排序思想的算法主要有**计数排序**和**基数排序**两种。桶排序思想的排序都是**不基于比较**的排序方法。时间复杂度为$O\left(n\right)$。和基于比较的排序不同的是，桶排序方法的应用范围较为有限，需要根据数据的状况来决定桶的划分。
+
+-----
+
+## 计数排序
+思想：计数排序的核心在于将输入的数据值转化为键存储在额外开辟的数组空间中。作为一种线性时间复杂度的排序，计数排序要求输入的数据必须是有确定范围的整数。当输入的元素是n个0~k之间的整数时，时间复杂度为$O\left(n+k\right)$。计数排序不是比较排序，排序的速度快于任何比较排序算法。由于用来计数的数组C的长度取决于待排序数组中数据的范围（等于待排序数组的最大值与最小值的差加上1），这使得计数排序对于数据范围很大的数组，需要大量时间和内存。例如：计数排序是用来排序0到100之间的数字的最好的算法，但是它不适合按字母顺序排序人名。  
+步骤：  
+1. 开辟一个基于元素范围大小的数组
+2. 统计每个不同值出现次数
+3. 按统计将元素放入待排序数组
+
+代码：  
+```cpp
+void countingSort(std::vector<int>& nums, int left, int right)  
+{  
+	int min = *std::min_element(nums.begin() + left, nums.begin() + right + 1);// include<algrithm>
+	int max = *std::max_element(nums.begin() + left, nums.begin() + right + 1);
+	std::vector<int> count(max - min + 1, 0);  
+	for (int i = left; i <= right; ++ i)  
+		++ count[nums[i] - min];  
+	int index = left;  
+	for (int i = 0; i < count.size(); ++ i)  
+	{  
+		while (count[i])  
+		{  
+			nums[index ++] = min + i;  
+			-- count[i];  
+		}  
+	}  
+}
+```
+时间复杂度：$O\left(n+k\right)$  *k为元素值的范围*    
+空间复杂度：$O\left(k\right)$
+
+-----
+
+## 基数排序
+思想：基数排序是一种非比较型整数排序算法，其原理是将整数按位数切割成不同的数字，然后按每个位数分别比较。使用LSD（Least significant digital）方法，先从低位开始进行排序，在每个关键字（每一位）上，可采用桶排序。
+步骤：  
+1. 找到数组中最大元素的十进制位数
+2. 按照从低位到高位的顺序，依次进行桶排序
+
+*代码进行了优化，对于十进制整数只使用了一个桶*
+代码：  
+```cpp
+int maxDigits(std::vector<int>& nums, int left, int right)  
+{  
+	int max_elem = *std::max_element(nums.begin() + left, nums.begin() + right + 1);// include<algrithm>
+	int digits = 0;  
+	while (max_elem)  
+	{  
+		++ digits;  
+		max_elem /= 10;  
+	}  
+	return digits;  
+}  
+int getDigit(int num, int d)  
+{  
+	while (d)  
+	{  
+		num /= 10;  
+		-- d;  
+	}  
+	return num % 10;  
+}  
+void radixSort(std::vector<int>& nums, int left, int right)  
+{  
+	int radix = 10, digit = maxDigits(nums, left, right);  
+	std::vector<int> bucket(right - left + 1);  
+	for (int d = 0; d < digit; ++ d)  
+	{  
+		std::vector<int> count(radix, 0);  
+		for (int i = left; i <= right; ++ i)  
+		{  
+			int j = getDigit(nums[i], d);  
+			++ count[j];  
+		}  
+		for (int i = 1; i < radix; ++ i)  
+			count[i] += count[i - 1];  // count[i]表示d位上<=num[i]的数量
+		for (int i = right; i >= left; -- i)  // 从后向前
+		{  
+			int j = getDigit(nums[i], d);  
+			bucket[count[j] - 1] = nums[i];  
+			-- count[j];  
+		}  
+		for (int i = 0; i < bucket.size(); ++ i)  
+			nums[left + i] = bucket[i];  
+	}  
+}
+```
+时间复杂度：$O\left(n+r\right)$ *r=radix*  
+空间复杂度：$O\left(n*d\right)$ *d=digits*  
