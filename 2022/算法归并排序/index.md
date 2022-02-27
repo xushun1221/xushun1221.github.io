@@ -74,7 +74,7 @@ int smallSum(vector<int>& nums, int left, int right)
 
 ### 题目2：逆序对
 [LeetCode-剑指Offer51](https://leetcode-cn.com/problems/shu-zu-zhong-de-ni-xu-dui-lcof/)  
-题目表述：在数组中的两个数字，如果前面一个数字大于后面的数字，则这两个数字组成一个逆序对。输入一个数组，求出这个数组中的逆序对的总数。
+题目描述：在数组中的两个数字，如果前面一个数字大于后面的数字，则这两个数字组成一个逆序对。输入一个数组，求出这个数组中的逆序对的总数。
 例子：输入: [7,5,6,4]，输出: 5。  
 思路：和问题1一样，只不过要求的是数量，以及大小关系相反。  
 代码：  
@@ -119,7 +119,7 @@ int reversePairs(vector<int>& nums) {
 
 ### 题目3：翻转对
 [LeetCode-剑指Offer493](https://leetcode-cn.com/problems/reverse-pairs/)  
-题目表述：给定一个数组`nums`，如果`i < j`且`nums[i] > 2*nums[j]`，我们就将 `(i, j)` 称作一个重要翻转对。你需要返回给定数组中的重要翻转对的数量。
+题目描述：给定一个数组`nums`，如果`i < j`且`nums[i] > 2*nums[j]`，我们就将 `(i, j)` 称作一个重要翻转对。你需要返回给定数组中的重要翻转对的数量。
 思路：和问题1\2一样。只是不可以在计数的同时归并数组，需要分开写。  
 代码：  
 ```cpp
@@ -161,5 +161,66 @@ int reversePairs(vector<int>& nums) {
 
 -----
 
+### 题目4：计算右侧小于当前元素的个数
+[LeetCode315](https://leetcode-cn.com/problems/count-of-smaller-numbers-after-self/)  
+题目描述：给你一个整数数组 `nums` ，按要求返回一个新数组 `counts` 。数组 `counts` 有该性质： `counts[i]` 的值是  `nums[i]`右侧小于 `nums[i]` 的元素的数量。  
+思路：和逆序对的思路基本相同，但是在使用`count`数组记录在右侧比当前元素大的数的个数时，需要使用索引数组记录元素在`count`数组中的位置，因为，归并时元素位置和`count`数组中的位置可能不再对应。  
+代码：  
+```cpp
+class Solution {
+public:
+    vector<int> index;
+    vector<int> res;
+    void merge(vector<int> &nums, int left, int mid, int right) {
+        int len = right - left + 1;
+        vector<int> temp(len);
+        vector<int> temp_index(len);
+        int tempPos = 0;
+        int l = left, r = mid + 1;
+        while(l <= mid && r <= right) {
+            if(nums[l] > nums[r]) {
+                res[index[l]] += right - r + 1;
+                temp_index[tempPos] = index[l];
+                temp[tempPos ++] = nums[l ++];
+            }
+            else {
+                temp_index[tempPos] = index[r];
+                temp[tempPos ++] = nums[r ++];
+            }
+        }
+        while(l <= mid) {
+            temp_index[tempPos] = index[l];
+            temp[tempPos ++] = nums[l ++];
+        }
+        while(r <= right) {
+            temp_index[tempPos] = index[r];
+            temp[tempPos ++] = nums[r ++];
+        }
+        for(int i = 0; i < len; ++ i) {
+            nums[left + i] = temp[i];
+            index[left + i]= temp_index[i];
+        }
+    }
+    void process(vector<int> &nums,int left,int right) {
+        if(left == right) return;
+        int mid = (right - left) / 2 + left;
+        process(nums, left, mid);
+        process(nums, mid + 1, right);
+        merge(nums, left, mid, right);
+    }
+    vector<int> countSmaller(vector<int>& nums) {
+        int len = nums.size();
+        res = vector<int>(len, 0);
+        index.resize(len);
+        for(int i = 0; i < len; ++ i) 
+            index[i] = i;
+        process(nums, 0, len - 1);
+        return res;
+    }
+};
+```
+时间复杂度：$O\left(nlogn\right)$  
+空间复杂度：$O\left(n\right)$ 
 
+-----
 
