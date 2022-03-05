@@ -128,4 +128,5 @@ size_t ByteStream::bytes_read() const { return _read_count; }
 
 size_t ByteStream::remaining_capacity() const { return _capacity - _buffer.size(); }
 ```
-![](/post_images/posts/Networking/CS144 Lab Assignment lab-0/测试bytestream.jpg "测试bytestream")  
+![](/post_images/posts/Networking/CS144 Lab Assignment lab-0/测试bytestream.jpg "测试bytestream") 
+![](/post_images/posts/Coding/算法——二分查找/二分查找初始状态.jpg "二分查找初始状态")
