@@ -20,20 +20,20 @@ telnet cs144.keithw.org http
 ```
 建立连接之后就要手动输入HTTP的请求报文。*注意要快点，不然连接超时了*  
 告诉服务器要请求的URL的path和host，并且告知服务器响应之后就关闭连接，然后就会收到响应报文。  
-![](/post_images/posts/Networking/ "手动getURL")  
+![](/post_images/posts/Networking/CS144 Lab Assignment lab-0/手动getURL.jpg "手动getURL")  
 
 -----
 
 ## Send yourself an email
 这个部分是让你手动发送一封邮件，请求邮件服务器的SMTP服务，发送邮件。  
 这里我用自己的qq邮箱给outlook邮箱发个邮件，用`telnet`程序请求`smtp.qq.com`的smtp服务，登录名和密码需要用Base64编码，密码这里要用qq邮箱的授权码。  
-![](/post_images/posts/Networking/ "手动smtp发邮件")
+![](/post_images/posts/Networking/CS144 Lab Assignment lab-0/手动smtp发邮件.jpg "手动smtp发邮件")
 
 -----
 
 ## Listening and connecting
 这里让你用`natcat`程序运行一个服务器进行监听。  
-![](/post_images/posts/Networking/ "监听和连接")
+![](/post_images/posts/Networking/CS144 Lab Assignment lab-0/监听和连接.jpg "监听和连接")
 
 -----
 
@@ -55,7 +55,7 @@ void get_URL(const string &host, const string &path) {
     return;
 }
 ```
-![](/post_images/posts/Networking/ "测试webget")  
+![](/post_images/posts/Networking/CS144 Lab Assignment lab-0/测试webget.jpg "测试webget")  
 
 -----
 
@@ -128,4 +128,4 @@ size_t ByteStream::bytes_read() const { return _read_count; }
 
 size_t ByteStream::remaining_capacity() const { return _capacity - _buffer.size(); }
 ```
-![](/post_images/posts/Networking/ "测试bytestream")  
+![](/post_images/posts/Networking/CS144 Lab Assignment lab-0/测试bytestream.jpg "测试bytestream")  
