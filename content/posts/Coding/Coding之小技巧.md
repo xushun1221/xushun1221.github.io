@@ -15,7 +15,7 @@ categories: [Coding]
 
 -----
 
-## master公式 22.2.16
+## master公式
 计算子问题等规模的递归问题的时间复杂度。  
 - 如果一个递归过程满足：$T\left(N\right)=aT\left(\frac{N}{b}\right)+O\left(N^{d}\right)$
 - 如果：$log_{b}a<d$，那么时间复杂度为：$O\left(N^{d}\right)$
@@ -24,7 +24,7 @@ categories: [Coding]
 
 -----
 
-## C++ for循环continue问题 22.2.17
+## C++ for循环continue问题
 在C++的for循环中，`continue`语句并不能跳过步进语句。  
 例子：  
 ```cpp
@@ -38,4 +38,8 @@ for (int i = 0; i < 10; ++ i)
 
 -----
 
+## C/C++ size_t
+`size_t`是一些C/C++标准在`stddef.h`中定义的，`size_t`类型表示C中任何对象所能达到的最大长度，它是无符号整数。  
+它是为了方便系统之间的移植而定义的，不同的系统上，定义`size_t`可能不一样。`size_t`在32位系统上定义为 `unsigned int`，也就是32位无符号整型。在64位系统上定义为 `unsigned long` ，也就是64位无符号整形。`size_t` 的目的是提供一种可移植的方法来声明与系统中可寻址的内存区域一致的长度。
 
+-----
