@@ -82,8 +82,10 @@ class ByteStream {
 ByteStream::ByteStream(const size_t capacity):_capacity(capacity) {}
 
 size_t ByteStream::write(const string &data) {
+    if (_input_ended)
+        return 0;
     size_t len = data.length();
-    len = len > remaining_capacity() ? remaining_capacity() : len;
+    len = min(len, _capacity - _buffer.size());
     for (size_t i = 0; i < len; ++ i)
         _buffer.push_back(data[i]);
     _written_count += len;
@@ -91,12 +93,12 @@ size_t ByteStream::write(const string &data) {
 }
 
 string ByteStream::peek_output(const size_t len) const {
-    size_t length = len > _buffer.size() ? _buffer.size() : len;
-    return string().assign(_buffer.begin(), _buffer.begin() + length);
+    size_t length = min(len, _buffer.size());
+    return string(_buffer.begin(), _buffer.begin() + length);
 }
 
 void ByteStream::pop_output(const size_t len) {
-    size_t length = len > _buffer.size() ? _buffer.size() : len;
+    size_t length = min(len, _buffer.size());
     for (size_t i = 0; i < length; ++ i)
         _buffer.pop_front();
     _read_count += length;
