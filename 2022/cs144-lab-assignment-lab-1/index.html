@@ -1,0 +1,178 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>CS144 Lab Assignment lab-1 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/cs144-lab-assignment-lab-0/><link rel=canonical href=https://xushun1221.github.io/2022/cs144-lab-assignment-lab-1/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="CS144 Lab Assignment lab-1"><meta name=twitter:description content="stitching substrings into a byte stream 本次实验是要实现一个流重组器，能够将TCPReceiver接收到的乱序的、重复的TCP段重新组装成一个正确的、按序的、无重复的字"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"CS144 Lab Assignment lab-1","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/cs144-lab-assignment-lab-1\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"network, C\x2b\x2b","wordcount":1850,"url":"https:\/\/xushun1221.github.io\/2022\/cs144-lab-assignment-lab-1\/","datePublished":"2022-03-10T00:00:00\x2b00:00","dateModified":"2022-03-10T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">CS144 Lab Assignment lab-1</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-03-10>2022-03-10</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 1850 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/networking/>Networking</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#stitching-substrings-into-a-byte-stream>stitching substrings into a byte stream</a></li><li><a href=#capacity>capacity</a></li><li><a href=#streamreassembler实现>StreamReassembler实现</a><ul><li><a href=#数据结构>数据结构</a></li><li><a href=#边界处理>边界处理</a></li><li><a href=#eof>eof</a></li><li><a href=#代码>代码</a></li><li><a href=#测试结果>测试结果</a></li></ul></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#stitching-substrings-into-a-byte-stream>stitching substrings into a byte stream</a></li><li><a href=#capacity>capacity</a></li><li><a href=#streamreassembler实现>StreamReassembler实现</a><ul><li><a href=#数据结构>数据结构</a></li><li><a href=#边界处理>边界处理</a></li><li><a href=#eof>eof</a></li><li><a href=#代码>代码</a></li><li><a href=#测试结果>测试结果</a></li></ul></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=stitching-substrings-into-a-byte-stream></a><h2>stitching substrings into a byte stream</h2><p>本次实验是要实现一个流重组器，能够将<code>TCPReceiver</code>接收到的乱序的、重复的<code>TCP段</code>重新组装成一个正确的、按序的、无重复的字节流<code>ByteStream</code>。<br>我们需要完成<code>StreamReassembler</code>类的编写，主要功能在<code>push_substring</code>中实现，该函数接收一个子字符串、该子串第一个字节在整个流中的字节索引（从0开始）和一个<code>eof</code>标志（用来标记该子串的最后一个字节是整个流的结尾）。</p><p>该实验看上去简单，但在细节部分十分繁琐，需要认真阅读文档，搞清楚所有细节问题在动手编写代码。</p><a class=post-dummy-target id=capacity></a><h2>capacity</h2><p>lab1中最重要的概念就是<code>capacity</code>，必须正确理解其含义。<br>下图详细展示了<code>capacity</code>的含义，</p><ul><li>stream start 到 first unread 的蓝色部分代表已经被<code>ByteStream</code>读取的部分（已经不在<code>ByteStream</code>中）</li><li>first unread 到 first unassembled 的绿色部分代表保存在<code>ByteStream</code>的缓冲区中还未被读取的部分</li><li>first unassembled 到 first unacceptable 部分，是<code>StreamReassembler</code>中能够保存的部分，红色片段代表在整个流中的该片段已经保存到<code>StreamReassembler</code>中，空白部分代表那些还没收到的部分</li><li>超过first unacceptable的字节应该被丢弃，而不继续保存在<code>StreamReassembler</code>中，这是为了避免在极限条件下的内存占用问题</li></ul><p>经过上述的分析，我们可以弄清楚<code>capacity</code>到底是什么，显然，<code>capacity</code>规定了<code>ByteStream</code>的大小，它的缓冲区不能超过这个大小，这就意味着，<code>StreamReassembler</code>中保存的字节数，不能超过<code>ByteStream</code>中剩余的缓冲区大小。<br><figure><img src=/svg/loading.min.svg data-sizes=auto data-src=/post_images/posts/Networking/CS144LabAssignmentlab-1/capacity.jpg alt title=capacity class=lazyload><figcaption class=image-caption>capacity</figcaption></figure></p><a class=post-dummy-target id=streamreassembler实现></a><h2>StreamReassembler实现</h2><a class=post-dummy-target id=数据结构></a><h3>数据结构</h3><p>很明显，我们需要一种数据结构来记录到目前为止，我们收到的<code>substring</code>。<br>我们可以使用<code>map&lt;size_t, string></code>来记录字节索引和子串的键值对，并且map容器底层由红黑树实现，可以排序方便插入删除，但是接收到的字符串彼此之间可能重叠、覆盖，使用这种结构会涉及许多字符串截取合并的操作，非常繁琐QAQ。<br>我使用的方法是：用两个双端队列<code>deque</code>分别记录<code>StreamReassembler</code>中接收的字符（char）以及字符的字节索引。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>deque</span><span class=o>&lt;</span><span class=kt>char</span><span class=o>&gt;</span> <span class=n>_unassembled_chars</span><span class=p>{</span><span class=p>}</span><span class=p>;</span>
+<span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>deque</span><span class=o>&lt;</span><span class=kt>bool</span><span class=o>&gt;</span> <span class=n>_unassembled_flags</span><span class=p>{</span><span class=p>}</span><span class=p>;</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=边界处理></a><h3>边界处理</h3><p>我们只需要留下在允许范围内的字节，小于下界或是大于上界的字节直接丢弃即可。</p><a class=post-dummy-target id=eof></a><h3>eof</h3><p>在允许范围内的字节需要考虑eof标记，小于下界的eof表示已经到结尾，而大于上界的eof无需考虑。</p><a class=post-dummy-target id=代码></a><h3>代码</h3><p>代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span><span class=lnt>59
+</span><span class=lnt>60
+</span><span class=lnt>61
+</span><span class=lnt>62
+</span><span class=lnt>63
+</span><span class=lnt>64
+</span><span class=lnt>65
+</span><span class=lnt>66
+</span><span class=lnt>67
+</span><span class=lnt>68
+</span><span class=lnt>69
+</span><span class=lnt>70
+</span><span class=lnt>71
+</span><span class=lnt>72
+</span><span class=lnt>73
+</span><span class=lnt>74
+</span><span class=lnt>75
+</span><span class=lnt>76
+</span><span class=lnt>77
+</span><span class=lnt>78
+</span><span class=lnt>79
+</span><span class=lnt>80
+</span><span class=lnt>81
+</span><span class=lnt>82
+</span><span class=lnt>83
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;byte_stream.hh&#34;</span><span class=cp>
+</span><span class=cp></span>
+<span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;cstdint&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;deque&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=c1>//! \brief A class that assembles a series of excerpts from a byte stream (possibly out of order,
+</span><span class=c1></span><span class=c1>//! possibly overlapping) into an in-order byte stream.
+</span><span class=c1></span><span class=k>class</span> <span class=nc>StreamReassembler</span> <span class=p>{</span>
+  <span class=k>private</span><span class=o>:</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>deque</span><span class=o>&lt;</span><span class=kt>char</span><span class=o>&gt;</span> <span class=n>_unassembled_chars</span><span class=p>{</span><span class=p>}</span><span class=p>;</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>deque</span><span class=o>&lt;</span><span class=kt>bool</span><span class=o>&gt;</span> <span class=n>_unassembled_flags</span><span class=p>{</span><span class=p>}</span><span class=p>;</span>
+    <span class=n>size_t</span> <span class=n>_next_assemble_index</span><span class=p>{</span><span class=mi>0</span><span class=p>}</span><span class=p>;</span>
+    <span class=n>size_t</span> <span class=n>_unassembled_bytes</span><span class=p>{</span><span class=mi>0</span><span class=p>}</span><span class=p>;</span>
+    <span class=kt>bool</span> <span class=n>_eof_flag</span><span class=p>{</span><span class=nb>false</span><span class=p>}</span><span class=p>;</span>
+    
+    <span class=n>ByteStream</span> <span class=n>_output</span><span class=p>{</span><span class=mi>0</span><span class=p>}</span><span class=p>;</span>  <span class=c1>//!&lt; The reassembled in-order byte stream
+</span><span class=c1></span>    <span class=n>size_t</span> <span class=n>_capacity</span><span class=p>{</span><span class=mi>0</span><span class=p>}</span><span class=p>;</span>    <span class=c1>//!&lt; The maximum number of bytes
+</span><span class=c1></span><span class=p>.</span><span class=p>.</span><span class=p>.</span>
+	
+	
+	
+<span class=c1>// 下面是 stream_reassembler.cc 内容
+</span><span class=c1></span>	
+<span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;stream_reassembler.hh&#34;</span><span class=cp>
+</span><span class=cp></span>
+<span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+
+<span class=n>StreamReassembler</span><span class=o>:</span><span class=o>:</span><span class=n>StreamReassembler</span><span class=p>(</span><span class=k>const</span> <span class=n>size_t</span> <span class=n>capacity</span><span class=p>)</span>
+    <span class=o>:</span> <span class=n>_unassembled_chars</span><span class=p>(</span><span class=n>capacity</span><span class=p>,</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>\0</span><span class=sc>&#39;</span><span class=p>)</span><span class=p>,</span> <span class=c1>// 初始化为空字符
+</span><span class=c1></span>    <span class=n>_unassembled_flags</span><span class=p>(</span><span class=n>capacity</span><span class=p>,</span> <span class=nb>false</span><span class=p>)</span><span class=p>,</span>  <span class=c1>// 初始化为false
+</span><span class=c1></span>    <span class=n>_output</span><span class=p>(</span><span class=n>capacity</span><span class=p>)</span><span class=p>,</span> 
+    <span class=n>_capacity</span><span class=p>(</span><span class=n>capacity</span><span class=p>)</span> <span class=p>{</span><span class=p>}</span>
+
+<span class=kt>void</span> <span class=n>StreamReassembler</span><span class=o>:</span><span class=o>:</span><span class=n>push_substring</span><span class=p>(</span><span class=k>const</span> <span class=n>string</span> <span class=o>&amp;</span><span class=n>data</span><span class=p>,</span> <span class=k>const</span> <span class=n>size_t</span> <span class=n>index</span><span class=p>,</span> <span class=k>const</span> <span class=kt>bool</span> <span class=n>eof</span><span class=p>)</span> <span class=p>{</span>
+    <span class=c1>// 我们在_unassembled_chars中可以容纳的字节数，不能多于ByteStream中剩余缓冲区的容量
+</span><span class=c1></span>    <span class=c1>// 如果当前串的起始位置，超过容纳范围，直接丢弃该串
+</span><span class=c1></span>    <span class=k>if</span> <span class=p>(</span><span class=n>index</span> <span class=o>&gt;</span><span class=o>=</span> <span class=n>_next_assemble_index</span> <span class=o>+</span> <span class=n>_output</span><span class=p>.</span><span class=n>remaining_capacity</span><span class=p>(</span><span class=p>)</span><span class=p>)</span>
+        <span class=k>return</span><span class=p>;</span>
+    <span class=c1>// 如果当前串所有字节，都已经被写入ByteStream，则丢弃该串
+</span><span class=c1></span>    <span class=k>if</span> <span class=p>(</span><span class=n>index</span> <span class=o>+</span> <span class=n>data</span><span class=p>.</span><span class=n>size</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>=</span> <span class=n>_next_assemble_index</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>eof</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>empty</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=c1>// 如果eof标记为true，表明后续已无字节需要写入，关闭ByteStream输入
+</span><span class=c1></span>            <span class=n>_output</span><span class=p>.</span><span class=n>end_input</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>return</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=c1>// 只有当前串的最后一个字节落在_unassembled_chars的范围内，且eof==true时，才将_eof_flag置为true
+</span><span class=c1></span>    <span class=c1>// 标记当前串的最后一个字节是否在_unassembled_chars的范围内
+</span><span class=c1></span>    <span class=kt>bool</span> <span class=n>flag_in_bounds</span> <span class=o>=</span> <span class=nb>true</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>index</span> <span class=o>+</span> <span class=n>data</span><span class=p>.</span><span class=n>size</span><span class=p>(</span><span class=p>)</span> <span class=o>&gt;</span> <span class=n>_next_assemble_index</span> <span class=o>+</span> <span class=n>_output</span><span class=p>.</span><span class=n>remaining_capacity</span><span class=p>(</span><span class=p>)</span><span class=p>)</span>
+        <span class=n>flag_in_bounds</span> <span class=o>=</span> <span class=nb>false</span><span class=p>;</span>
+    <span class=c1>// 遍历当前串，对在_unassembled_chars范围内的字节进行判断
+</span><span class=c1></span>    <span class=k>for</span> <span class=p>(</span><span class=n>size_t</span> <span class=n>i</span> <span class=o>=</span> <span class=n>index</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>index</span> <span class=o>+</span> <span class=n>data</span><span class=p>.</span><span class=n>size</span><span class=p>(</span><span class=p>)</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>_next_assemble_index</span> <span class=o>+</span> <span class=n>_output</span><span class=p>.</span><span class=n>remaining_capacity</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>i</span> <span class=o>&gt;</span><span class=o>=</span> <span class=n>_next_assemble_index</span><span class=p>)</span> <span class=p>{</span>
+            <span class=k>if</span> <span class=p>(</span><span class=n>_unassembled_flags</span><span class=p>[</span><span class=n>i</span> <span class=o>-</span> <span class=n>_next_assemble_index</span><span class=p>]</span> <span class=o>=</span><span class=o>=</span> <span class=nb>false</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// 如果该位置为空，则写入字节
+</span><span class=c1></span>                <span class=n>_unassembled_chars</span><span class=p>[</span><span class=n>i</span> <span class=o>-</span> <span class=n>_next_assemble_index</span><span class=p>]</span> <span class=o>=</span> <span class=n>data</span><span class=p>[</span><span class=n>i</span> <span class=o>-</span> <span class=n>index</span><span class=p>]</span><span class=p>;</span>
+                <span class=n>_unassembled_flags</span><span class=p>[</span><span class=n>i</span> <span class=o>-</span> <span class=n>_next_assemble_index</span><span class=p>]</span> <span class=o>=</span> <span class=nb>true</span><span class=p>;</span>
+                <span class=o>+</span><span class=o>+</span> <span class=n>_unassembled_bytes</span><span class=p>;</span>
+            <span class=p>}</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=c1>// 把_unassembled_chars中开头的字节写入ByteStream
+</span><span class=c1></span>    <span class=c1>// 因为整个_unassembled_chars的大小不大于ByteStream缓冲区的剩余容量，所以不用担心写入的字节被丢弃
+</span><span class=c1></span>    <span class=n>string</span> <span class=n>write_string</span><span class=p>{</span><span class=p>}</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span><span class=n>size_t</span> <span class=n>i</span> <span class=o>=</span> <span class=n>_next_assemble_index</span><span class=p>;</span> <span class=n>_unassembled_flags</span><span class=p>[</span><span class=n>i</span> <span class=o>-</span> <span class=n>_next_assemble_index</span><span class=p>]</span> <span class=o>=</span><span class=o>=</span> <span class=nb>true</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>write_string</span> <span class=o>+</span><span class=o>=</span> <span class=n>_unassembled_chars</span><span class=p>[</span><span class=n>i</span> <span class=o>-</span> <span class=n>_next_assemble_index</span><span class=p>]</span><span class=p>;</span>
+        <span class=n>_unassembled_chars</span><span class=p>.</span><span class=n>pop_front</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>_unassembled_chars</span><span class=p>.</span><span class=n>push_back</span><span class=p>(</span><span class=sa></span><span class=sc>&#39;</span><span class=sc>\0</span><span class=sc>&#39;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>_unassembled_flags</span><span class=p>.</span><span class=n>pop_front</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>_unassembled_flags</span><span class=p>.</span><span class=n>push_back</span><span class=p>(</span><span class=nb>false</span><span class=p>)</span><span class=p>;</span>
+        <span class=o>+</span><span class=o>+</span> <span class=n>_next_assemble_index</span><span class=p>;</span>
+        <span class=o>-</span><span class=o>-</span> <span class=n>_unassembled_bytes</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>_output</span><span class=p>.</span><span class=n>write</span><span class=p>(</span><span class=n>write_string</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 判断是否需要置位_eof_flag以及是否需要关闭ByteStream输入
+</span><span class=c1></span>    <span class=k>if</span> <span class=p>(</span><span class=n>flag_in_bounds</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>eof</span><span class=p>)</span>
+        <span class=n>_eof_flag</span> <span class=o>=</span> <span class=nb>true</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>_eof_flag</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>empty</span><span class=p>(</span><span class=p>)</span><span class=p>)</span>
+        <span class=n>_output</span><span class=p>.</span><span class=n>end_input</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=n>size_t</span> <span class=n>StreamReassembler</span><span class=o>:</span><span class=o>:</span><span class=n>unassembled_bytes</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=n>_unassembled_bytes</span><span class=p>;</span> <span class=p>}</span>
+
+<span class=kt>bool</span> <span class=n>StreamReassembler</span><span class=o>:</span><span class=o>:</span><span class=n>empty</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=n>_unassembled_bytes</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=p>}</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=测试结果></a><h3>测试结果</h3><p>（我还优化了一下lab0的代码，这下测试用时很少了）<br><figure><img src=/svg/loading.min.svg data-sizes=auto data-src=/post_images/posts/Networking/CS144LabAssignmentlab-1/lab1%e6%b5%8b%e8%af%95%e7%bb%93%e6%9e%9c.jpg alt title=lab1测试结果 class=lazyload><figcaption class=image-caption>lab1测试结果</figcaption></figure></p></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+<span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
+<span>2022-03-10</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
+<span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fcs144-lab-assignment-lab-1%2f&text=CS144%20Lab%20Assignment%20lab-1&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2fcs144-lab-assignment-lab-1%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fcs144-lab-assignment-lab-1%2f&title=CS144%20Lab%20Assignment%20lab-1" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/network/><i class="fas fa-tag fa-fw"></i>&nbsp;network</a>&nbsp;
+</span><span class=tag><a href=https://xushun1221.github.io/tags/c++/><i class="fas fa-tag fa-fw"></i>&nbsp;C++</a>&nbsp;</span></section><section><span><a href=javascript:window.history.back();>Back</a></span>&nbsp;|&nbsp;<span><a href=https://xushun1221.github.io>Home</a></span></section></div><div class=post-nav><a href=https://xushun1221.github.io/2022/cs144-lab-assignment-lab-0/ class=prev rel=prev title="CS144 Lab Assignment lab-0"><i class="fas fa-angle-left fa-fw"></i>CS144 Lab Assignment lab-0</a></div><div class=post-comment></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2022</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=https://xushun1221.github.io/about/ target=_blank>xushun</a> | </span>Powered by <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> & <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer">LoveIt</a></div></div></footer></div><a href=# class=dynamic-to-top id=dynamic-to-top data-scroll><span>&nbsp;</span>
+</a><script src=/js/lib/jquery/jquery.slim.min.js></script><script src=/js/lib/lazysizes/lazysizes.min.js></script><script src=/js/lib/smooth-scroll/smooth-scroll.polyfills.min.js></script><script>window.scroll=new SmoothScroll('[data-scroll]',{speed:300,speedAsDuration:true});</script><link rel=stylesheet href=/css/lib/katex/katex.min.css><script src=/js/lib/katex/katex.min.js></script><script defer src=/js/lib/katex/auto-render.min.js></script><link rel=stylesheet href=/css/lib/katex/copy-tex.min.css><script defer src=/js/lib/katex/copy-tex.min.js></script><script defer src=/js/lib/katex/mhchem.min.js></script><script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true},{left:"$",right:"$",display:false},]});});</script><script src=/js/blog.min.js></script></body></html>
