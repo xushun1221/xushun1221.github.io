@@ -11,6 +11,8 @@ categories: [Networking]
 
 该实验看上去简单，但在细节部分十分繁琐，需要认真阅读文档，搞清楚所有细节问题在动手编写代码。
 
+-----
+
 ## capacity
 lab1中最重要的概念就是`capacity`，必须正确理解其含义。  
 下图详细展示了`capacity`的含义，  
@@ -21,6 +23,8 @@ lab1中最重要的概念就是`capacity`，必须正确理解其含义。
 
 经过上述的分析，我们可以弄清楚`capacity`到底是什么，显然，`capacity`规定了`ByteStream`的大小，它的缓冲区不能超过这个大小，这就意味着，`StreamReassembler`中保存的字节数，不能超过`ByteStream`中剩余的缓冲区大小。  
 ![](/post_images/posts/Networking/CS144LabAssignmentlab-1/capacity.jpg "capacity")
+
+-----
 
 ## StreamReassembler实现
 ### 数据结构
