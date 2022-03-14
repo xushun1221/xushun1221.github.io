@@ -40,7 +40,7 @@ sudo apt-get install libpcap-dev
 -----
 
 ### absolute seqno(64 bit) → seqno(32 bit)
-从`seqno`到`abs_seqno`只需要`abs_seqno`对$2^{32}$取模，再加上`isn`即可。  
+从`abs_seqno`到`seqno`只需要`abs_seqno`对$2^{32}$取模，再加上`isn`即可。  
 代码：  
 ```cpp
 WrappingInt32 wrap(uint64_t n, WrappingInt32 isn) {
