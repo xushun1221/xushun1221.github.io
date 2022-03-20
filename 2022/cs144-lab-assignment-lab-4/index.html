@@ -1,0 +1,430 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>CS144 Lab Assignment lab-4 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/cs144-lab-assignment-lab-3/><link rel=canonical href=https://xushun1221.github.io/2022/cs144-lab-assignment-lab-4/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="CS144 Lab Assignment lab-4"><meta name=twitter:description content="前言 前后经过半个多月终于把关于TCP的几个lab写完了，★,°:.☆(￣▽￣)/$:.°★ 。 lab4的难点在于对于TCP各个状态的理解、如何"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"CS144 Lab Assignment lab-4","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/cs144-lab-assignment-lab-4\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"network, C\x2b\x2b","wordcount":2822,"url":"https:\/\/xushun1221.github.io\/2022\/cs144-lab-assignment-lab-4\/","datePublished":"2022-03-20T00:00:00\x2b00:00","dateModified":"2022-03-20T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">CS144 Lab Assignment lab-4</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-03-20>2022-03-20</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 2822 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/networking/>Networking</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#前言>前言</a></li><li><a href=#the-tcp-connection>The TCP connection</a></li><li><a href=#重中之重>重中之重</a></li><li><a href=#implementing-the-tcp-connection>Implementing the TCP Connection</a></li><li><a href=#lab4测试结果>lab4测试结果</a></li><li><a href=#webget>webget</a></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#前言>前言</a></li><li><a href=#the-tcp-connection>The TCP connection</a></li><li><a href=#重中之重>重中之重</a></li><li><a href=#implementing-the-tcp-connection>Implementing the TCP Connection</a></li><li><a href=#lab4测试结果>lab4测试结果</a></li><li><a href=#webget>webget</a></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=前言></a><h2>前言</h2><p>前后经过半个多月终于把关于TCP的几个lab写完了，<em>★,°</em>:.☆(￣▽￣)/$:<em>.°★</em> 。<br>lab4的难点在于对于TCP各个状态的理解、如何处理各种状态下收到的<code>segment</code>、如何进行<code>clean_shutdown</code>正确结束TCP连接。</p><hr><a class=post-dummy-target id=the-tcp-connection></a><h2>The TCP connection</h2><p>本次实验的任务是，将<code>TCPSender</code>和<code>TCPReceiver</code>整合起来，<code>TCPConnection</code>负责TCP的整体连接处理。需要完成的功能如下：</p><ul><li>接收<code>segment</code>：当TCPConnection调用<code>segment_received()</code>函数时，从网络中（CS144封装的SOCKET）接收<code>TCPSegment</code>，并检查这个段：<ul><li>如果设置了<code>RST(reset)</code>标志，则将入站流和出站流都设置为错误状态，并永久终止连接</li><li>将这个段交由<code>TCPReceiver</code>处理，获取<code>seqno</code>、<code>syn</code>、<code>payload</code>和<code>fin</code>信息</li><li>如果设置了<code>ACK</code>标志，则将<code>ackno</code>和<code>win</code>告知<code>TCPSender</code>以更新发送窗口</li><li>如果传入的<code>segment</code>占用了至少一个<code>seqno</code>（如果发来的时空段，则不需要发送ack），则发送至少一个段来告知对方<code>ackno</code>和<code>window_size</code>的更新</li></ul></li><li>发送<code>segment</code>：TCPConnection将待发送的<code>segment</code>推入发送队列，等待上层调用以传入网络中<ul><li>TCPConnection将<code>sender.segment_out</code>队列中的seg推入发送队列时，需要为<code>segment</code>添加<code>ack</code>、<code>ackno</code>和<code>window_size</code></li></ul></li><li>当时间流逝：TCPConnection的<code>tick()</code>函数将被上层调用，传入的参数将告知TCPConnection自上次<code>tick()</code>被调用以来经过了多少毫秒的时间<ul><li>TCPConnection将告知<code>TCPSender</code>经过的时间</li><li>如果sender超时重传的次数超过了限定值， 远端peer将会被认为不可达，此时应该向远端peer发送一个seg并带有<code>RST</code>标志</li><li>如果时机合适，正常地断开连接（<code>clean_shutdown</code>）</li></ul></li></ul><hr><a class=post-dummy-target id=重中之重></a><h2>重中之重</h2><p>要完全理解TCP协议的状态信息，和讲义中的内容，<code>segment_received()</code>和<code>clean_shutdown()</code>有很多对TCP连接状态进行判断的地方，也是我认为的本次实验的难点，其他的部分基本就比较简单了。<br>再次回顾一下TCP的连接状态：（图是偷来的^^）<br><figure><img src=/svg/loading.min.svg data-sizes=auto data-src=/post_images/posts/Networking/CS144LabAssignmentlab-4/TCP%e5%bb%ba%e7%ab%8b%e8%bf%9e%e6%8e%a5.jpg alt title=TCP建立连接 class=lazyload><figcaption class=image-caption>TCP建立连接</figcaption></figure><br><figure><img src=/svg/loading.min.svg data-sizes=auto data-src=/post_images/posts/Networking/CS144LabAssignmentlab-4/TCP%e6%96%ad%e5%bc%80%e8%bf%9e%e6%8e%a5.jpg alt title=TCP断开连接 class=lazyload><figcaption class=image-caption>TCP断开连接</figcaption></figure><br><figure><img src=/svg/loading.min.svg data-sizes=auto data-src=/post_images/posts/Networking/CS144LabAssignmentlab-4/EvolutionofTCPreceiver.jpg alt title="Evolution of the TCP receiver" class=lazyload><figcaption class=image-caption>Evolution of the TCP receiver</figcaption></figure><br><figure><img src=/svg/loading.min.svg data-sizes=auto data-src=/post_images/posts/Networking/CS144LabAssignmentlab-4/EvolutionofTCPsender.jpg alt title="Evolution of the TCP sender" class=lazyload><figcaption class=image-caption>Evolution of the TCP sender</figcaption></figure></p><hr><a class=post-dummy-target id=implementing-the-tcp-connection></a><h2>Implementing the TCP Connection</h2><p>注释足够详细，不在赘述。<br>代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>  1
+</span><span class=lnt>  2
+</span><span class=lnt>  3
+</span><span class=lnt>  4
+</span><span class=lnt>  5
+</span><span class=lnt>  6
+</span><span class=lnt>  7
+</span><span class=lnt>  8
+</span><span class=lnt>  9
+</span><span class=lnt> 10
+</span><span class=lnt> 11
+</span><span class=lnt> 12
+</span><span class=lnt> 13
+</span><span class=lnt> 14
+</span><span class=lnt> 15
+</span><span class=lnt> 16
+</span><span class=lnt> 17
+</span><span class=lnt> 18
+</span><span class=lnt> 19
+</span><span class=lnt> 20
+</span><span class=lnt> 21
+</span><span class=lnt> 22
+</span><span class=lnt> 23
+</span><span class=lnt> 24
+</span><span class=lnt> 25
+</span><span class=lnt> 26
+</span><span class=lnt> 27
+</span><span class=lnt> 28
+</span><span class=lnt> 29
+</span><span class=lnt> 30
+</span><span class=lnt> 31
+</span><span class=lnt> 32
+</span><span class=lnt> 33
+</span><span class=lnt> 34
+</span><span class=lnt> 35
+</span><span class=lnt> 36
+</span><span class=lnt> 37
+</span><span class=lnt> 38
+</span><span class=lnt> 39
+</span><span class=lnt> 40
+</span><span class=lnt> 41
+</span><span class=lnt> 42
+</span><span class=lnt> 43
+</span><span class=lnt> 44
+</span><span class=lnt> 45
+</span><span class=lnt> 46
+</span><span class=lnt> 47
+</span><span class=lnt> 48
+</span><span class=lnt> 49
+</span><span class=lnt> 50
+</span><span class=lnt> 51
+</span><span class=lnt> 52
+</span><span class=lnt> 53
+</span><span class=lnt> 54
+</span><span class=lnt> 55
+</span><span class=lnt> 56
+</span><span class=lnt> 57
+</span><span class=lnt> 58
+</span><span class=lnt> 59
+</span><span class=lnt> 60
+</span><span class=lnt> 61
+</span><span class=lnt> 62
+</span><span class=lnt> 63
+</span><span class=lnt> 64
+</span><span class=lnt> 65
+</span><span class=lnt> 66
+</span><span class=lnt> 67
+</span><span class=lnt> 68
+</span><span class=lnt> 69
+</span><span class=lnt> 70
+</span><span class=lnt> 71
+</span><span class=lnt> 72
+</span><span class=lnt> 73
+</span><span class=lnt> 74
+</span><span class=lnt> 75
+</span><span class=lnt> 76
+</span><span class=lnt> 77
+</span><span class=lnt> 78
+</span><span class=lnt> 79
+</span><span class=lnt> 80
+</span><span class=lnt> 81
+</span><span class=lnt> 82
+</span><span class=lnt> 83
+</span><span class=lnt> 84
+</span><span class=lnt> 85
+</span><span class=lnt> 86
+</span><span class=lnt> 87
+</span><span class=lnt> 88
+</span><span class=lnt> 89
+</span><span class=lnt> 90
+</span><span class=lnt> 91
+</span><span class=lnt> 92
+</span><span class=lnt> 93
+</span><span class=lnt> 94
+</span><span class=lnt> 95
+</span><span class=lnt> 96
+</span><span class=lnt> 97
+</span><span class=lnt> 98
+</span><span class=lnt> 99
+</span><span class=lnt>100
+</span><span class=lnt>101
+</span><span class=lnt>102
+</span><span class=lnt>103
+</span><span class=lnt>104
+</span><span class=lnt>105
+</span><span class=lnt>106
+</span><span class=lnt>107
+</span><span class=lnt>108
+</span><span class=lnt>109
+</span><span class=lnt>110
+</span><span class=lnt>111
+</span><span class=lnt>112
+</span><span class=lnt>113
+</span><span class=lnt>114
+</span><span class=lnt>115
+</span><span class=lnt>116
+</span><span class=lnt>117
+</span><span class=lnt>118
+</span><span class=lnt>119
+</span><span class=lnt>120
+</span><span class=lnt>121
+</span><span class=lnt>122
+</span><span class=lnt>123
+</span><span class=lnt>124
+</span><span class=lnt>125
+</span><span class=lnt>126
+</span><span class=lnt>127
+</span><span class=lnt>128
+</span><span class=lnt>129
+</span><span class=lnt>130
+</span><span class=lnt>131
+</span><span class=lnt>132
+</span><span class=lnt>133
+</span><span class=lnt>134
+</span><span class=lnt>135
+</span><span class=lnt>136
+</span><span class=lnt>137
+</span><span class=lnt>138
+</span><span class=lnt>139
+</span><span class=lnt>140
+</span><span class=lnt>141
+</span><span class=lnt>142
+</span><span class=lnt>143
+</span><span class=lnt>144
+</span><span class=lnt>145
+</span><span class=lnt>146
+</span><span class=lnt>147
+</span><span class=lnt>148
+</span><span class=lnt>149
+</span><span class=lnt>150
+</span><span class=lnt>151
+</span><span class=lnt>152
+</span><span class=lnt>153
+</span><span class=lnt>154
+</span><span class=lnt>155
+</span><span class=lnt>156
+</span><span class=lnt>157
+</span><span class=lnt>158
+</span><span class=lnt>159
+</span><span class=lnt>160
+</span><span class=lnt>161
+</span><span class=lnt>162
+</span><span class=lnt>163
+</span><span class=lnt>164
+</span><span class=lnt>165
+</span><span class=lnt>166
+</span><span class=lnt>167
+</span><span class=lnt>168
+</span><span class=lnt>169
+</span><span class=lnt>170
+</span><span class=lnt>171
+</span><span class=lnt>172
+</span><span class=lnt>173
+</span><span class=lnt>174
+</span><span class=lnt>175
+</span><span class=lnt>176
+</span><span class=lnt>177
+</span><span class=lnt>178
+</span><span class=lnt>179
+</span><span class=lnt>180
+</span><span class=lnt>181
+</span><span class=lnt>182
+</span><span class=lnt>183
+</span><span class=lnt>184
+</span><span class=lnt>185
+</span><span class=lnt>186
+</span><span class=lnt>187
+</span><span class=lnt>188
+</span><span class=lnt>189
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=k>class</span> <span class=nc>TCPConnection</span> <span class=p>{</span>
+  <span class=k>private</span><span class=o>:</span>
+    <span class=n>TCPConfig</span> <span class=n>_cfg</span><span class=p>;</span>
+    <span class=n>TCPReceiver</span> <span class=n>_receiver</span><span class=p>{</span><span class=n>_cfg</span><span class=p>.</span><span class=n>recv_capacity</span><span class=p>}</span><span class=p>;</span>
+    <span class=n>TCPSender</span> <span class=n>_sender</span><span class=p>{</span><span class=n>_cfg</span><span class=p>.</span><span class=n>send_capacity</span><span class=p>,</span> <span class=n>_cfg</span><span class=p>.</span><span class=n>rt_timeout</span><span class=p>,</span> <span class=n>_cfg</span><span class=p>.</span><span class=n>fixed_isn</span><span class=p>}</span><span class=p>;</span>
+
+    <span class=c1>//! outbound queue of segments that the TCPConnection wants sent
+</span><span class=c1></span>    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>queue</span><span class=o>&lt;</span><span class=n>TCPSegment</span><span class=o>&gt;</span> <span class=n>_segments_out</span><span class=p>{</span><span class=p>}</span><span class=p>;</span>
+
+    <span class=c1>//! Should the TCPConnection stay active (and keep ACKing)
+</span><span class=c1></span>    <span class=c1>//! for 10 * _cfg.rt_timeout milliseconds after both streams have ended,
+</span><span class=c1></span>    <span class=c1>//! in case the remote TCPConnection doesn&#39;t know we&#39;ve received its whole stream?
+</span><span class=c1></span>    <span class=kt>bool</span> <span class=n>_linger_after_streams_finish</span><span class=p>{</span><span class=nb>true</span><span class=p>}</span><span class=p>;</span>
+
+	<span class=c1>// 我新增的私有成员
+</span><span class=c1></span>    <span class=n>size_t</span> <span class=n>_time_since_last_segment_received</span><span class=p>{</span><span class=mi>0</span><span class=p>}</span><span class=p>;</span>
+    <span class=kt>bool</span> <span class=n>_active_flag</span><span class=p>{</span><span class=nb>true</span><span class=p>}</span><span class=p>;</span>
+    <span class=kt>void</span> <span class=nf>send_segments</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=kt>void</span> <span class=nf>try_clean_shutdown</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=kt>void</span> <span class=nf>unclean_shutdown</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+<span class=p>.</span><span class=p>.</span><span class=p>.</span>
+	
+	
+<span class=n>size_t</span> <span class=n>TCPConnection</span><span class=o>:</span><span class=o>:</span><span class=n>remaining_outbound_capacity</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=n>_sender</span><span class=p>.</span><span class=n>stream_in</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>remaining_capacity</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=p>}</span>
+
+<span class=n>size_t</span> <span class=n>TCPConnection</span><span class=o>:</span><span class=o>:</span><span class=n>bytes_in_flight</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=n>_sender</span><span class=p>.</span><span class=n>bytes_in_flight</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=p>}</span>
+
+<span class=n>size_t</span> <span class=n>TCPConnection</span><span class=o>:</span><span class=o>:</span><span class=n>unassembled_bytes</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=n>_receiver</span><span class=p>.</span><span class=n>unassembled_bytes</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=p>}</span>
+
+<span class=n>size_t</span> <span class=n>TCPConnection</span><span class=o>:</span><span class=o>:</span><span class=n>time_since_last_segment_received</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=n>_time_since_last_segment_received</span><span class=p>;</span> <span class=p>}</span>
+
+<span class=kt>void</span> <span class=n>TCPConnection</span><span class=o>:</span><span class=o>:</span><span class=n>segment_received</span><span class=p>(</span><span class=k>const</span> <span class=n>TCPSegment</span> <span class=o>&amp;</span><span class=n>seg</span><span class=p>)</span> <span class=p>{</span> 
+    <span class=k>if</span> <span class=p>(</span><span class=o>!</span><span class=n>active</span><span class=p>(</span><span class=p>)</span><span class=p>)</span>
+        <span class=k>return</span><span class=p>;</span>
+    <span class=c1>// 收到seg更新定时器
+</span><span class=c1></span>    <span class=n>_time_since_last_segment_received</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+    <span class=c1>// 收到rst消息 需要立即关闭连接 LISTEN 期间收到的rst应该被忽略
+</span><span class=c1></span>    <span class=k>if</span> <span class=p>(</span><span class=n>seg</span><span class=p>.</span><span class=n>header</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>rst</span><span class=p>)</span> <span class=p>{</span>
+        <span class=c1>// LISTEN == 未收到syn &amp;&amp; 未发送syn
+</span><span class=c1></span>        <span class=k>if</span> <span class=p>(</span><span class=o>!</span><span class=n>_receiver</span><span class=p>.</span><span class=n>ackno</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>has_value</span><span class=p>(</span><span class=p>)</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>_sender</span><span class=p>.</span><span class=n>next_seqno_absolute</span><span class=p>(</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span>
+            <span class=k>return</span><span class=p>;</span>
+        <span class=c1>// 收到rst信号 不需要进行ack 断开连接即可
+</span><span class=c1></span>        <span class=n>_sender</span><span class=p>.</span><span class=n>stream_in</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>set_error</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>_receiver</span><span class=p>.</span><span class=n>stream_out</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>set_error</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>_active_flag</span> <span class=o>=</span><span class=nb>false</span><span class=p>;</span>
+        <span class=c1>//_sender.send_empty_segment();
+</span><span class=c1></span>        <span class=c1>//unclean_shutdown();
+</span><span class=c1></span>        <span class=k>return</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=c1>// SYN-SENT &amp;&amp; LISTEN 期间 收到的seg没有syn 丢弃
+</span><span class=c1></span>    <span class=k>if</span> <span class=p>(</span><span class=o>!</span><span class=n>seg</span><span class=p>.</span><span class=n>header</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>syn</span><span class=o>&amp;</span><span class=o>&amp;</span> <span class=o>!</span><span class=n>_receiver</span><span class=p>.</span><span class=n>ackno</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>has_value</span><span class=p>(</span><span class=p>)</span><span class=p>)</span>
+        <span class=k>return</span><span class=p>;</span>
+    <span class=c1>// 如果seg里有ack信息 则将确认信息告知sender
+</span><span class=c1></span>    <span class=k>if</span> <span class=p>(</span><span class=n>seg</span><span class=p>.</span><span class=n>header</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>ack</span><span class=p>)</span>
+        <span class=n>_sender</span><span class=p>.</span><span class=n>ack_received</span><span class=p>(</span><span class=n>seg</span><span class=p>.</span><span class=n>header</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>ackno</span><span class=p>,</span> <span class=n>seg</span><span class=p>.</span><span class=n>header</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>win</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 接收的seg交由receiver处理
+</span><span class=c1></span>    <span class=n>_receiver</span><span class=p>.</span><span class=n>segment_received</span><span class=p>(</span><span class=n>seg</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 收到seg我们需要对其进行确认 确认信息由发送的seg捎带 所以要填充窗口
+</span><span class=c1></span>    <span class=c1>// 更新了确认信息后 应该马上填充窗口  syn会在这里添加
+</span><span class=c1></span>    <span class=n>_sender</span><span class=p>.</span><span class=n>fill_window</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 如果要对seg进行ack 如果发送队列里没有数据 我们发送一个空seg来确认
+</span><span class=c1></span>    <span class=c1>// 还要注意如果接收的seg本身就是空的 那我们不能对ack进行ack 跳过
+</span><span class=c1></span>    <span class=k>if</span> <span class=p>(</span><span class=n>seg</span><span class=p>.</span><span class=n>length_in_sequence_space</span><span class=p>(</span><span class=p>)</span> <span class=o>&gt;</span> <span class=mi>0</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>_sender</span><span class=p>.</span><span class=n>segments_out</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>empty</span><span class=p>(</span><span class=p>)</span><span class=p>)</span>
+        <span class=n>_sender</span><span class=p>.</span><span class=n>send_empty_segment</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// ack ackno win 会在这里添加
+</span><span class=c1></span>    <span class=n>send_segments</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>bool</span> <span class=n>TCPConnection</span><span class=o>:</span><span class=o>:</span><span class=n>active</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=n>_active_flag</span><span class=p>;</span> <span class=p>}</span>
+
+<span class=n>size_t</span> <span class=n>TCPConnection</span><span class=o>:</span><span class=o>:</span><span class=n>write</span><span class=p>(</span><span class=k>const</span> <span class=n>string</span> <span class=o>&amp;</span><span class=n>data</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>if</span> <span class=p>(</span><span class=o>!</span><span class=n>active</span><span class=p>(</span><span class=p>)</span><span class=p>)</span>
+        <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+    <span class=n>size_t</span> <span class=n>written_bytes</span> <span class=o>=</span> <span class=n>_sender</span><span class=p>.</span><span class=n>stream_in</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>write</span><span class=p>(</span><span class=n>data</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 向输出流中写入数据 需要立即填充窗口 并发送
+</span><span class=c1></span>    <span class=n>_sender</span><span class=p>.</span><span class=n>fill_window</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>send_segments</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=n>written_bytes</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=c1>//! \param[in] ms_since_last_tick number of milliseconds since the last call to this method
+</span><span class=c1></span><span class=kt>void</span> <span class=n>TCPConnection</span><span class=o>:</span><span class=o>:</span><span class=n>tick</span><span class=p>(</span><span class=k>const</span> <span class=n>size_t</span> <span class=n>ms_since_last_tick</span><span class=p>)</span> <span class=p>{</span> 
+    <span class=k>if</span> <span class=p>(</span><span class=o>!</span><span class=n>active</span><span class=p>(</span><span class=p>)</span><span class=p>)</span>
+        <span class=k>return</span><span class=p>;</span>
+    <span class=c1>// 定时器记录时间流逝
+</span><span class=c1></span>    <span class=n>_time_since_last_segment_received</span> <span class=o>+</span><span class=o>=</span> <span class=n>ms_since_last_tick</span><span class=p>;</span>
+    <span class=c1>// 告知sender时间
+</span><span class=c1></span>    <span class=n>_sender</span><span class=p>.</span><span class=n>tick</span><span class=p>(</span><span class=n>ms_since_last_tick</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 如果超时重传次数过多 立即断开连接
+</span><span class=c1></span>    <span class=k>if</span> <span class=p>(</span><span class=n>_sender</span><span class=p>.</span><span class=n>consecutive_retransmissions</span><span class=p>(</span><span class=p>)</span> <span class=o>&gt;</span> <span class=n>_cfg</span><span class=p>.</span><span class=n>MAX_RETX_ATTEMPTS</span><span class=p>)</span> <span class=p>{</span>
+        <span class=c1>// 此时主动断开连接 需要发送rst信号
+</span><span class=c1></span>        <span class=n>_sender</span><span class=p>.</span><span class=n>send_empty_segment</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>unclean_shutdown</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>else</span> <span class=c1>// 连接没有断开则发送数据
+</span><span class=c1></span>        <span class=n>send_segments</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>void</span> <span class=n>TCPConnection</span><span class=o>:</span><span class=o>:</span><span class=n>end_input_stream</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=c1>// 输出流结束（总之更新数据流时都需要立即填充窗口 并发送）
+</span><span class=c1></span>    <span class=n>_sender</span><span class=p>.</span><span class=n>stream_in</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>end_input</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>_sender</span><span class=p>.</span><span class=n>fill_window</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>send_segments</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>void</span> <span class=n>TCPConnection</span><span class=o>:</span><span class=o>:</span><span class=n>connect</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=c1>// 第一次fill 如果输出流中有数据 就会发送syn
+</span><span class=c1></span>    <span class=n>_sender</span><span class=p>.</span><span class=n>fill_window</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>send_segments</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=n>TCPConnection</span><span class=o>:</span><span class=o>:</span><span class=o>~</span><span class=n>TCPConnection</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>try</span> <span class=p>{</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>active</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>cerr</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>Warning: Unclean shutdown of TCPConnection</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>;</span>
+            <span class=c1>// Your code here: need to send a RST segment to the peer
+</span><span class=c1></span>            <span class=c1>// 执行析构函数时 需要告知peer断开连接 发送rst
+</span><span class=c1></span>            <span class=n>_sender</span><span class=p>.</span><span class=n>send_empty_segment</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+            <span class=n>unclean_shutdown</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span> <span class=k>catch</span> <span class=p>(</span><span class=k>const</span> <span class=n>exception</span> <span class=o>&amp;</span><span class=n>e</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cerr</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>Exception destructing TCP FSM: </span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>e</span><span class=p>.</span><span class=n>what</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=p>}</span>
+
+<span class=c1>// 该函数将_sender.segment_out()中seg全部发送出去
+</span><span class=c1></span><span class=kt>void</span> <span class=n>TCPConnection</span><span class=o>:</span><span class=o>:</span><span class=n>send_segments</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>TCPSegment</span> <span class=n>seg</span><span class=p>;</span>
+    <span class=k>while</span> <span class=p>(</span><span class=o>!</span><span class=n>_sender</span><span class=p>.</span><span class=n>segments_out</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>empty</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>seg</span> <span class=o>=</span> <span class=n>_sender</span><span class=p>.</span><span class=n>segments_out</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>front</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>_sender</span><span class=p>.</span><span class=n>segments_out</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>pop</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=c1>// 如果需要进行确认 捎带确认号
+</span><span class=c1></span>        <span class=k>if</span> <span class=p>(</span><span class=n>_receiver</span><span class=p>.</span><span class=n>ackno</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>has_value</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>seg</span><span class=p>.</span><span class=n>header</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>ack</span> <span class=o>=</span> <span class=nb>true</span><span class=p>;</span>
+            <span class=n>seg</span><span class=p>.</span><span class=n>header</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>ackno</span> <span class=o>=</span> <span class=n>_receiver</span><span class=p>.</span><span class=n>ackno</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>value</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+            <span class=n>seg</span><span class=p>.</span><span class=n>header</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>win</span> <span class=o>=</span> <span class=n>_receiver</span><span class=p>.</span><span class=n>window_size</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>  <span class=c1>// ??
+</span><span class=c1></span>        <span class=p>}</span>
+        <span class=n>_segments_out</span><span class=p>.</span><span class=n>push</span><span class=p>(</span><span class=n>seg</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=c1>// 尝试进行clean_shutdown
+</span><span class=c1></span>    <span class=n>try_clean_shutdown</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=c1>// 尝试进行clean_shutdown
+</span><span class=c1></span><span class=kt>void</span> <span class=n>TCPConnection</span><span class=o>:</span><span class=o>:</span><span class=n>try_clean_shutdown</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=c1>// _linger_after_streams_finish 含义是 
+</span><span class=c1></span>    <span class=c1>// 本地的TCPConnection 是否需要在连接结束后等待一段时间 来保证没有任何需要重传的数据
+</span><span class=c1></span>
+    <span class=c1>// 如果本地 已经完全接收 远端peer 发送的信息
+</span><span class=c1></span>    <span class=c1>// 而本地还有信息没有发送完
+</span><span class=c1></span>    <span class=c1>// 那么 本地 应看作是 server 的角色
+</span><span class=c1></span>    <span class=c1>// 当本地 发送完数据 并收到 所有的确认
+</span><span class=c1></span>    <span class=c1>// 就可以立即断开连接 而不需要等待远端peer是否有数据需要重传
+</span><span class=c1></span>    <span class=k>if</span> <span class=p>(</span><span class=n>_receiver</span><span class=p>.</span><span class=n>stream_out</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>input_ended</span><span class=p>(</span><span class=p>)</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=o>!</span><span class=p>(</span><span class=n>_sender</span><span class=p>.</span><span class=n>stream_in</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>eof</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+        <span class=c1>// 这种情况下 不需要重传 标记为false
+</span><span class=c1></span>        <span class=n>_linger_after_streams_finish</span> <span class=o>=</span> <span class=nb>false</span><span class=p>;</span>
+    <span class=p>}</span>
+    
+    <span class=c1>// 如果 本地 已经完全接收了远端peer的数据 并且 本地的数据完全发送 并且 完全被对面接收并确认
+</span><span class=c1></span>    <span class=c1>// 这种情况下 
+</span><span class=c1></span>    <span class=c1>// 1. 本地无需等待（server） 可以直接断开连接
+</span><span class=c1></span>    <span class=c1>// 2. 本地需要等待（client） 本地的数据先发送完成 而远端peer的数据发送完成后 
+</span><span class=c1></span>    <span class=c1>//                         本地返回ack 需要等待一段时间以确认 远端peer收到ack
+</span><span class=c1></span>    <span class=c1>//                         在等待的时间内如果收到了远端peer的重传 说明 远端peer没收到确认
+</span><span class=c1></span>    <span class=c1>//                         本地需要重新确认 再尝试等待一段时间来关闭连接
+</span><span class=c1></span>    <span class=c1>//                         如果本地等待时间超过设定值 说明远端peer已经收到 ack并关闭 那么本地也立即关闭 
+</span><span class=c1></span>    <span class=k>if</span> <span class=p>(</span><span class=n>_receiver</span><span class=p>.</span><span class=n>stream_out</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>input_ended</span><span class=p>(</span><span class=p>)</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>_sender</span><span class=p>.</span><span class=n>stream_in</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>eof</span><span class=p>(</span><span class=p>)</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>_sender</span><span class=p>.</span><span class=n>bytes_in_flight</span><span class=p>(</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span>
+        <span class=k>if</span> <span class=p>(</span><span class=o>!</span><span class=n>_linger_after_streams_finish</span> <span class=o>|</span><span class=o>|</span> <span class=n>time_since_last_segment_received</span><span class=p>(</span><span class=p>)</span> <span class=o>&gt;</span><span class=o>=</span> <span class=mi>10</span> <span class=o>*</span> <span class=n>_cfg</span><span class=p>.</span><span class=n>rt_timeout</span><span class=p>)</span>
+            <span class=n>_active_flag</span> <span class=o>=</span> <span class=nb>false</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=c1>// 该函数将输入输出流设为错误 关闭连接 并向peer发送rst信号
+</span><span class=c1></span><span class=kt>void</span> <span class=n>TCPConnection</span><span class=o>:</span><span class=o>:</span><span class=n>unclean_shutdown</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=c1>// unclean_shutdown 需要发送队列中有seg以rst捎带
+</span><span class=c1></span>    <span class=c1>// 关闭输入输出流
+</span><span class=c1></span>    <span class=n>_sender</span><span class=p>.</span><span class=n>stream_in</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>set_error</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>_receiver</span><span class=p>.</span><span class=n>stream_out</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>set_error</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 关闭active状态
+</span><span class=c1></span>    <span class=n>_active_flag</span> <span class=o>=</span> <span class=nb>false</span><span class=p>;</span>
+    <span class=c1>// 构建 rst 消息 将其附带在发送队列中的第一个seg上
+</span><span class=c1></span>    <span class=n>TCPSegment</span> <span class=n>seg</span> <span class=o>=</span> <span class=n>_sender</span><span class=p>.</span><span class=n>segments_out</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>front</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>_sender</span><span class=p>.</span><span class=n>segments_out</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>pop</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>seg</span><span class=p>.</span><span class=n>header</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>rst</span> <span class=o>=</span> <span class=nb>true</span><span class=p>;</span>
+    <span class=n>seg</span><span class=p>.</span><span class=n>header</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>ack</span> <span class=o>=</span> <span class=nb>true</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>_receiver</span><span class=p>.</span><span class=n>ackno</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>has_value</span><span class=p>(</span><span class=p>)</span><span class=p>)</span>
+        <span class=n>seg</span><span class=p>.</span><span class=n>header</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>ackno</span> <span class=o>=</span> <span class=n>_receiver</span><span class=p>.</span><span class=n>ackno</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>value</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>seg</span><span class=p>.</span><span class=n>header</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>win</span> <span class=o>=</span> <span class=n>_receiver</span><span class=p>.</span><span class=n>window_size</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>_segments_out</span><span class=p>.</span><span class=n>push</span><span class=p>(</span><span class=n>seg</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><hr><a class=post-dummy-target id=lab4测试结果></a><h2>lab4测试结果</h2><p>PS：某些测试可能因为网络原因导致Timeout<figure><img src=/svg/loading.min.svg data-sizes=auto data-src=/post_images/posts/Networking/CS144LabAssignmentlab-4/lab4%e6%b5%8b%e8%af%95%e7%bb%93%e6%9e%9c.jpg alt title=lab4测试结果 class=lazyload><figcaption class=image-caption>lab4测试结果</figcaption></figure><br>性能测试结果：（虽然没有很高速度，但好歹超过了0.1G/s的底线哈哈）<br><figure><img src=/svg/loading.min.svg data-sizes=auto data-src=/post_images/posts/Networking/CS144LabAssignmentlab-4/%e6%80%a7%e8%83%bd%e6%b5%8b%e8%af%95%e7%bb%93%e6%9e%9c.jpg alt title=性能测试结果 class=lazyload><figcaption class=image-caption>性能测试结果</figcaption></figure></p><hr><a class=post-dummy-target id=webget></a><h2>webget</h2><p>lab0中我们用系统的socket写了一个<code>get_URL()</code>，现在用我们自己的实现来试试。<br>代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=c1>// #include &#34;socket.hh&#34;
+</span><span class=c1></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;tcp_sponge_socket.hh&#34;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;util.hh&#34;</span><span class=cp>
+</span><span class=cp></span>
+<span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;cstdlib&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+
+<span class=kt>void</span> <span class=nf>get_URL</span><span class=p>(</span><span class=k>const</span> <span class=n>string</span> <span class=o>&amp;</span><span class=n>host</span><span class=p>,</span> <span class=k>const</span> <span class=n>string</span> <span class=o>&amp;</span><span class=n>path</span><span class=p>)</span> <span class=p>{</span>
+    <span class=c1>//TCPSocket sock{};
+</span><span class=c1></span>    <span class=n>CS144TCPSocket</span> <span class=n>sock</span><span class=p>{</span><span class=p>}</span><span class=p>;</span>
+    <span class=n>sock</span><span class=p>.</span><span class=n>connect</span><span class=p>(</span><span class=n>Address</span><span class=p>(</span><span class=n>host</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>http</span><span class=s>&#34;</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>sock</span><span class=p>.</span><span class=n>write</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>GET </span><span class=s>&#34;</span> <span class=o>+</span> <span class=n>path</span> <span class=o>+</span> <span class=sa></span><span class=s>&#34;</span><span class=s> HTTP/1.1</span><span class=se>\r</span><span class=se>\n</span><span class=s>Host: </span><span class=s>&#34;</span> <span class=o>+</span> <span class=n>host</span> <span class=o>+</span> <span class=sa></span><span class=s>&#34;</span><span class=se>\r</span><span class=se>\n</span><span class=s>Connection:close</span><span class=s>&#34;</span> <span class=o>+</span> <span class=sa></span><span class=s>&#34;</span><span class=se>\r</span><span class=se>\n</span><span class=se>\r</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>sock</span><span class=p>.</span><span class=n>shutdown</span><span class=p>(</span><span class=n>SHUT_WR</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>while</span> <span class=p>(</span><span class=o>!</span><span class=n>sock</span><span class=p>.</span><span class=n>eof</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>sock</span><span class=p>.</span><span class=n>read</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=c1>//sock.close();
+</span><span class=c1></span>    <span class=n>sock</span><span class=p>.</span><span class=n>wait_until_closed</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>测试结果：<br><figure><img src=/svg/loading.min.svg data-sizes=auto data-src=/post_images/posts/Networking/CS144LabAssignmentlab-4/webget%e6%b5%8b%e8%af%95%e7%bb%93%e6%9e%9c.jpg alt title=webget测试结果 class=lazyload><figcaption class=image-caption>webget测试结果</figcaption></figure></p></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+<span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
+<span>2022-03-20</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
+<span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fcs144-lab-assignment-lab-4%2f&text=CS144%20Lab%20Assignment%20lab-4&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2fcs144-lab-assignment-lab-4%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fcs144-lab-assignment-lab-4%2f&title=CS144%20Lab%20Assignment%20lab-4" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/network/><i class="fas fa-tag fa-fw"></i>&nbsp;network</a>&nbsp;
+</span><span class=tag><a href=https://xushun1221.github.io/tags/c++/><i class="fas fa-tag fa-fw"></i>&nbsp;C++</a>&nbsp;</span></section><section><span><a href=javascript:window.history.back();>Back</a></span>&nbsp;|&nbsp;<span><a href=https://xushun1221.github.io>Home</a></span></section></div><div class=post-nav><a href=https://xushun1221.github.io/2022/cs144-lab-assignment-lab-3/ class=prev rel=prev title="CS144 Lab Assignment lab-3"><i class="fas fa-angle-left fa-fw"></i>CS144 Lab Assignment lab-3</a></div><div class=post-comment></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2022</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=https://xushun1221.github.io/about/ target=_blank>xushun</a> | </span>Powered by <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> & <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer">LoveIt</a></div></div></footer></div><a href=# class=dynamic-to-top id=dynamic-to-top data-scroll><span>&nbsp;</span>
+</a><script src=/js/lib/jquery/jquery.slim.min.js></script><script src=/js/lib/lazysizes/lazysizes.min.js></script><script src=/js/lib/smooth-scroll/smooth-scroll.polyfills.min.js></script><script>window.scroll=new SmoothScroll('[data-scroll]',{speed:300,speedAsDuration:true});</script><link rel=stylesheet href=/css/lib/katex/katex.min.css><script src=/js/lib/katex/katex.min.js></script><script defer src=/js/lib/katex/auto-render.min.js></script><link rel=stylesheet href=/css/lib/katex/copy-tex.min.css><script defer src=/js/lib/katex/copy-tex.min.js></script><script defer src=/js/lib/katex/mhchem.min.js></script><script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true},{left:"$",right:"$",display:false},]});});</script><script src=/js/blog.min.js></script></body></html>
