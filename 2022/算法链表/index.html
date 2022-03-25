@@ -1,0 +1,560 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【算法】链表 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/cs144-lab-assignment-lab-4/><link rel=canonical href=https://xushun1221.github.io/2022/%E7%AE%97%E6%B3%95%E9%93%BE%E8%A1%A8/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【算法】链表"><meta name=twitter:description content="链表定义 1 2 3 4 5 6 7 8 9 10 11 12 // 单链表 struct ListNode { int val; ListNode *next; }; // 双链表 struct ListNode { int val; ListNode *next; ListNode *front; }; 链表题目之方法论 笔试：不用太在乎空间复杂度，一切为了时间"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【算法】链表","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/%E7%AE%97%E6%B3%95%E9%93%BE%E8%A1%A8\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"算法与数据结构, C\x2b\x2b","wordcount":3659,"url":"https:\/\/xushun1221.github.io\/2022\/%E7%AE%97%E6%B3%95%E9%93%BE%E8%A1%A8\/","datePublished":"2022-03-21T00:00:00\x2b00:00","dateModified":"2022-03-21T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【算法】链表</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-03-21>2022-03-21</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 3659 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#链表定义>链表定义</a></li><li><a href=#链表题目之方法论>链表题目之方法论</a></li><li><a href=#相关题目>相关题目</a><ul><li><a href=#题目1判断一个单链表是否为回文链表>题目1：判断一个单链表是否为回文链表</a></li><li><a href=#问题2将单链表按某个值划分成左边小中间相等右边大的形式>问题2：将单链表按某个值划分成左边小、中间相等、右边大的形式</a></li><li><a href=#问题3复制带随机指针的链表>问题3：复制带随机指针的链表</a></li><li><a href=#问题4在一个有环单链表中找到第一个入环节点>问题4：在一个有环单链表中找到第一个入环节点</a></li><li><a href=#问题5两个单链表的相交节点>问题5：两个单链表的相交节点</a></li></ul></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#链表定义>链表定义</a></li><li><a href=#链表题目之方法论>链表题目之方法论</a></li><li><a href=#相关题目>相关题目</a><ul><li><a href=#题目1判断一个单链表是否为回文链表>题目1：判断一个单链表是否为回文链表</a></li><li><a href=#问题2将单链表按某个值划分成左边小中间相等右边大的形式>问题2：将单链表按某个值划分成左边小、中间相等、右边大的形式</a></li><li><a href=#问题3复制带随机指针的链表>问题3：复制带随机指针的链表</a></li><li><a href=#问题4在一个有环单链表中找到第一个入环节点>问题4：在一个有环单链表中找到第一个入环节点</a></li><li><a href=#问题5两个单链表的相交节点>问题5：两个单链表的相交节点</a></li></ul></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=链表定义></a><h2>链表定义</h2><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=c1>// 单链表
+</span><span class=c1></span><span class=k>struct</span> <span class=nc>ListNode</span> <span class=p>{</span>
+	<span class=kt>int</span> <span class=n>val</span><span class=p>;</span>
+	<span class=n>ListNode</span> <span class=o>*</span><span class=n>next</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+
+<span class=c1>// 双链表
+</span><span class=c1></span><span class=k>struct</span> <span class=nc>ListNode</span> <span class=p>{</span>
+	<span class=kt>int</span> <span class=n>val</span><span class=p>;</span>
+	<span class=n>ListNode</span> <span class=o>*</span><span class=n>next</span><span class=p>;</span>
+	<span class=n>ListNode</span> <span class=o>*</span><span class=n>front</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+</code></pre></td></tr></table></div></div><hr><a class=post-dummy-target id=链表题目之方法论></a><h2>链表题目之方法论</h2><ul><li>笔试：不用太在乎空间复杂度，一切为了时间复杂度</li><li>面试：时间复杂度依然放在第一位，尽量找到空间最省的方法</li><li>使用额外的数据结构来记录数据（哈希表等）</li><li>快慢指针</li></ul><hr><a class=post-dummy-target id=相关题目></a><h2>相关题目</h2><a class=post-dummy-target id=题目1判断一个单链表是否为回文链表></a><h3>题目1：判断一个单链表是否为回文链表</h3><p><a href=https://leetcode-cn.com/problems/palindrome-linked-list/ target=_blank>LeetCode234</a><br>题目描述：给你一个单链表的头节点 <code>head</code> ，请你判断该链表是否为回文链表。如果是，返回 <code>true</code> ；否则，返回 <code>false</code> 。
+基本要求：时间复杂度$O\left(n\right)$ 空间复杂度$O\left(n\right)$<br>进阶要求：时间复杂度$O\left(n\right)$ 空间复杂度$O\left(1\right)$</p><p>基本思路：使用快慢指针找到链表中点，中点向后的节点入栈，出站时和链表前半部分节点比较即可<br>基本代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp> <span class=kt>bool</span> <span class=nf>isPalindrome</span><span class=p>(</span><span class=n>ListNode</span><span class=o>*</span> <span class=n>head</span><span class=p>)</span> <span class=p>{</span>
+	<span class=n>ListNode</span> <span class=o>*</span> <span class=n>fast</span> <span class=o>=</span> <span class=n>head</span><span class=p>,</span> <span class=o>*</span> <span class=n>slow</span> <span class=o>=</span> <span class=n>head</span><span class=p>;</span>
+	<span class=k>while</span> <span class=p>(</span><span class=n>fast</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>fast</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// 快慢指针 
+</span><span class=c1></span>		<span class=n>fast</span> <span class=o>=</span> <span class=n>fast</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span>			   <span class=c1>// 慢指针 指向中点（奇数） 中点的前面（偶数）
+</span><span class=c1></span>		<span class=n>slow</span> <span class=o>=</span> <span class=n>slow</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span>
+	<span class=p>}</span>
+	<span class=n>ListNode</span> <span class=o>*</span> <span class=n>p</span> <span class=o>=</span> <span class=n>slow</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span>
+	<span class=n>stack</span><span class=o>&lt;</span><span class=n>ListNode</span><span class=o>*</span><span class=o>&gt;</span> <span class=n>nodestack</span><span class=p>;</span>  <span class=c1>// 入栈
+</span><span class=c1></span>	<span class=k>while</span> <span class=p>(</span><span class=n>p</span><span class=p>)</span> <span class=p>{</span>
+		<span class=n>nodestack</span><span class=p>.</span><span class=n>push</span><span class=p>(</span><span class=n>p</span><span class=p>)</span><span class=p>;</span>
+		<span class=n>p</span> <span class=o>=</span> <span class=n>p</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span>
+	<span class=p>}</span>
+	<span class=k>while</span> <span class=p>(</span><span class=o>!</span><span class=n>nodestack</span><span class=p>.</span><span class=n>empty</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// 出栈比较
+</span><span class=c1></span>		<span class=n>ListNode</span> <span class=o>*</span> <span class=n>t</span> <span class=o>=</span> <span class=n>nodestack</span><span class=p>.</span><span class=n>top</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+		<span class=n>nodestack</span><span class=p>.</span><span class=n>pop</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+		<span class=k>if</span> <span class=p>(</span><span class=n>head</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>val</span> <span class=o>!</span><span class=o>=</span> <span class=n>t</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>val</span><span class=p>)</span>
+			<span class=k>return</span> <span class=nb>false</span><span class=p>;</span>
+		<span class=n>head</span> <span class=o>=</span> <span class=n>head</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span>
+	<span class=p>}</span>
+	<span class=k>return</span> <span class=nb>true</span><span class=p>;</span>
+ <span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>时间复杂度$O\left(n\right)$<br>空间复杂度$O\left(n\right)$</p><p>进阶思路：快慢指针找到链表中点后，将链表的后半部分逆序（例如：1 -> 2 -> 3 -> 2 -> 1 变为 1 -> 2 -> 3 &lt;- 2 &lt;- 1），然后两个指针分别从前后向中间走，发现不一样即为非回文链表，最后将链表还原到初始情况<br>进阶代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp> <span class=kt>bool</span> <span class=nf>isPalindrome</span><span class=p>(</span><span class=n>ListNode</span><span class=o>*</span> <span class=n>head</span><span class=p>)</span> <span class=p>{</span>
+	<span class=n>ListNode</span> <span class=o>*</span> <span class=n>n1</span> <span class=o>=</span> <span class=n>head</span><span class=p>,</span> <span class=o>*</span> <span class=n>n2</span> <span class=o>=</span> <span class=n>head</span><span class=p>;</span>
+	<span class=k>while</span> <span class=p>(</span><span class=n>n2</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>n2</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>)</span> <span class=p>{</span>
+		<span class=n>n1</span> <span class=o>=</span> <span class=n>n1</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span> <span class=c1>// n1 -&gt; mid
+</span><span class=c1></span>		<span class=n>n2</span> <span class=o>=</span> <span class=n>n2</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span><span class=c1>// n2 -&gt; end
+</span><span class=c1></span>	<span class=p>}</span>
+	<span class=n>n2</span> <span class=o>=</span> <span class=n>n1</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span> <span class=c1>// right part
+</span><span class=c1></span>	<span class=n>n1</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>;</span> <span class=c1>// mid -&gt; next == nullptr
+</span><span class=c1></span>	<span class=n>ListNode</span> <span class=o>*</span> <span class=n>n3</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>;</span>
+	<span class=k>while</span> <span class=p>(</span><span class=n>n2</span><span class=p>)</span> <span class=p>{</span>
+		<span class=n>n3</span> <span class=o>=</span> <span class=n>n2</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span> <span class=c1>// save next node
+</span><span class=c1></span>		<span class=n>n2</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span> <span class=o>=</span> <span class=n>n1</span><span class=p>;</span>
+		<span class=n>n1</span> <span class=o>=</span> <span class=n>n2</span><span class=p>;</span>
+		<span class=n>n2</span> <span class=o>=</span> <span class=n>n3</span><span class=p>;</span>
+	<span class=p>}</span>
+	<span class=n>n3</span> <span class=o>=</span> <span class=n>n1</span><span class=p>;</span> <span class=c1>// save last node    n1 -&gt; right last node
+</span><span class=c1></span>	<span class=n>n2</span> <span class=o>=</span> <span class=n>head</span><span class=p>;</span> <span class=c1>// n2 -&gt; left first node
+</span><span class=c1></span>	<span class=kt>bool</span> <span class=n>res</span> <span class=o>=</span> <span class=nb>true</span><span class=p>;</span>
+	<span class=k>while</span> <span class=p>(</span><span class=n>n1</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>n2</span><span class=p>)</span> <span class=p>{</span>
+		<span class=k>if</span> <span class=p>(</span><span class=n>n2</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>val</span> <span class=o>!</span><span class=o>=</span> <span class=n>n1</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>val</span><span class=p>)</span> <span class=p>{</span>
+			<span class=n>res</span> <span class=o>=</span> <span class=nb>false</span><span class=p>;</span>
+			<span class=k>break</span><span class=p>;</span>
+		<span class=p>}</span>
+		<span class=n>n2</span> <span class=o>=</span> <span class=n>n2</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span> <span class=c1>// left to mid
+</span><span class=c1></span>		<span class=n>n1</span> <span class=o>=</span> <span class=n>n1</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span> <span class=c1>// right to mid
+</span><span class=c1></span>	<span class=p>}</span>
+	<span class=c1>// restore to original linklist
+</span><span class=c1></span>	<span class=c1>// n1 = n3 -&gt; next;
+</span><span class=c1></span>	<span class=c1>// n3 -&gt; next = nullptr;
+</span><span class=c1></span>	<span class=c1>// while (n1) {
+</span><span class=c1></span>	<span class=c1>//     n2 = n1 -&gt; next;
+</span><span class=c1></span>	<span class=c1>//     n1 -&gt; next = n3;
+</span><span class=c1></span>	<span class=c1>//     n3 = n1;
+</span><span class=c1></span>	<span class=c1>//     n1 = n2;
+</span><span class=c1></span>	<span class=c1>// }
+</span><span class=c1></span>	<span class=k>return</span> <span class=n>res</span><span class=p>;</span>
+ <span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>时间复杂度$O\left(n\right)$<br>空间复杂度$O\left(1\right)$</p><hr><a class=post-dummy-target id=问题2将单链表按某个值划分成左边小中间相等右边大的形式></a><h3>问题2：将单链表按某个值划分成左边小、中间相等、右边大的形式</h3><p>问题描述：给定一个单链表的头节点<code>head</code>，节点值为整型，再给定一个<code>pivot</code>，实现一个调整链表的算法，使得链表的左部分小于<code>pivot</code>，中间部分等于<code>pivot</code>，右边部分大于<code>pivot</code>。
+思路：其实可以将链表拷贝到一个数组里，然后用<code>partition</code>方法，再重构链表即可，当然这样会占用线性的额外空间，我们也可以用$O\left(1\right)$的空间复杂度来实现：构建三个链表分别对应小于、等于、大于，然后将链表连起来即可，注意讨论边界情况。</p><p>代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=n>ListNode</span> <span class=o>*</span> <span class=nf>ListPartition</span><span class=p>(</span><span class=n>ListNode</span> <span class=o>*</span> <span class=n>head</span><span class=p>,</span> <span class=kt>int</span> <span class=n>pivot</span><span class=p>)</span> <span class=p>{</span>  
+	<span class=n>ListNode</span> <span class=o>*</span> <span class=n>sh</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>;</span> <span class=c1>// 小于list  
+</span><span class=c1></span>	<span class=n>ListNode</span> <span class=o>*</span> <span class=n>sr</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>;</span>  
+	<span class=n>ListNode</span> <span class=o>*</span> <span class=n>eh</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>;</span> <span class=c1>// 等于list  
+</span><span class=c1></span>	<span class=n>ListNode</span> <span class=o>*</span> <span class=n>er</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>;</span>  
+	<span class=n>ListNode</span> <span class=o>*</span> <span class=n>bh</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>;</span> <span class=c1>// 大于list  
+</span><span class=c1></span>	<span class=n>ListNode</span> <span class=o>*</span> <span class=n>br</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>;</span>  
+	<span class=n>ListNode</span> <span class=o>*</span> <span class=n>next</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>;</span> <span class=c1>// save next node  
+</span><span class=c1></span>	<span class=k>while</span> <span class=p>(</span><span class=n>head</span><span class=p>)</span> <span class=p>{</span>  
+		<span class=n>next</span> <span class=o>=</span> <span class=n>head</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span>  
+		<span class=n>head</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>;</span>  
+		<span class=k>if</span> <span class=p>(</span><span class=n>head</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>val</span> <span class=o>&lt;</span> <span class=n>pivot</span><span class=p>)</span> <span class=p>{</span>  
+			<span class=k>if</span> <span class=p>(</span><span class=o>!</span><span class=n>sh</span><span class=p>)</span> <span class=p>{</span>  
+				<span class=n>sh</span> <span class=o>=</span> <span class=n>head</span><span class=p>;</span>  
+				<span class=n>sr</span> <span class=o>=</span> <span class=n>head</span><span class=p>;</span>  
+			<span class=p>}</span>  
+			<span class=k>else</span> <span class=p>{</span>  
+				<span class=n>sr</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span> <span class=o>=</span> <span class=n>head</span><span class=p>;</span>  
+				<span class=n>sr</span> <span class=o>=</span> <span class=n>head</span><span class=p>;</span>  
+			<span class=p>}</span>  
+		<span class=p>}</span>  
+		<span class=k>else</span> <span class=k>if</span> <span class=p>(</span><span class=n>head</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>val</span> <span class=o>=</span><span class=o>=</span> <span class=n>pivot</span><span class=p>)</span> <span class=p>{</span>  
+			<span class=k>if</span> <span class=p>(</span><span class=o>!</span><span class=n>eh</span><span class=p>)</span> <span class=p>{</span>  
+				<span class=n>eh</span> <span class=o>=</span> <span class=n>head</span><span class=p>;</span>  
+				<span class=n>er</span> <span class=o>=</span> <span class=n>head</span><span class=p>;</span>  
+			<span class=p>}</span>  
+			<span class=k>else</span> <span class=p>{</span>  
+				<span class=n>er</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span> <span class=o>=</span> <span class=n>head</span><span class=p>;</span>  
+				<span class=n>er</span> <span class=o>=</span> <span class=n>head</span><span class=p>;</span>  
+			<span class=p>}</span>  
+		<span class=p>}</span>  
+		<span class=k>else</span> <span class=p>{</span>  
+			<span class=k>if</span> <span class=p>(</span><span class=o>!</span><span class=n>bh</span><span class=p>)</span> <span class=p>{</span>  
+				<span class=n>bh</span> <span class=o>=</span> <span class=n>head</span><span class=p>;</span>  
+				<span class=n>br</span> <span class=o>=</span> <span class=n>head</span><span class=p>;</span>  
+			<span class=p>}</span>  
+			<span class=k>else</span> <span class=p>{</span>  
+				<span class=n>br</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span> <span class=o>=</span> <span class=n>head</span><span class=p>;</span>  
+				<span class=n>br</span> <span class=o>=</span> <span class=n>head</span><span class=p>;</span>  
+			<span class=p>}</span>  
+		<span class=p>}</span>  
+		<span class=n>head</span> <span class=o>=</span> <span class=n>next</span><span class=p>;</span>  
+	<span class=p>}</span>  
+	<span class=k>if</span> <span class=p>(</span><span class=n>sr</span><span class=p>)</span> <span class=p>{</span>  
+		<span class=n>sr</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span> <span class=o>=</span> <span class=n>eh</span><span class=p>;</span>  
+		<span class=n>er</span> <span class=o>=</span> <span class=n>er</span> <span class=o>?</span> <span class=nl>er</span> <span class=p>:</span> <span class=n>sr</span><span class=p>;</span>  
+	<span class=p>}</span>  
+	<span class=k>if</span> <span class=p>(</span><span class=n>er</span><span class=p>)</span> <span class=p>{</span>  
+		<span class=n>er</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span> <span class=o>=</span> <span class=n>bh</span><span class=p>;</span>  
+	<span class=p>}</span>  
+    <span class=k>return</span> <span class=n>sh</span> <span class=o>?</span> <span class=nl>sh</span> <span class=p>:</span> <span class=p>(</span><span class=n>eh</span> <span class=o>?</span> <span class=nl>eh</span> <span class=p>:</span> <span class=n>bh</span><span class=p>)</span><span class=p>;</span>  
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>时间复杂度$O\left(n\right)$<br>空间复杂度$O\left(1\right)$</p><hr><a class=post-dummy-target id=问题3复制带随机指针的链表></a><h3>问题3：复制带随机指针的链表</h3><p><a href=https://leetcode-cn.com/problems/copy-list-with-random-pointer/ target=_blank>LeetCode138</a><br>问题描述：给你一个长度为 <code>n</code> 的链表，每个节点包含一个额外增加的随机指针 <code>random</code> ，该指针可以指向链表中的任何节点或空节点。构造这个链表的 深拷贝。 深拷贝应该正好由 <code>n</code> 个 全新 节点组成，其中每个新节点的值都设为其对应的原节点的值。新节点的 <code>next</code> 指针和 <code>random</code> 指针也都应指向复制链表中的新节点，并使原链表和复制链表中的这些指针能够表示相同的链表状态。复制链表中的指针都不应指向原链表中的节点 。例如，如果原链表中有 <code>X</code> 和 <code>Y</code> 两个节点，其中 <code>X.random --> Y</code> 。那么在复制链表中对应的两个节点 <code>x</code> 和 <code>y</code> ，同样有 <code>x.random --> y</code> 。<br>返回复制链表的头节点。<br>思路：</p><ul><li>如果可以使用额外空间，利用哈希表实现老节点和新节点之间的对应关系，在构建新节点的<code>next</code>和<code>random</code>指针时，就能找到对应的新节点。</li><li>如果只用$O\left(1\right)$的空间复杂度，将新老节点的对应关系<strong>就地</strong>记录在链表中，即将老的链表节点复制一份并连接在它后面，这样，老节点的<code>random</code>指针指向的节点的后一个，就是新节点的<code>random</code>指针应该指向的位置，新节点的<code>next</code>指针就是新复制的节点的<code>next</code>的<code>next</code>。在同一个链表中复制了新的节点，这样就能保留下新老节点的对应关系。最后将新节点全部从老链表上取下即可。</li></ul><p>方法1代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=n>Node</span><span class=o>*</span> <span class=nf>copyRandomList</span><span class=p>(</span><span class=n>Node</span><span class=o>*</span> <span class=n>head</span><span class=p>)</span> <span class=p>{</span>
+	<span class=n>unordered_map</span><span class=o>&lt;</span><span class=n>Node</span><span class=o>*</span><span class=p>,</span> <span class=n>Node</span><span class=o>*</span><span class=o>&gt;</span> <span class=n>nmap</span><span class=p>;</span>
+	<span class=n>Node</span><span class=o>*</span> <span class=n>p</span> <span class=o>=</span> <span class=n>head</span><span class=p>;</span>
+	<span class=k>while</span> <span class=p>(</span><span class=n>p</span><span class=p>)</span> <span class=p>{</span>
+		<span class=n>nmap</span><span class=p>[</span><span class=n>p</span><span class=p>]</span> <span class=o>=</span> <span class=k>new</span> <span class=n>Node</span><span class=p>(</span><span class=n>p</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>val</span><span class=p>)</span><span class=p>;</span>
+		<span class=n>p</span> <span class=o>=</span> <span class=n>p</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span> 
+	<span class=p>}</span>
+	<span class=n>p</span> <span class=o>=</span> <span class=n>head</span><span class=p>;</span>
+	<span class=k>while</span> <span class=p>(</span><span class=n>p</span><span class=p>)</span> <span class=p>{</span>
+		<span class=n>nmap</span><span class=p>[</span><span class=n>p</span><span class=p>]</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span> <span class=o>=</span> <span class=n>nmap</span><span class=p>[</span><span class=n>p</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>]</span><span class=p>;</span>
+		<span class=n>nmap</span><span class=p>[</span><span class=n>p</span><span class=p>]</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>random</span> <span class=o>=</span> <span class=n>nmap</span><span class=p>[</span><span class=n>p</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>random</span><span class=p>]</span><span class=p>;</span>
+		<span class=n>p</span> <span class=o>=</span> <span class=n>p</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span>
+	<span class=p>}</span>
+	<span class=k>return</span> <span class=n>nmap</span><span class=p>[</span><span class=n>head</span><span class=p>]</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>时间复杂度$O\left(n\right)$<br>空间复杂度$O\left(n\right)$</p><p>方法2代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=n>Node</span><span class=o>*</span> <span class=nf>copyRandomList</span><span class=p>(</span><span class=n>Node</span><span class=o>*</span> <span class=n>head</span><span class=p>)</span> <span class=p>{</span>
+	<span class=k>if</span> <span class=p>(</span><span class=o>!</span><span class=n>head</span><span class=p>)</span>
+	<span class=k>return</span> <span class=n>head</span><span class=p>;</span>
+	<span class=n>Node</span> <span class=o>*</span> <span class=n>p</span> <span class=o>=</span> <span class=n>head</span><span class=p>,</span> <span class=o>*</span> <span class=n>t</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>;</span>
+	<span class=c1>// copy linklist
+</span><span class=c1></span>	<span class=c1>// 1 -&gt; 2
+</span><span class=c1></span>	<span class=c1>// 1 -&gt; 1&#39; -&gt; 2
+</span><span class=c1></span>	<span class=k>while</span> <span class=p>(</span><span class=n>p</span><span class=p>)</span> <span class=p>{</span>
+		<span class=n>t</span> <span class=o>=</span> <span class=n>p</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span>
+		<span class=n>p</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span> <span class=o>=</span> <span class=k>new</span> <span class=n>Node</span><span class=p>(</span><span class=n>p</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>val</span><span class=p>)</span><span class=p>;</span>
+		<span class=n>p</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span> <span class=o>=</span> <span class=n>t</span><span class=p>;</span>
+		<span class=n>p</span> <span class=o>=</span> <span class=n>t</span><span class=p>;</span>
+	<span class=p>}</span>
+	<span class=n>p</span> <span class=o>=</span> <span class=n>head</span><span class=p>;</span>
+	<span class=n>Node</span> <span class=o>*</span> <span class=n>copy</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>;</span>
+	<span class=c1>// set copy node ran
+</span><span class=c1></span>	<span class=k>while</span> <span class=p>(</span><span class=n>p</span><span class=p>)</span> <span class=p>{</span>
+		<span class=n>copy</span> <span class=o>=</span> <span class=n>p</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span>
+		<span class=n>t</span> <span class=o>=</span> <span class=n>copy</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span>
+		<span class=n>copy</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>random</span> <span class=o>=</span> <span class=n>p</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>random</span> <span class=o>?</span> <span class=n>p</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>random</span> <span class=o>-</span><span class=o>&gt;</span> <span class=nl>next</span> <span class=p>:</span> <span class=k>nullptr</span><span class=p>;</span>
+		<span class=n>p</span> <span class=o>=</span> <span class=n>t</span><span class=p>;</span>
+	<span class=p>}</span>
+	<span class=n>Node</span> <span class=o>*</span> <span class=n>rethead</span> <span class=o>=</span> <span class=n>head</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span>
+	<span class=n>p</span> <span class=o>=</span> <span class=n>head</span><span class=p>;</span>
+	<span class=c1>// split nodelist
+</span><span class=c1></span>	<span class=k>while</span> <span class=p>(</span><span class=n>p</span><span class=p>)</span> <span class=p>{</span>
+		<span class=n>t</span> <span class=o>=</span> <span class=n>p</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span>
+		<span class=n>copy</span> <span class=o>=</span> <span class=n>p</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span>
+		<span class=n>p</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span> <span class=o>=</span> <span class=n>t</span><span class=p>;</span>
+		<span class=n>copy</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span> <span class=o>=</span> <span class=n>t</span> <span class=o>?</span> <span class=n>t</span> <span class=o>-</span><span class=o>&gt;</span> <span class=nl>next</span> <span class=p>:</span> <span class=k>nullptr</span><span class=p>;</span>
+		<span class=n>p</span> <span class=o>=</span> <span class=n>t</span><span class=p>;</span>
+	<span class=p>}</span>
+	<span class=k>return</span> <span class=n>rethead</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>时间复杂度$O\left(n\right)$<br>空间复杂度$O\left(1\right)$</p><hr><a class=post-dummy-target id=问题4在一个有环单链表中找到第一个入环节点></a><h3>问题4：在一个有环单链表中找到第一个入环节点</h3><p><a href=https://leetcode-cn.com/problems/linked-list-cycle-ii/ target=_blank>LeetCode142</a>
+思路1：遍历链表，并且用哈希表记录遍历过的节点，当遍历到已经记录的节点时，该节点就是入环节点，空间复杂度为$O\left(n\right)$；<br>思路2：使用快慢指针，两指针从头开始走，快指针一次走两步，慢指针一次走一步，一定会在环中的某个节点相遇，然后快指针回到头节点，此时两指针同时一次走一步，相遇时的节点即为入环节点，此方法空间复杂度为$O\left(1\right)$。<br>方法2代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=c1>// getLoopNode
+</span><span class=c1></span><span class=n>ListNode</span> <span class=o>*</span><span class=nf>getLoopNode</span><span class=p>(</span><span class=n>ListNode</span> <span class=o>*</span><span class=n>head</span><span class=p>)</span> <span class=p>{</span>
+	<span class=k>if</span> <span class=p>(</span><span class=o>!</span><span class=n>head</span> <span class=o>|</span><span class=o>|</span> <span class=o>!</span><span class=n>head</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span> <span class=o>|</span><span class=o>|</span> <span class=o>!</span><span class=n>head</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>)</span> <span class=c1>// 两个节点成环的情况也能包括
+</span><span class=c1></span>		<span class=k>return</span> <span class=k>nullptr</span><span class=p>;</span>
+	<span class=n>ListNode</span> <span class=o>*</span> <span class=n>p1</span> <span class=o>=</span> <span class=n>head</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span> <span class=c1>// slow
+</span><span class=c1></span>	<span class=n>ListNode</span> <span class=o>*</span> <span class=n>p2</span> <span class=o>=</span> <span class=n>head</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span> <span class=c1>// fast
+</span><span class=c1></span>	<span class=k>while</span> <span class=p>(</span><span class=n>p1</span> <span class=o>!</span><span class=o>=</span> <span class=n>p2</span><span class=p>)</span> <span class=p>{</span>
+		<span class=k>if</span> <span class=p>(</span><span class=o>!</span><span class=n>p2</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span> <span class=o>|</span><span class=o>|</span> <span class=o>!</span><span class=n>p2</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>)</span> <span class=c1>// 无环
+</span><span class=c1></span>			<span class=k>return</span> <span class=k>nullptr</span><span class=p>;</span>
+		<span class=n>p1</span> <span class=o>=</span> <span class=n>p1</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span>
+		<span class=n>p2</span> <span class=o>=</span> <span class=n>p2</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span>
+	<span class=p>}</span>
+	<span class=n>p2</span> <span class=o>=</span> <span class=n>head</span><span class=p>;</span>
+	<span class=k>while</span> <span class=p>(</span><span class=n>p1</span> <span class=o>!</span><span class=o>=</span> <span class=n>p2</span><span class=p>)</span> <span class=p>{</span>
+		<span class=n>p1</span> <span class=o>=</span> <span class=n>p1</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span>
+		<span class=n>p2</span> <span class=o>=</span> <span class=n>p2</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span>
+	<span class=p>}</span>
+	<span class=k>return</span> <span class=n>p1</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>时间复杂度$O\left(n\right)$<br>空间复杂度$O\left(1\right)$</p><hr><a class=post-dummy-target id=问题5两个单链表的相交节点></a><h3>问题5：两个单链表的相交节点</h3><p>相关OJ：<a href=https://leetcode-cn.com/problems/intersection-of-two-linked-lists/ target=_blank>LeetCode160</a>
+问题描述：给定两个可能有环也可能无环的单链表，头节点<code>head1 head2</code>，实现一个函数，若两链表相交，返回第一个相交节点，否则返回空。<br>思路： 对于有环和无环分情况讨论</p><ol><li>两个链表都无环。遍历两个链表，如果两个链表最后一个节点不相等，那么一定不相交，否则相交，遍历时记录两个链表长度的差值，再次遍历时，长链表先多走差值步，然后一起走，找到的相同节点即为相交节点（当然也可以用哈希表）；</li><li>如果一个链表有环，而另一个无环，那必然不相交；</li><li>两个链表都有环。<ol><li>如果两个链表的入环节点是同一个，那么第一个相交节点应该在该节点处或者之前，将该节点看作终止节点，用无环方法找第一个相交节点即可；</li><li>如果两个链表的入环节点不是同一个，那么让一个入环节点转一圈，如果没有遇到另一个入环节点，那么就不相交，否则相交，如果相交返回任意一个入环节点即可。</li></ol></li></ol><p>代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span><span class=lnt>59
+</span><span class=lnt>60
+</span><span class=lnt>61
+</span><span class=lnt>62
+</span><span class=lnt>63
+</span><span class=lnt>64
+</span><span class=lnt>65
+</span><span class=lnt>66
+</span><span class=lnt>67
+</span><span class=lnt>68
+</span><span class=lnt>69
+</span><span class=lnt>70
+</span><span class=lnt>71
+</span><span class=lnt>72
+</span><span class=lnt>73
+</span><span class=lnt>74
+</span><span class=lnt>75
+</span><span class=lnt>76
+</span><span class=lnt>77
+</span><span class=lnt>78
+</span><span class=lnt>79
+</span><span class=lnt>80
+</span><span class=lnt>81
+</span><span class=lnt>82
+</span><span class=lnt>83
+</span><span class=lnt>84
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=c1>// noLoop 两无环链表返回第一个相交节点
+</span><span class=c1></span><span class=n>ListNode</span> <span class=o>*</span><span class=nf>noLoop</span><span class=p>(</span><span class=n>ListNode</span> <span class=o>*</span><span class=n>headA</span><span class=p>,</span> <span class=n>ListNode</span> <span class=o>*</span><span class=n>headB</span><span class=p>)</span> <span class=p>{</span>
+	<span class=k>if</span> <span class=p>(</span><span class=o>!</span><span class=n>headA</span> <span class=o>|</span><span class=o>|</span> <span class=o>!</span><span class=n>headB</span><span class=p>)</span>
+		<span class=k>return</span> <span class=k>nullptr</span><span class=p>;</span>
+	<span class=n>ListNode</span> <span class=o>*</span><span class=n>p1</span> <span class=o>=</span> <span class=n>headA</span><span class=p>;</span>
+	<span class=n>ListNode</span> <span class=o>*</span><span class=n>p2</span> <span class=o>=</span> <span class=n>headB</span><span class=p>;</span>
+	<span class=kt>int</span> <span class=n>n</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=c1>// 链表长度差值
+</span><span class=c1></span>	<span class=k>while</span> <span class=p>(</span><span class=n>p1</span><span class=p>)</span> <span class=p>{</span>
+		<span class=o>+</span><span class=o>+</span> <span class=n>n</span><span class=p>;</span>
+		<span class=n>p1</span> <span class=o>=</span> <span class=n>p1</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span>
+	<span class=p>}</span>
+	<span class=k>while</span> <span class=p>(</span><span class=n>p2</span><span class=p>)</span> <span class=p>{</span>
+		<span class=o>-</span><span class=o>-</span> <span class=n>n</span><span class=p>;</span>
+		<span class=n>p2</span> <span class=o>=</span> <span class=n>p2</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span>
+	<span class=p>}</span>
+	<span class=k>if</span> <span class=p>(</span><span class=n>p1</span> <span class=o>!</span><span class=o>=</span> <span class=n>p2</span><span class=p>)</span>
+		<span class=k>return</span> <span class=k>nullptr</span><span class=p>;</span>
+	<span class=n>p1</span> <span class=o>=</span> <span class=n>n</span> <span class=o>&gt;</span> <span class=mi>0</span> <span class=o>?</span> <span class=nl>headA</span> <span class=p>:</span> <span class=n>headB</span><span class=p>;</span> <span class=c1>// p1 指向长链
+</span><span class=c1></span>	<span class=n>p2</span> <span class=o>=</span> <span class=n>p1</span> <span class=o>=</span><span class=o>=</span> <span class=n>headA</span> <span class=o>?</span> <span class=nl>headB</span> <span class=p>:</span> <span class=n>headA</span><span class=p>;</span>
+	<span class=n>n</span> <span class=o>=</span> <span class=n>abs</span><span class=p>(</span><span class=n>n</span><span class=p>)</span><span class=p>;</span>
+	<span class=k>while</span> <span class=p>(</span><span class=n>n</span><span class=p>)</span> <span class=p>{</span>
+		<span class=n>p1</span> <span class=o>=</span> <span class=n>p1</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span>
+		<span class=o>-</span><span class=o>-</span> <span class=n>n</span><span class=p>;</span>
+	<span class=p>}</span>
+	<span class=k>while</span> <span class=p>(</span><span class=n>p1</span> <span class=o>!</span><span class=o>=</span> <span class=n>p2</span><span class=p>)</span><span class=p>{</span>
+		<span class=n>p1</span> <span class=o>=</span> <span class=n>p1</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span>
+		<span class=n>p2</span> <span class=o>=</span> <span class=n>p2</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span>
+	<span class=p>}</span>
+	<span class=k>return</span> <span class=n>p1</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=c1>// bothLoop 两有环链表返回第一个相交节点
+</span><span class=c1></span><span class=n>ListNode</span> <span class=o>*</span><span class=nf>bothLoop</span><span class=p>(</span><span class=n>ListNode</span> <span class=o>*</span><span class=n>head1</span><span class=p>,</span> <span class=n>ListNode</span> <span class=o>*</span><span class=n>loop1</span><span class=p>,</span> <span class=n>ListNode</span> <span class=o>*</span><span class=n>head1</span><span class=p>,</span> <span class=n>ListNode</span> <span class=o>*</span><span class=n>loop2</span><span class=p>)</span> <span class=p>{</span>
+	<span class=c1>// head 头节点 loop 入环节点
+</span><span class=c1></span>	<span class=n>ListNode</span> <span class=o>*</span><span class=n>p1</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>;</span>
+	<span class=n>ListNode</span> <span class=o>*</span><span class=n>p2</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>;</span>
+	<span class=k>if</span> <span class=p>(</span><span class=n>loop1</span> <span class=o>=</span><span class=o>=</span> <span class=n>loop2</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// 入环节点相同
+</span><span class=c1></span>		<span class=n>p1</span> <span class=o>=</span> <span class=n>head1</span><span class=p>;</span>
+		<span class=n>p2</span> <span class=o>=</span> <span class=n>head2</span><span class=p>;</span>
+		<span class=kt>int</span> <span class=n>n</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=c1>// 链表长度差值 将loop看作end
+</span><span class=c1></span>		<span class=k>while</span> <span class=p>(</span><span class=n>p1</span> <span class=o>!</span><span class=o>=</span> <span class=n>loop1</span><span class=p>)</span> <span class=p>{</span>
+			<span class=o>+</span><span class=o>+</span> <span class=n>n</span><span class=p>;</span>
+			<span class=n>p1</span> <span class=o>=</span> <span class=n>p1</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span>
+		<span class=p>}</span>
+		<span class=k>while</span> <span class=p>(</span><span class=n>p2</span> <span class=o>!</span><span class=o>=</span> <span class=n>loop1</span><span class=p>)</span> <span class=p>{</span>
+			<span class=o>-</span><span class=o>-</span> <span class=n>n</span><span class=p>;</span>
+			<span class=n>p2</span> <span class=o>=</span> <span class=n>p2</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span>
+		<span class=p>}</span>
+		<span class=n>p1</span> <span class=o>=</span> <span class=n>n</span> <span class=o>&gt;</span> <span class=mi>0</span> <span class=o>?</span> <span class=nl>headA</span> <span class=p>:</span> <span class=n>headB</span><span class=p>;</span> <span class=c1>// p1 指向长链
+</span><span class=c1></span>		<span class=n>p2</span> <span class=o>=</span> <span class=n>p1</span> <span class=o>=</span><span class=o>=</span> <span class=n>headA</span> <span class=o>?</span> <span class=nl>headB</span> <span class=p>:</span> <span class=n>headA</span><span class=p>;</span>
+		<span class=n>n</span> <span class=o>=</span> <span class=n>abs</span><span class=p>(</span><span class=n>n</span><span class=p>)</span><span class=p>;</span>
+		<span class=k>while</span> <span class=p>(</span><span class=n>n</span><span class=p>)</span> <span class=p>{</span>
+			<span class=n>p1</span> <span class=o>=</span> <span class=n>p1</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span>
+			<span class=o>-</span><span class=o>-</span> <span class=n>n</span><span class=p>;</span>
+		<span class=p>}</span>
+		<span class=k>while</span> <span class=p>(</span><span class=n>p1</span> <span class=o>!</span><span class=o>=</span> <span class=n>p2</span><span class=p>)</span> <span class=p>{</span>
+			<span class=n>p1</span> <span class=o>=</span> <span class=n>p1</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span>
+			<span class=n>p2</span> <span class=o>=</span> <span class=n>p2</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span>
+		<span class=p>}</span>
+		<span class=k>return</span> <span class=n>p1</span><span class=p>;</span>
+	<span class=p>}</span>
+	<span class=k>else</span> <span class=p>{</span><span class=c1>// 入环节点不同
+</span><span class=c1></span>		<span class=n>p1</span> <span class=o>=</span> <span class=n>loop1</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span>
+		<span class=k>while</span> <span class=p>(</span><span class=n>p1</span> <span class=o>!</span><span class=o>=</span> <span class=n>loop1</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// p1 在环中转一圈 如果 loop2也在环中 则相交 返回 任一入环节点
+</span><span class=c1></span>			<span class=k>if</span> <span class=p>(</span><span class=n>p1</span> <span class=o>=</span><span class=o>=</span> <span class=n>loop2</span><span class=p>)</span>
+				<span class=k>return</span> <span class=n>loop1</span><span class=p>;</span>
+			<span class=n>p1</span> <span class=o>=</span> <span class=n>p1</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>next</span><span class=p>;</span>
+		<span class=p>}</span>
+		<span class=k>return</span> <span class=k>nullptr</span><span class=p>;</span>
+	<span class=p>}</span>
+<span class=p>}</span>
+
+<span class=c1>// 主函数
+</span><span class=c1></span><span class=n>ListNode</span> <span class=o>*</span><span class=nf>getIntersectNode</span><span class=p>(</span><span class=n>ListNode</span> <span class=o>*</span><span class=n>head1</span><span class=p>,</span> <span class=n>ListNode</span> <span class=o>*</span><span class=n>head2</span><span class=p>)</span> <span class=p>{</span>
+	<span class=k>if</span> <span class=p>(</span><span class=o>!</span><span class=n>head1</span> <span class=o>|</span><span class=o>|</span> <span class=o>!</span><span class=n>head2</span><span class=p>)</span>
+		<span class=k>return</span> <span class=k>nullptr</span><span class=p>;</span>
+	<span class=n>ListNode</span> <span class=o>*</span><span class=n>loop1</span> <span class=o>=</span> <span class=n>getLoopNode</span><span class=p>(</span><span class=n>head1</span><span class=p>)</span><span class=p>;</span>
+	<span class=n>ListNode</span> <span class=o>*</span><span class=n>loop2</span> <span class=o>=</span> <span class=n>getLoopNode</span><span class=p>(</span><span class=n>head2</span><span class=p>)</span><span class=p>;</span>
+	<span class=k>if</span> <span class=p>(</span><span class=o>!</span><span class=n>loop1</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=o>!</span><span class=n>loop2</span><span class=p>)</span> <span class=c1>// 两无环
+</span><span class=c1></span>		<span class=k>return</span> <span class=n>noLoop</span><span class=p>(</span><span class=n>head1</span><span class=p>,</span> <span class=n>head2</span><span class=p>)</span><span class=p>;</span>
+	<span class=k>if</span> <span class=p>(</span><span class=n>loop1</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>loop2</span><span class=p>)</span>		<span class=c1>// 两有环
+</span><span class=c1></span>		<span class=k>return</span> <span class=n>bothLoop</span><span class=p>(</span><span class=n>head1</span><span class=p>,</span> <span class=n>loop1</span><span class=p>,</span> <span class=n>head2</span><span class=p>,</span> <span class=n>loop2</span><span class=p>)</span><span class=p>;</span>
+	<span class=k>return</span> <span class=k>nullptr</span><span class=p>;</span>		<span class=c1>// 一个有一个无
+</span><span class=c1></span><span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>时间复杂度$O\left(n\right)$<br>空间复杂度$O\left(1\right)$</p></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+<span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
+<span>2022-03-21</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
+<span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2f%25E7%25AE%2597%25E6%25B3%2595%25E9%2593%25BE%25E8%25A1%25A8%2f&text=%e3%80%90%e7%ae%97%e6%b3%95%e3%80%91%e9%93%be%e8%a1%a8&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2f%25E7%25AE%2597%25E6%25B3%2595%25E9%2593%25BE%25E8%25A1%25A8%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2f%25E7%25AE%2597%25E6%25B3%2595%25E9%2593%25BE%25E8%25A1%25A8%2f&title=%e3%80%90%e7%ae%97%e6%b3%95%e3%80%91%e9%93%be%e8%a1%a8" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/%E7%AE%97%E6%B3%95%E4%B8%8E%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/><i class="fas fa-tag fa-fw"></i>&nbsp;算法与数据结构</a>&nbsp;
+</span><span class=tag><a href=https://xushun1221.github.io/tags/c++/><i class="fas fa-tag fa-fw"></i>&nbsp;C++</a>&nbsp;</span></section><section><span><a href=javascript:window.history.back();>Back</a></span>&nbsp;|&nbsp;<span><a href=https://xushun1221.github.io>Home</a></span></section></div><div class=post-nav><a href=https://xushun1221.github.io/2022/cs144-lab-assignment-lab-4/ class=prev rel=prev title="CS144 Lab Assignment lab-4"><i class="fas fa-angle-left fa-fw"></i>CS144 Lab Assignment lab-4</a></div><div class=post-comment></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2022</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=https://xushun1221.github.io/about/ target=_blank>xushun</a> | </span>Powered by <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> & <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer">LoveIt</a></div></div></footer></div><a href=# class=dynamic-to-top id=dynamic-to-top data-scroll><span>&nbsp;</span>
+</a><script src=/js/lib/jquery/jquery.slim.min.js></script><script src=/js/lib/lazysizes/lazysizes.min.js></script><script src=/js/lib/smooth-scroll/smooth-scroll.polyfills.min.js></script><script>window.scroll=new SmoothScroll('[data-scroll]',{speed:300,speedAsDuration:true});</script><link rel=stylesheet href=/css/lib/katex/katex.min.css><script src=/js/lib/katex/katex.min.js></script><script defer src=/js/lib/katex/auto-render.min.js></script><link rel=stylesheet href=/css/lib/katex/copy-tex.min.css><script defer src=/js/lib/katex/copy-tex.min.js></script><script defer src=/js/lib/katex/mhchem.min.js></script><script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true},{left:"$",right:"$",display:false},]});});</script><script src=/js/blog.min.js></script></body></html>
