@@ -8,7 +8,7 @@ categories: [Coding]
 ## 前言
 记录一些Coding的技巧。
 
-## 取数组下标中点 22.2.16
+## 取数组下标中点
 常规的取下标中点方法：`mid = (left + right) / 2`，这种方法在数组很大的时候，可能会溢出，所以用这种方法：`mid = left + (right - left) / 2`，不溢出的原因是：  
 `left`、`right`本身不溢出，且`right >= left`，`(right - left) / 2`肯定不溢出。  
 更简化一点的写法：`mid = left + ((right - left) >> 1)`。*右移操作比除法快*
@@ -53,3 +53,13 @@ iter = testmap.erase(iter);
 ```cpp
 testmap.erase(iter ++);
 ```
+
+-----
+
+## 计算`2^n`
+```cpp
+int n = 10;
+int res = 1 << n;
+```
+
+-----
