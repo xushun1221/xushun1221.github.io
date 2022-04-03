@@ -59,3 +59,21 @@ int res = 1 << n;
 ```
 
 -----
+
+## sort之自定义比较器
+`sort`默认升序，自定义比较器方法如下
+```cpp
+// 升序
+static bool cmp_up(int a, int b) {
+	return a < b;
+}
+// 降序
+static bool cmp_down(int a, int b) {
+	return a > b;
+}
+
+// 1.当返回值为true时，第一个参数放在前面，第二个参数放在后面; false则反之
+// 2.当a = b时，必须要返回fasle
+
+// priority_queue 相反
+```

@@ -1,0 +1,370 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【算法】暴力递归（回溯） | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/%E7%AE%97%E6%B3%95%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95/><link rel=canonical href=https://xushun1221.github.io/2022/%E7%AE%97%E6%B3%95%E6%9A%B4%E5%8A%9B%E9%80%92%E5%BD%92%E5%9B%9E%E6%BA%AF/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【算法】暴力递归（回溯）"><meta name=twitter:description content="暴力递归 暴力递归就是尝试： 把问题转化为规模缩小了的同类问题的子问题 有明确的不需要继续进行递归的条件（base case） 有当得到了子问题的结果"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【算法】暴力递归（回溯）","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/%E7%AE%97%E6%B3%95%E6%9A%B4%E5%8A%9B%E9%80%92%E5%BD%92%E5%9B%9E%E6%BA%AF\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"算法与数据结构, C\x2b\x2b","wordcount":2758,"url":"https:\/\/xushun1221.github.io\/2022\/%E7%AE%97%E6%B3%95%E6%9A%B4%E5%8A%9B%E9%80%92%E5%BD%92%E5%9B%9E%E6%BA%AF\/","datePublished":"2022-04-02T00:00:00\x2b00:00","dateModified":"2022-04-02T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【算法】暴力递归（回溯）</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-04-02>2022-04-02</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 2758 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#暴力递归>暴力递归</a></li><li><a href=#经典问题n皇后>经典问题：N皇后</a></li><li><a href=#相关题目>相关题目</a><ul><li><a href=#题目1打印一个子串的全部子序列-包括空串>题目1：打印一个子串的全部子序列 包括空串</a></li><li><a href=#题目2字符串的全排列>题目2：字符串的全排列</a></li><li><a href=#题目3纸牌博弈-预测赢家>题目3：纸牌博弈-预测赢家</a></li><li><a href=#题目4逆序一个栈>题目4：逆序一个栈</a></li><li><a href=#题目5把数字翻译为字符串>题目5：把数字翻译为字符串</a></li><li><a href=#题目601背包问题>题目6：01背包问题</a></li></ul></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#暴力递归>暴力递归</a></li><li><a href=#经典问题n皇后>经典问题：N皇后</a></li><li><a href=#相关题目>相关题目</a><ul><li><a href=#题目1打印一个子串的全部子序列-包括空串>题目1：打印一个子串的全部子序列 包括空串</a></li><li><a href=#题目2字符串的全排列>题目2：字符串的全排列</a></li><li><a href=#题目3纸牌博弈-预测赢家>题目3：纸牌博弈-预测赢家</a></li><li><a href=#题目4逆序一个栈>题目4：逆序一个栈</a></li><li><a href=#题目5把数字翻译为字符串>题目5：把数字翻译为字符串</a></li><li><a href=#题目601背包问题>题目6：01背包问题</a></li></ul></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=暴力递归></a><h2>暴力递归</h2><p>暴力递归就是尝试：</p><ol><li>把问题转化为规模缩小了的同类问题的子问题</li><li>有明确的不需要继续进行递归的条件（base case）</li><li>有当得到了子问题的结果之后的决策过程</li><li>不记录每个子问题的解</li></ol><p><em>本章记录的题目都使用暴力递归方式解题，可能存在动态规划等更好的方法。</em></p><hr><a class=post-dummy-target id=经典问题n皇后></a><h2>经典问题：N皇后</h2><p><a href=https://leetcode-cn.com/problems/n-queens-ii/ target=_blank>LeetCode52</a><br>问题描述：n 皇后问题 研究的是如何将 <code>n</code> 个皇后放置在 <code>n×n</code> 的棋盘上，并且使皇后彼此之间不能相互攻击（皇后之间不能共行、共列、共斜线）。给你一个整数 <code>n</code> ，返回所有不同的 <code>n</code> 皇后问题 的解决方案的数量。<br>思路：暴力递归，从第<code>0</code>行开始到第<code>n-1</code>行，依次确定皇后放置位置剩下的皇后有多少可能情况。<br>代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=kt>bool</span> <span class=nf>isValid</span><span class=p>(</span><span class=kt>int</span> <span class=n>i</span><span class=p>,</span> <span class=kt>int</span> <span class=n>j</span><span class=p>,</span> <span class=kt>int</span> <span class=n>n</span><span class=p>,</span> <span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=o>&amp;</span> <span class=n>record</span><span class=p>)</span> <span class=p>{</span>
+	<span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>k</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>k</span> <span class=o>&lt;</span> <span class=n>i</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>k</span><span class=p>)</span>
+		<span class=k>if</span> <span class=p>(</span><span class=n>j</span> <span class=o>=</span><span class=o>=</span> <span class=n>record</span><span class=p>[</span><span class=n>k</span><span class=p>]</span> <span class=o>|</span><span class=o>|</span> <span class=n>abs</span><span class=p>(</span><span class=n>record</span><span class=p>[</span><span class=n>k</span><span class=p>]</span> <span class=o>-</span> <span class=n>j</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=n>abs</span><span class=p>(</span><span class=n>k</span> <span class=o>-</span> <span class=n>i</span><span class=p>)</span><span class=p>)</span>
+			<span class=k>return</span> <span class=nb>false</span><span class=p>;</span>
+	<span class=k>return</span> <span class=nb>true</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=kt>int</span> <span class=nf>process</span><span class=p>(</span><span class=kt>int</span> <span class=n>i</span><span class=p>,</span> <span class=kt>int</span> <span class=n>n</span><span class=p>,</span> <span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=o>&amp;</span> <span class=n>record</span><span class=p>)</span> <span class=p>{</span>
+	<span class=k>if</span> <span class=p>(</span><span class=n>i</span> <span class=o>=</span><span class=o>=</span> <span class=n>n</span><span class=p>)</span>
+		<span class=k>return</span> <span class=mi>1</span><span class=p>;</span>
+	<span class=kt>int</span> <span class=n>res</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+	<span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>j</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>j</span> <span class=o>&lt;</span> <span class=n>n</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>j</span><span class=p>)</span> <span class=p>{</span>
+		<span class=k>if</span> <span class=p>(</span><span class=n>isValid</span><span class=p>(</span><span class=n>i</span><span class=p>,</span> <span class=n>j</span><span class=p>,</span> <span class=n>n</span><span class=p>,</span> <span class=n>record</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+			<span class=n>record</span><span class=p>[</span><span class=n>i</span><span class=p>]</span> <span class=o>=</span> <span class=n>j</span><span class=p>;</span>
+			<span class=n>res</span> <span class=o>+</span><span class=o>=</span> <span class=n>process</span><span class=p>(</span><span class=n>i</span> <span class=o>+</span> <span class=mi>1</span><span class=p>,</span> <span class=n>n</span><span class=p>,</span> <span class=n>record</span><span class=p>)</span><span class=p>;</span>
+		<span class=p>}</span>
+	<span class=p>}</span>
+	<span class=k>return</span> <span class=n>res</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=kt>int</span> <span class=nf>totalNQueens</span><span class=p>(</span><span class=kt>int</span> <span class=n>n</span><span class=p>)</span> <span class=p>{</span>
+	<span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span> <span class=n>record</span><span class=p>(</span><span class=n>n</span><span class=p>,</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+	<span class=k>return</span> <span class=n>process</span><span class=p>(</span><span class=mi>0</span><span class=p>,</span> <span class=n>n</span><span class=p>,</span> <span class=n>record</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>时间复杂度：$O\left(n^{2}\right)$<br>空间复杂度：$O\left(n\right)$</p><p>基于位运算加速的优化方法：用位运算来确定可以尝试的位置。确定每一行的皇后位置时，可以知道下一行皇后不可以出现的位置（优化了常数项的时间）<br>代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=kt>int</span> <span class=nf>process</span><span class=p>(</span><span class=kt>int</span> <span class=n>Lim</span><span class=p>,</span> <span class=kt>int</span> <span class=n>colLim</span><span class=p>,</span> <span class=kt>int</span> <span class=n>leftDiaLim</span><span class=p>,</span> <span class=kt>int</span> <span class=n>rightDiaLim</span><span class=p>)</span> <span class=p>{</span>
+	<span class=c1>// Lim 寻找空间限制
+</span><span class=c1></span>	<span class=c1>// colLim 列方向限制
+</span><span class=c1></span>	<span class=c1>// leftDiaLim 左斜线方向限制
+</span><span class=c1></span>	<span class=c1>// rightDiaLim 右斜线方向限制
+</span><span class=c1></span>	<span class=c1>// n个皇后全部找到位置 返回一种情况
+</span><span class=c1></span>	<span class=k>if</span> <span class=p>(</span><span class=n>colLim</span> <span class=o>=</span><span class=o>=</span> <span class=n>Lim</span><span class=p>)</span>
+		<span class=k>return</span> <span class=mi>1</span><span class=p>;</span>
+	<span class=kt>int</span> <span class=n>mostRightOne</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+	<span class=c1>// 可以放皇后的位置为1
+</span><span class=c1></span>	<span class=kt>int</span> <span class=n>pos</span> <span class=o>=</span> <span class=n>Lim</span> <span class=o>&amp;</span> <span class=p>(</span><span class=o>~</span><span class=p>(</span><span class=n>colLim</span> <span class=o>|</span> <span class=n>leftDiaLim</span> <span class=o>|</span> <span class=n>rightDiaLim</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+	<span class=kt>int</span> <span class=n>res</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+	<span class=k>while</span> <span class=p>(</span><span class=n>pos</span> <span class=o>!</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+		<span class=c1>// 选择可选位置的最右位置
+</span><span class=c1></span>		<span class=n>mostRightOne</span> <span class=o>=</span> <span class=n>pos</span> <span class=o>=</span><span class=o>=</span> <span class=n>INT_MIN</span> <span class=o>?</span> <span class=nl>pos</span> <span class=p>:</span> <span class=n>pos</span> <span class=o>&amp;</span> <span class=p>(</span><span class=o>~</span><span class=n>pos</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+		<span class=c1>// 删除这个位
+</span><span class=c1></span>		<span class=n>pos</span> <span class=o>=</span> <span class=n>pos</span> <span class=o>-</span> <span class=n>mostRightOne</span><span class=p>;</span>
+		<span class=n>res</span> <span class=o>+</span><span class=o>=</span> <span class=n>process</span><span class=p>(</span><span class=n>Lim</span><span class=p>,</span>
+						<span class=n>colLim</span> <span class=o>|</span> <span class=n>mostRightOne</span><span class=p>,</span>              <span class=c1>// 列限制 
+</span><span class=c1></span>						<span class=p>(</span><span class=n>leftDiaLim</span> <span class=o>|</span> <span class=n>mostRightOne</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=mi>1</span><span class=p>,</span>   <span class=c1>// 左斜线 
+</span><span class=c1></span>						<span class=p>(</span><span class=n>rightDiaLim</span> <span class=o>|</span> <span class=n>mostRightOne</span><span class=p>)</span> <span class=o>&gt;</span><span class=o>&gt;</span> <span class=mi>1</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 右斜线 
+</span><span class=c1></span>	<span class=p>}</span>
+	<span class=k>return</span> <span class=n>res</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=kt>int</span> <span class=nf>totalNQueens</span><span class=p>(</span><span class=kt>int</span> <span class=n>n</span><span class=p>)</span> <span class=p>{</span>
+	<span class=c1>// 使用位运算来限制寻找空间 皇后数量不能超过整型位数
+</span><span class=c1></span>	<span class=k>if</span> <span class=p>(</span><span class=n>n</span> <span class=o>&lt;</span> <span class=mi>1</span> <span class=o>|</span><span class=o>|</span> <span class=n>n</span> <span class=o>&gt;</span> <span class=mi>32</span><span class=p>)</span>
+		<span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+	<span class=c1>// 32位整型的最后n位为1
+</span><span class=c1></span>	<span class=kt>int</span> <span class=n>Lim</span> <span class=o>=</span> <span class=n>n</span> <span class=o>=</span><span class=o>=</span> <span class=mi>32</span> <span class=o>?</span> <span class=o>-</span><span class=mi>1</span> <span class=o>:</span> <span class=p>(</span><span class=mi>1</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>n</span><span class=p>)</span> <span class=o>-</span> <span class=mi>1</span><span class=p>;</span>
+	<span class=k>return</span> <span class=n>process</span><span class=p>(</span><span class=n>Lim</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>时间复杂度：$O\left(n^{2}\right)$<br>空间复杂度：$O\left(n\right)$</p><hr><a class=post-dummy-target id=相关题目></a><h2>相关题目</h2><a class=post-dummy-target id=题目1打印一个子串的全部子序列-包括空串></a><h3>题目1：打印一个子串的全部子序列 包括空串</h3><p>思路：其实就是求子集，从字符串开头到结尾，依次选择要或不要。穷尽所有可能。<br>代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=kt>void</span> <span class=nf>process</span><span class=p>(</span><span class=n>string</span> <span class=n>str</span><span class=p>,</span> <span class=kt>int</span> <span class=n>index</span><span class=p>,</span> <span class=n>vector</span><span class=o>&lt;</span><span class=kt>char</span><span class=o>&gt;</span><span class=o>&amp;</span> <span class=n>res</span><span class=p>)</span> <span class=p>{</span>
+	<span class=k>if</span> <span class=p>(</span><span class=n>index</span> <span class=o>=</span><span class=o>=</span> <span class=n>str</span><span class=p>.</span><span class=n>size</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+		<span class=k>for</span> <span class=p>(</span><span class=k>auto</span> <span class=nl>ch</span> <span class=p>:</span> <span class=n>res</span><span class=p>)</span>
+			<span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>ch</span><span class=p>;</span>
+		<span class=k>return</span><span class=p>;</span>
+	<span class=p>}</span>
+	<span class=n>vector</span><span class=o>&lt;</span><span class=kt>char</span><span class=o>&gt;</span> <span class=n>resKeep</span><span class=p>(</span><span class=n>res</span><span class=p>.</span><span class=n>begin</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>res</span><span class=p>.</span><span class=n>end</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+	<span class=n>resKeep</span><span class=p>.</span><span class=n>push_back</span><span class=p>(</span><span class=n>str</span><span class=p>[</span><span class=n>index</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+	<span class=n>process</span><span class=p>(</span><span class=n>str</span><span class=p>,</span> <span class=n>index</span> <span class=o>+</span> <span class=mi>1</span><span class=p>,</span> <span class=n>resKeep</span><span class=p>)</span><span class=p>;</span>
+	<span class=n>vector</span><span class=o>&lt;</span><span class=kt>char</span><span class=o>&gt;</span> <span class=n>resNoKeep</span><span class=p>(</span><span class=n>res</span><span class=p>.</span><span class=n>begin</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>res</span><span class=p>.</span><span class=n>end</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+	<span class=n>process</span><span class=p>(</span><span class=n>str</span><span class=p>,</span> <span class=n>index</span> <span class=o>+</span> <span class=mi>1</span><span class=p>,</span> <span class=n>resNoKeep</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>void</span> <span class=nf>allSubseq</span><span class=p>(</span><span class=n>string</span> <span class=n>str</span><span class=p>)</span> <span class=p>{</span>
+	<span class=n>vector</span><span class=o>&lt;</span><span class=kt>char</span><span class=o>&gt;</span> <span class=n>res</span><span class=p>;</span>
+	<span class=n>process</span><span class=p>(</span><span class=n>str</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=n>res</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=c1>// 优化的算法 省空间
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>process</span><span class=p>(</span><span class=n>string</span> <span class=n>str</span><span class=p>,</span> <span class=kt>int</span> <span class=n>index</span><span class=p>)</span> <span class=p>{</span>
+	<span class=k>if</span> <span class=p>(</span><span class=n>index</span> <span class=o>=</span><span class=o>=</span> <span class=n>str</span><span class=p>.</span><span class=n>size</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+		<span class=k>for</span> <span class=p>(</span><span class=k>auto</span> <span class=nl>ch</span> <span class=p>:</span> <span class=n>res</span><span class=p>)</span>
+			<span class=k>if</span> <span class=p>(</span><span class=n>ch</span> <span class=o>!</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span>
+				<span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>ch</span><span class=p>;</span>
+		<span class=k>return</span><span class=p>;</span>
+	<span class=p>}</span>
+	<span class=n>process</span><span class=p>(</span><span class=n>str</span><span class=p>,</span> <span class=n>index</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+	<span class=kt>char</span> <span class=n>tmp</span> <span class=o>=</span> <span class=n>str</span><span class=p>[</span><span class=n>index</span><span class=p>]</span><span class=p>;</span>
+	<span class=n>str</span><span class=p>[</span><span class=n>index</span><span class=p>]</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+	<span class=n>process</span><span class=p>(</span><span class=n>str</span><span class=p>,</span> <span class=n>index</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+	<span class=n>str</span><span class=p>[</span><span class=n>index</span><span class=p>]</span> <span class=o>=</span> <span class=n>tmp</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><hr><a class=post-dummy-target id=题目2字符串的全排列></a><h3>题目2：字符串的全排列</h3><p><a href=https://leetcode-cn.com/problems/zi-fu-chuan-de-pai-lie-lcof/ target=_blank>LeetCode-剑指Offer38</a><br>题目描述：输入一个字符串，打印出该字符串中字符的所有排列，不能有重复字符串。<br>思路：在字符串中可以选择每一个字符当头，剩下的字符继续全排列。如何实现不重复？可以使用哈希表，但是有点笨。思考一下为什么会重复，原因是每次循环选择头字符的时候，可能会有一样的，那我们在循环的时候记录一下选择过的头字符，再次遇到直接跳过即可。<br>代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=kt>void</span> <span class=nf>process</span><span class=p>(</span><span class=n>string</span> <span class=n>s</span><span class=p>,</span> <span class=kt>int</span> <span class=n>index</span><span class=p>,</span> <span class=n>vector</span><span class=o>&lt;</span><span class=n>string</span><span class=o>&gt;</span><span class=o>&amp;</span> <span class=n>res</span><span class=p>)</span> <span class=p>{</span>
+	<span class=k>if</span> <span class=p>(</span><span class=n>index</span> <span class=o>=</span><span class=o>=</span> <span class=n>s</span><span class=p>.</span><span class=n>size</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+		<span class=n>res</span><span class=p>.</span><span class=n>push_back</span><span class=p>(</span><span class=n>s</span><span class=p>)</span><span class=p>;</span>
+		<span class=k>return</span><span class=p>;</span>
+	<span class=p>}</span>
+	<span class=n>vector</span><span class=o>&lt;</span><span class=kt>bool</span><span class=o>&gt;</span> <span class=n>count</span><span class=p>(</span><span class=mi>26</span><span class=p>,</span> <span class=nb>false</span><span class=p>)</span><span class=p>;</span>
+	<span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=n>index</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>s</span><span class=p>.</span><span class=n>size</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+		<span class=k>if</span> <span class=p>(</span><span class=o>!</span><span class=n>count</span><span class=p>[</span><span class=n>s</span><span class=p>[</span><span class=n>i</span><span class=p>]</span> <span class=o>-</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>a</span><span class=sc>&#39;</span><span class=p>]</span><span class=p>)</span> <span class=p>{</span>
+			<span class=n>swap</span><span class=p>(</span><span class=n>s</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>,</span> <span class=n>s</span><span class=p>[</span><span class=n>index</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+			<span class=n>process</span><span class=p>(</span><span class=n>s</span><span class=p>,</span> <span class=n>index</span> <span class=o>+</span> <span class=mi>1</span><span class=p>,</span> <span class=n>res</span><span class=p>)</span><span class=p>;</span>
+			<span class=n>swap</span><span class=p>(</span><span class=n>s</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>,</span> <span class=n>s</span><span class=p>[</span><span class=n>index</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+			<span class=n>count</span><span class=p>[</span><span class=n>s</span><span class=p>[</span><span class=n>i</span><span class=p>]</span> <span class=o>-</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>a</span><span class=sc>&#39;</span><span class=p>]</span> <span class=o>=</span> <span class=nb>true</span><span class=p>;</span>
+		<span class=p>}</span>
+	<span class=p>}</span>
+<span class=p>}</span>
+<span class=n>vector</span><span class=o>&lt;</span><span class=n>string</span><span class=o>&gt;</span> <span class=n>permutation</span><span class=p>(</span><span class=n>string</span> <span class=n>s</span><span class=p>)</span> <span class=p>{</span>
+	<span class=n>vector</span><span class=o>&lt;</span><span class=n>string</span><span class=o>&gt;</span> <span class=n>res</span><span class=p>;</span>
+	<span class=n>process</span><span class=p>(</span><span class=n>s</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=n>res</span><span class=p>)</span><span class=p>;</span>
+	<span class=k>return</span> <span class=n>res</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><hr><a class=post-dummy-target id=题目3纸牌博弈-预测赢家></a><h3>题目3：纸牌博弈-预测赢家</h3><p><a href=https://leetcode-cn.com/problems/predict-the-winner/ target=_blank>LeetCode486</a><br>题目描述：给你一个整数数组 <code>nums</code> 。玩家 1 和玩家 2 基于这个数组设计了一个游戏。玩家 1 和玩家 2 轮流进行自己的回合，玩家 1 先手。开始时，两个玩家的初始分值都是 <code>0</code> 。每一回合，玩家从数组的任意一端取一个数字（即，<code>nums[0]</code> 或 <code>nums[nums.length - 1]</code>），取到的数字将会从数组中移除（数组长度减 1 ）。玩家选中的数字将会加到他的得分上。当数组中没有剩余数字可取时，游戏结束。如果玩家 1 能成为赢家，返回 <code>true</code> 。如果两个玩家得分相等，同样认为玩家 1 是游戏的赢家，也返回 <code>true</code> 。你可以假设每个玩家的玩法都会使他的分数最大化。<br>思路：递归，先手情况下选择一个数，然后转为后手情况；后手情况下，对方先选一个数，然后转为先手情况。<br>代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=kt>int</span> <span class=nf>first</span><span class=p>(</span><span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=o>&amp;</span> <span class=n>nums</span><span class=p>,</span> <span class=kt>int</span> <span class=n>l</span><span class=p>,</span> <span class=kt>int</span> <span class=n>r</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// 先手
+</span><span class=c1></span>	<span class=k>if</span> <span class=p>(</span><span class=n>l</span> <span class=o>=</span><span class=o>=</span> <span class=n>r</span><span class=p>)</span> <span class=c1>// base case
+</span><span class=c1></span>		<span class=k>return</span> <span class=n>nums</span><span class=p>[</span><span class=n>l</span><span class=p>]</span><span class=p>;</span>
+	<span class=c1>// 先手可以选择拿左边或右边的牌 绝对聪明的情况下 会拿结果最大的
+</span><span class=c1></span>	<span class=k>return</span> <span class=n>max</span><span class=p>(</span><span class=n>nums</span><span class=p>[</span><span class=n>l</span><span class=p>]</span> <span class=o>+</span> <span class=n>second</span><span class=p>(</span><span class=n>nums</span><span class=p>,</span> <span class=n>l</span> <span class=o>+</span> <span class=mi>1</span><span class=p>,</span> <span class=n>r</span><span class=p>)</span><span class=p>,</span> <span class=n>nums</span><span class=p>[</span><span class=n>r</span><span class=p>]</span> <span class=o>+</span> <span class=n>second</span><span class=p>(</span><span class=n>nums</span><span class=p>,</span> <span class=n>l</span><span class=p>,</span> <span class=n>r</span> <span class=o>-</span> <span class=mi>1</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=kt>int</span> <span class=nf>second</span><span class=p>(</span><span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=o>&amp;</span> <span class=n>nums</span><span class=p>,</span> <span class=kt>int</span> <span class=n>l</span><span class=p>,</span> <span class=kt>int</span> <span class=n>r</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// 后手
+</span><span class=c1></span>	<span class=k>if</span> <span class=p>(</span><span class=n>l</span> <span class=o>=</span><span class=o>=</span> <span class=n>r</span><span class=p>)</span> <span class=c1>// base case
+</span><span class=c1></span>		<span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+	<span class=c1>// 后手要在先手选择完后再选择 先后选择左或右
+</span><span class=c1></span>	<span class=c1>// 剩下两种范围 后手转为先手选择 因为后手是后选
+</span><span class=c1></span>	<span class=c1>// 所以先手会留下后手范围小的那个
+</span><span class=c1></span>	<span class=k>return</span> <span class=n>min</span><span class=p>(</span><span class=n>first</span><span class=p>(</span><span class=n>nums</span><span class=p>,</span> <span class=n>l</span> <span class=o>+</span> <span class=mi>1</span><span class=p>,</span> <span class=n>r</span><span class=p>)</span><span class=p>,</span> <span class=n>first</span><span class=p>(</span><span class=n>nums</span><span class=p>,</span> <span class=n>l</span><span class=p>,</span> <span class=n>r</span> <span class=o>-</span> <span class=mi>1</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=kt>bool</span> <span class=nf>PredictTheWinner</span><span class=p>(</span><span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=o>&amp;</span> <span class=n>nums</span><span class=p>)</span> <span class=p>{</span>
+	<span class=k>return</span> <span class=n>first</span><span class=p>(</span><span class=n>nums</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=n>nums</span><span class=p>.</span><span class=n>size</span><span class=p>(</span><span class=p>)</span> <span class=o>-</span> <span class=mi>1</span><span class=p>)</span> <span class=o>&gt;</span><span class=o>=</span> <span class=n>second</span><span class=p>(</span><span class=n>nums</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=n>nums</span><span class=p>.</span><span class=n>size</span><span class=p>(</span><span class=p>)</span> <span class=o>-</span> <span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>如何改为动态规划再说。</p><hr><a class=post-dummy-target id=题目4逆序一个栈></a><h3>题目4：逆序一个栈</h3><p>题目描述：逆序一个栈，不能用额外的结构，只能使用递归函数。<br>思路：用一个递归函数完成将栈底元素拿出来的操作（其他元素位置不变），改函数接收栈顶弹出的元素，这样保存了栈顶元素，然后进入下一层递归，也这样操作，当栈空时，返回保存的栈顶元素，当函数接收到下层递归函数传来的元素，将之前保存的栈顶元素压栈，然后返回上层返回的元素，最后就可以返回栈底元素了。然后再用一个递归函数调用上面的方法，获取栈底元素，然后再递归调用该函数，当栈空时，返回上层，上层发现下层结束后，将保存的元素压栈，即可。<br>代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=kt>void</span> <span class=nf>reverse</span><span class=p>(</span><span class=n>stack</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=o>&amp;</span> <span class=n>s</span><span class=p>)</span> <span class=p>{</span>
+	<span class=k>if</span> <span class=p>(</span><span class=n>s</span><span class=p>.</span><span class=n>empty</span><span class=p>(</span><span class=p>)</span><span class=p>)</span>
+		<span class=k>return</span><span class=p>;</span>
+	<span class=kt>int</span> <span class=n>end</span> <span class=o>=</span> <span class=n>f</span><span class=p>(</span><span class=n>s</span><span class=p>)</span><span class=p>;</span>
+	<span class=n>reverse</span><span class=p>(</span><span class=n>s</span><span class=p>)</span><span class=p>;</span>
+	<span class=n>stack</span><span class=p>.</span><span class=n>push</span><span class=p>(</span><span class=n>end</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=kt>int</span> <span class=nf>f</span><span class=p>(</span><span class=n>stack</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=o>&amp;</span> <span class=n>s</span><span class=p>)</span> <span class=p>{</span>
+	<span class=kt>int</span> <span class=n>res</span> <span class=o>=</span> <span class=n>s</span><span class=p>.</span><span class=n>top</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+	<span class=n>s</span><span class=p>.</span><span class=n>pop</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+	<span class=k>if</span> <span class=p>(</span><span class=n>s</span><span class=p>.</span><span class=n>empty</span><span class=p>(</span><span class=p>)</span><span class=p>)</span>
+		<span class=k>return</span> <span class=n>res</span><span class=p>;</span>
+	<span class=kt>int</span> <span class=n>last</span> <span class=o>=</span> <span class=n>f</span><span class=p>(</span><span class=n>s</span><span class=p>)</span><span class=p>;</span>
+	<span class=n>s</span><span class=p>.</span><span class=n>push</span><span class=p>(</span><span class=n>res</span><span class=p>)</span><span class=p>;</span>
+	<span class=k>return</span> <span class=n>last</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=kt>void</span> <span class=nf>reStack</span><span class=p>(</span><span class=n>stack</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=o>&amp;</span> <span class=n>s</span><span class=p>)</span> <span class=p>{</span>
+	<span class=n>reverse</span><span class=p>(</span><span class=n>s</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><hr><a class=post-dummy-target id=题目5把数字翻译为字符串></a><h3>题目5：把数字翻译为字符串</h3><p><a href=https://leetcode-cn.com/problems/ba-shu-zi-fan-yi-cheng-zi-fu-chuan-lcof/ target=_blank>LeetCode-剑指Offer46</a><br>题目描述：给定一个数字，我们按照如下规则把它翻译为字符串：0 翻译成 “a” ，1 翻译成 “b”，……，11 翻译成 “l”，……，25 翻译成 “z”。一个数字可能有多个翻译。请编程实现一个函数，用来计算一个数字有多少种不同的翻译方法。例如，<code>12258</code>，可以翻译为5种字符串，<code>"bccfi", "bwfi", "bczi", "mcfi", "mzi"</code>。<br>思路：还是递归，从左往右。每次遍历只考虑从当前下标到数组最后范围有多少种可能。<br>代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=kt>int</span> <span class=nf>process</span><span class=p>(</span><span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=o>&amp;</span> <span class=n>nums</span><span class=p>,</span> <span class=kt>int</span> <span class=n>index</span><span class=p>)</span> <span class=p>{</span>
+	<span class=k>if</span> <span class=p>(</span><span class=n>index</span> <span class=o>=</span><span class=o>=</span> <span class=n>nums</span><span class=p>.</span><span class=n>size</span><span class=p>(</span><span class=p>)</span><span class=p>)</span>
+		<span class=k>return</span> <span class=mi>1</span><span class=p>;</span>
+	<span class=k>if</span> <span class=p>(</span><span class=n>nums</span><span class=p>[</span><span class=n>index</span><span class=p>]</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span>
+		<span class=k>return</span> <span class=n>process</span><span class=p>(</span><span class=n>nums</span><span class=p>,</span> <span class=n>index</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+	<span class=k>if</span> <span class=p>(</span><span class=n>nums</span><span class=p>[</span><span class=n>index</span><span class=p>]</span> <span class=o>&gt;</span><span class=o>=</span> <span class=mi>3</span><span class=p>)</span>
+		<span class=k>return</span> <span class=n>process</span><span class=p>(</span><span class=n>nums</span><span class=p>,</span> <span class=n>index</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+	<span class=kt>int</span> <span class=n>res</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+	<span class=k>if</span> <span class=p>(</span><span class=n>nums</span><span class=p>[</span><span class=n>index</span><span class=p>]</span> <span class=o>=</span><span class=o>=</span> <span class=mi>1</span> <span class=o>|</span><span class=o>|</span> <span class=n>nums</span><span class=p>[</span><span class=n>index</span><span class=p>]</span> <span class=o>=</span><span class=o>=</span> <span class=mi>2</span><span class=p>)</span> <span class=p>{</span>
+		<span class=k>if</span> <span class=p>(</span><span class=n>index</span> <span class=o>=</span><span class=o>=</span> <span class=n>nums</span><span class=p>.</span><span class=n>size</span><span class=p>(</span><span class=p>)</span> <span class=o>-</span> <span class=mi>1</span><span class=p>)</span>
+			<span class=n>res</span> <span class=o>=</span> <span class=n>process</span><span class=p>(</span><span class=n>nums</span><span class=p>,</span> <span class=n>index</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+		<span class=k>else</span> <span class=k>if</span> <span class=p>(</span><span class=mi>10</span> <span class=o>*</span> <span class=n>nums</span><span class=p>[</span><span class=n>index</span><span class=p>]</span> <span class=o>+</span> <span class=n>nums</span><span class=p>[</span><span class=n>index</span> <span class=o>+</span> <span class=mi>1</span><span class=p>]</span> <span class=o>&gt;</span> <span class=mi>25</span><span class=p>)</span>
+			<span class=n>res</span> <span class=o>=</span> <span class=n>process</span><span class=p>(</span><span class=n>nums</span><span class=p>,</span> <span class=n>index</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+		<span class=k>else</span> 
+			<span class=n>res</span> <span class=o>=</span> <span class=n>process</span><span class=p>(</span><span class=n>nums</span><span class=p>,</span> <span class=n>index</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span> <span class=o>+</span> <span class=n>process</span><span class=p>(</span><span class=n>nums</span><span class=p>,</span> <span class=n>index</span> <span class=o>+</span> <span class=mi>2</span><span class=p>)</span><span class=p>;</span>
+	<span class=p>}</span>
+	<span class=k>return</span> <span class=n>res</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=kt>int</span> <span class=nf>translateNum</span><span class=p>(</span><span class=kt>int</span> <span class=n>num</span><span class=p>)</span> <span class=p>{</span>
+	<span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span> <span class=n>nums</span><span class=p>;</span>
+	<span class=k>while</span> <span class=p>(</span><span class=n>num</span><span class=p>)</span> <span class=p>{</span>
+		<span class=n>nums</span><span class=p>.</span><span class=n>insert</span><span class=p>(</span><span class=n>nums</span><span class=p>.</span><span class=n>begin</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>num</span> <span class=o>%</span> <span class=mi>10</span><span class=p>)</span><span class=p>;</span> <span class=c1>// vector不支持头插 使用insert 在迭代器之前插入
+</span><span class=c1></span>		<span class=n>num</span> <span class=o>/</span><span class=o>=</span> <span class=mi>10</span><span class=p>;</span>
+	<span class=p>}</span>
+	<span class=k>return</span> <span class=n>process</span><span class=p>(</span><span class=n>nums</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><hr><a class=post-dummy-target id=题目601背包问题></a><h3>题目6：01背包问题</h3><p>问题描述：给定两个数组分别存放重量和价值：<code>weights[] values[]</code>，下标对应，给定一个最大重量限制<code>bag</code>，可以选择每个货物是否装入背包（不可分割），求最大价值。<br>思路：递归，从左往右，要还是不要。<br>代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=kt>int</span> <span class=nf>process</span><span class=p>(</span><span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=o>&amp;</span> <span class=n>weights</span><span class=p>,</span> <span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=o>&amp;</span> <span class=n>values</span><span class=p>,</span> <span class=kt>int</span> <span class=n>index</span><span class=p>,</span> <span class=kt>int</span> <span class=n>weightAlready</span><span class=p>,</span> <span class=kt>int</span> <span class=n>valueAlraedy</span><span class=p>,</span> <span class=kt>int</span> <span class=n>bag</span><span class=p>)</span> <span class=p>{</span>
+	<span class=k>if</span> <span class=p>(</span><span class=n>weightAlready</span> <span class=o>&gt;</span> <span class=n>bag</span><span class=p>)</span> <span class=c1>// 这条路要放弃
+</span><span class=c1></span>		<span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+	<span class=k>if</span> <span class=p>(</span><span class=n>index</span> <span class=o>=</span> <span class=n>weights</span><span class=p>.</span><span class=n>size</span><span class=p>(</span><span class=p>)</span><span class=p>)</span>
+		<span class=k>return</span> <span class=n>valueAlready</span><span class=p>;</span>
+	<span class=k>if</span> <span class=p>(</span><span class=n>weights</span><span class=p>[</span><span class=n>i</span><span class=p>]</span> <span class=o>+</span> <span class=n>weightAlready</span> <span class=o>&lt;</span><span class=o>=</span> <span class=n>bag</span><span class=p>)</span> <span class=c1>// 剩余容量可以要这个货
+</span><span class=c1></span>		<span class=k>return</span> <span class=n>max</span><span class=p>(</span><span class=n>process</span><span class=p>(</span><span class=n>weights</span><span class=p>,</span> <span class=n>values</span><span class=p>,</span> <span class=n>index</span> <span class=o>+</span> <span class=mi>1</span><span class=p>,</span> <span class=n>weightAlready</span> <span class=o>+</span> <span class=n>weights</span><span class=p>[</span><span class=n>index</span><span class=p>]</span><span class=p>,</span> <span class=n>valueAlready</span> <span class=o>+</span> <span class=n>values</span><span class=p>[</span><span class=n>index</span><span class=p>]</span><span class=p>,</span> <span class=n>bag</span><span class=p>)</span><span class=p>,</span> <span class=n>process</span><span class=p>(</span><span class=n>weights</span><span class=p>,</span> <span class=n>values</span><span class=p>,</span> <span class=n>index</span> <span class=o>+</span> <span class=mi>1</span><span class=p>,</span> <span class=n>weightAlready</span><span class=p>,</span> <span class=n>valueAlready</span><span class=p>,</span> <span class=n>bag</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+	<span class=k>else</span>
+		<span class=k>return</span> <span class=n>process</span><span class=p>(</span><span class=n>weights</span><span class=p>,</span> <span class=n>values</span><span class=p>,</span> <span class=n>index</span> <span class=o>+</span> <span class=mi>1</span><span class=p>,</span> <span class=n>weightAlready</span><span class=p>,</span> <span class=n>bag</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=kt>int</span> <span class=nf>maxValue</span><span class=p>(</span><span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=o>&amp;</span> <span class=n>weights</span><span class=p>,</span> <span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=o>&amp;</span> <span class=n>values</span><span class=p>,</span> <span class=kt>int</span> <span class=n>bag</span><span class=p>)</span> <span class=p>{</span>
+	<span class=k>return</span> <span class=n>process</span><span class=p>(</span><span class=n>weights</span><span class=p>,</span> <span class=n>values</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=n>bag</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><hr></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+<span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
+<span>2022-04-02</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
+<span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2f%25E7%25AE%2597%25E6%25B3%2595%25E6%259A%25B4%25E5%258A%259B%25E9%2580%2592%25E5%25BD%2592%25E5%259B%259E%25E6%25BA%25AF%2f&text=%e3%80%90%e7%ae%97%e6%b3%95%e3%80%91%e6%9a%b4%e5%8a%9b%e9%80%92%e5%bd%92%ef%bc%88%e5%9b%9e%e6%ba%af%ef%bc%89&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2f%25E7%25AE%2597%25E6%25B3%2595%25E6%259A%25B4%25E5%258A%259B%25E9%2580%2592%25E5%25BD%2592%25E5%259B%259E%25E6%25BA%25AF%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2f%25E7%25AE%2597%25E6%25B3%2595%25E6%259A%25B4%25E5%258A%259B%25E9%2580%2592%25E5%25BD%2592%25E5%259B%259E%25E6%25BA%25AF%2f&title=%e3%80%90%e7%ae%97%e6%b3%95%e3%80%91%e6%9a%b4%e5%8a%9b%e9%80%92%e5%bd%92%ef%bc%88%e5%9b%9e%e6%ba%af%ef%bc%89" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/%E7%AE%97%E6%B3%95%E4%B8%8E%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/><i class="fas fa-tag fa-fw"></i>&nbsp;算法与数据结构</a>&nbsp;
+</span><span class=tag><a href=https://xushun1221.github.io/tags/c++/><i class="fas fa-tag fa-fw"></i>&nbsp;C++</a>&nbsp;</span></section><section><span><a href=javascript:window.history.back();>Back</a></span>&nbsp;|&nbsp;<span><a href=https://xushun1221.github.io>Home</a></span></section></div><div class=post-nav><a href=https://xushun1221.github.io/2022/%E7%AE%97%E6%B3%95%E8%B4%AA%E5%BF%83%E7%AE%97%E6%B3%95/ class=prev rel=prev title=【算法】贪心算法><i class="fas fa-angle-left fa-fw"></i>【算法】贪心算法</a></div><div class=post-comment></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2022</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=https://xushun1221.github.io/about/ target=_blank>xushun</a> | </span>Powered by <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> & <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer">LoveIt</a></div></div></footer></div><a href=# class=dynamic-to-top id=dynamic-to-top data-scroll><span>&nbsp;</span>
+</a><script src=/js/lib/jquery/jquery.slim.min.js></script><script src=/js/lib/lazysizes/lazysizes.min.js></script><script src=/js/lib/smooth-scroll/smooth-scroll.polyfills.min.js></script><script>window.scroll=new SmoothScroll('[data-scroll]',{speed:300,speedAsDuration:true});</script><link rel=stylesheet href=/css/lib/katex/katex.min.css><script src=/js/lib/katex/katex.min.js></script><script defer src=/js/lib/katex/auto-render.min.js></script><link rel=stylesheet href=/css/lib/katex/copy-tex.min.css><script defer src=/js/lib/katex/copy-tex.min.js></script><script defer src=/js/lib/katex/mhchem.min.js></script><script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true},{left:"$",right:"$",display:false},]});});</script><script src=/js/blog.min.js></script></body></html>

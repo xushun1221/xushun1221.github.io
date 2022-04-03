@@ -1,6 +1,6 @@
-<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【算法】堆排序 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/%E7%AE%97%E6%B3%95%E5%BF%AB%E9%80%9F%E6%8E%92%E5%BA%8F/><link rel=next href=https://xushun1221.github.io/2022/ubuntu%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%97%A0%E6%B3%95%E5%92%8Cwin10%E4%BA%92%E7%9B%B8%E5%A4%8D%E5%88%B6%E7%B2%98%E8%B4%B4%E8%AE%B0%E6%8B%96%E6%8B%BD/><link rel=canonical href=https://xushun1221.github.io/2022/%E7%AE%97%E6%B3%95%E5%A0%86%E6%8E%92%E5%BA%8F/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【算法】堆排序"><meta name=twitter:description content="堆排序 原理：利用大根堆（小根堆）结构来进行排序。 实现1 这种实现方法，在建立最大堆时，从后向前对每个有孩子的结点进行了一次向下调整算法，建堆时"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【算法】堆排序","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/%E7%AE%97%E6%B3%95%E5%A0%86%E6%8E%92%E5%BA%8F\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"算法与数据结构, C\x2b\x2b","wordcount":1484,"url":"https:\/\/xushun1221.github.io\/2022\/%E7%AE%97%E6%B3%95%E5%A0%86%E6%8E%92%E5%BA%8F\/","datePublished":"2022-02-18T00:00:00\x2b00:00","dateModified":"2022-02-18T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【算法】堆排序</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-02-18>2022-02-18</time>&nbsp;
-<i class="fas fa-pencil-alt fa-fw"></i>about 1484 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#堆排序>堆排序</a><ul><li><a href=#实现1>实现1</a></li><li><a href=#实现2>实现2</a></li></ul></li><li><a href=#相关题目>相关题目</a></li><li><a href=#题目1排序一个几乎有序的数组>题目1：排序一个几乎有序的数组</a><ul><li><a href=#c优先队列>C++优先队列</a></li></ul></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
-<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#堆排序>堆排序</a><ul><li><a href=#实现1>实现1</a></li><li><a href=#实现2>实现2</a></li></ul></li><li><a href=#相关题目>相关题目</a></li><li><a href=#题目1排序一个几乎有序的数组>题目1：排序一个几乎有序的数组</a><ul><li><a href=#c优先队列>C++优先队列</a></li></ul></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=堆排序></a><h2>堆排序</h2><p>原理：利用大根堆（小根堆）结构来进行排序。</p><a class=post-dummy-target id=实现1></a><h3>实现1</h3><p>这种实现方法，在建立最大堆时，从后向前对每个有孩子的结点进行了一次向下调整算法，建堆时间为$O\left(n\right)$，之后有<code>len - 1</code>次向下调整，每次调整时间复杂度为$O\left(logn\right)$，所以时间复杂度为$O\left(nlogn\right)$。<br>代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【算法】堆排序 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/%E7%AE%97%E6%B3%95%E5%BF%AB%E9%80%9F%E6%8E%92%E5%BA%8F/><link rel=next href=https://xushun1221.github.io/2022/ubuntu%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%97%A0%E6%B3%95%E5%92%8Cwin10%E4%BA%92%E7%9B%B8%E5%A4%8D%E5%88%B6%E7%B2%98%E8%B4%B4%E8%AE%B0%E6%8B%96%E6%8B%BD/><link rel=canonical href=https://xushun1221.github.io/2022/%E7%AE%97%E6%B3%95%E5%A0%86%E6%8E%92%E5%BA%8F/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【算法】堆排序"><meta name=twitter:description content="堆排序 原理：利用大根堆（小根堆）结构来进行排序。 实现1 这种实现方法，在建立最大堆时，从后向前对每个有孩子的结点进行了一次向下调整算法，建堆时"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【算法】堆排序","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/%E7%AE%97%E6%B3%95%E5%A0%86%E6%8E%92%E5%BA%8F\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"算法与数据结构, C\x2b\x2b","wordcount":2570,"url":"https:\/\/xushun1221.github.io\/2022\/%E7%AE%97%E6%B3%95%E5%A0%86%E6%8E%92%E5%BA%8F\/","datePublished":"2022-02-18T00:00:00\x2b00:00","dateModified":"2022-02-18T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【算法】堆排序</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-02-18>2022-02-18</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 2570 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#堆排序>堆排序</a><ul><li><a href=#实现1>实现1</a></li><li><a href=#实现2>实现2</a></li></ul></li><li><a href=#相关题目>相关题目</a><ul><li><a href=#题目1排序一个几乎有序的数组>题目1：排序一个几乎有序的数组</a></li><li><a href=#c优先队列>C++优先队列</a></li><li><a href=#题目2数据流中的中位数>题目2：数据流中的中位数</a></li><li><a href=#题目3滑动窗口中位数>题目3：滑动窗口中位数</a></li></ul></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#堆排序>堆排序</a><ul><li><a href=#实现1>实现1</a></li><li><a href=#实现2>实现2</a></li></ul></li><li><a href=#相关题目>相关题目</a><ul><li><a href=#题目1排序一个几乎有序的数组>题目1：排序一个几乎有序的数组</a></li><li><a href=#c优先队列>C++优先队列</a></li><li><a href=#题目2数据流中的中位数>题目2：数据流中的中位数</a></li><li><a href=#题目3滑动窗口中位数>题目3：滑动窗口中位数</a></li></ul></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=堆排序></a><h2>堆排序</h2><p>原理：利用大根堆（小根堆）结构来进行排序。</p><a class=post-dummy-target id=实现1></a><h3>实现1</h3><p>这种实现方法，在建立最大堆时，从后向前对每个有孩子的结点进行了一次向下调整算法，建堆时间为$O\left(n\right)$，之后有<code>len - 1</code>次向下调整，每次调整时间复杂度为$O\left(logn\right)$，所以时间复杂度为$O\left(nlogn\right)$。<br>代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
 </span><span class=lnt> 2
 </span><span class=lnt> 3
 </span><span class=lnt> 4
@@ -116,7 +116,7 @@
 		<span class=n>heapAdjustDown</span><span class=p>(</span><span class=n>nums</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=n>i</span> <span class=o>-</span> <span class=mi>1</span><span class=p>)</span><span class=p>;</span>  
 	<span class=p>}</span>  
 <span class=p>}</span>
-</code></pre></td></tr></table></div></div><p>时间复杂度：$O\left(nlogn\right)$<br>空间复杂度：$O\left(1\right)$</p><hr><a class=post-dummy-target id=相关题目></a><h2>相关题目</h2><a class=post-dummy-target id=题目1排序一个几乎有序的数组></a><h2>题目1：排序一个几乎有序的数组</h2><p>题目描述：已知一个几乎有序的数组，几乎有序是指，如果将数组排序，那么每个元素移动的距离不超过<code>k</code>，且相对于数组来说<code>k</code>比较小。选择合适的算法排序该数组（非递减）。<br>思路：（假设<code>k == 6</code>）我们从头开始取7个元素，构成一个最小堆，那么堆顶元素一定是这7个元素里最小的，放在数组0位置，然后将第8个元素放入堆顶，调整成最小堆，那么数组1位置就是堆顶元素，……，循环往复直到最小堆对应数组最后7个空位，依次将堆顶元素放入数组，即可。<br>时间复杂度分析，建立最小堆需要常数时间，每次弹出堆顶元素，重新调整最小堆需要$O\left(logk\right)$，整体时间复杂度为$O\left(nlogk\right)$，在<code>k</code>较小时可以看作$O\left(n\right)$。</p><p><em>最小堆的实现我们可以自己写，也可以用STL方法，STL实现的优先队列，控制粒度不如自己写，效率可能较低，这题没什么差别。</em><br>代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</code></pre></td></tr></table></div></div><p>时间复杂度：$O\left(nlogn\right)$<br>空间复杂度：$O\left(1\right)$</p><hr><a class=post-dummy-target id=相关题目></a><h2>相关题目</h2><a class=post-dummy-target id=题目1排序一个几乎有序的数组></a><h3>题目1：排序一个几乎有序的数组</h3><p>题目描述：已知一个几乎有序的数组，几乎有序是指，如果将数组排序，那么每个元素移动的距离不超过<code>k</code>，且相对于数组来说<code>k</code>比较小。选择合适的算法排序该数组（非递减）。<br>思路：（假设<code>k == 6</code>）我们从头开始取7个元素，构成一个最小堆，那么堆顶元素一定是这7个元素里最小的，放在数组0位置，然后将第8个元素放入堆顶，调整成最小堆，那么数组1位置就是堆顶元素，……，循环往复直到最小堆对应数组最后7个空位，依次将堆顶元素放入数组，即可。<br>时间复杂度分析，建立最小堆需要常数时间，每次弹出堆顶元素，重新调整最小堆需要$O\left(logk\right)$，整体时间复杂度为$O\left(nlogk\right)$，在<code>k</code>较小时可以看作$O\left(n\right)$。</p><p><em>最小堆的实现我们可以自己写，也可以用STL方法，STL实现的优先队列，控制粒度不如自己写，效率可能较低，这题没什么差别。</em><br>代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
 </span><span class=lnt> 2
 </span><span class=lnt> 3
 </span><span class=lnt> 4
@@ -166,7 +166,271 @@
 </span><span class=c1></span><span class=n>priority_queue</span> <span class=o>&lt;</span><span class=kt>int</span><span class=p>,</span><span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=p>,</span><span class=n>less</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=o>&gt;</span> <span class=n>q</span><span class=p>;</span>
 
 <span class=c1>//greater和less是std实现的两个仿函数（就是使一个类的使用看上去像一个函数。其实现就是类中实现一个operator()，这个类就有了类似函数的行为，就是一个仿函数类了）
-</span></code></pre></td></tr></table></div></div></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+</span></code></pre></td></tr></table></div></div><hr><a class=post-dummy-target id=题目2数据流中的中位数></a><h3>题目2：数据流中的中位数</h3><p><a href=https://leetcode-cn.com/problems/find-median-from-data-stream/ target=_blank>LeetCode295</a><br>题目描述：在一个数据流中，可以随时取得中位数。<br>思路：维护两个堆结构，一个大根堆，一个小根堆，大根堆用来存储较小的一半元素，小根堆用来存储较大的一半元素，大根堆堆顶元素即为中位数，当心数据到来时，要做的是：</p><ol><li>如果比大根堆堆顶元素小，入大根堆，否则入小根堆</li><li>如果两堆元素数差值超过1，调整两边的大小，大根堆多就将堆顶元素入小根堆，反之亦然</li></ol><p>代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=k>class</span> <span class=nc>MedianFinder</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>priority_queue</span><span class=o>&lt;</span><span class=kt>int</span><span class=p>,</span> <span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=p>,</span> <span class=n>greater</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=o>&gt;</span> <span class=n>min_heap</span><span class=p>;</span>
+    <span class=n>priority_queue</span><span class=o>&lt;</span><span class=kt>int</span><span class=p>,</span> <span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=p>,</span> <span class=n>less</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=o>&gt;</span> <span class=n>max_heap</span><span class=p>;</span>
+
+    <span class=n>MedianFinder</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span><span class=p>}</span>
+    
+    <span class=kt>void</span> <span class=nf>addNum</span><span class=p>(</span><span class=kt>int</span> <span class=n>num</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>max_heap</span><span class=p>.</span><span class=n>empty</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>max_heap</span><span class=p>.</span><span class=n>push</span><span class=p>(</span><span class=n>num</span><span class=p>)</span><span class=p>;</span>
+            <span class=k>return</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>num</span> <span class=o>&lt;</span><span class=o>=</span> <span class=n>max_heap</span><span class=p>.</span><span class=n>top</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>max_heap</span><span class=p>.</span><span class=n>push</span><span class=p>(</span><span class=n>num</span><span class=p>)</span><span class=p>;</span>
+            <span class=k>if</span> <span class=p>(</span><span class=n>max_heap</span><span class=p>.</span><span class=n>size</span><span class=p>(</span><span class=p>)</span> <span class=o>-</span> <span class=n>min_heap</span><span class=p>.</span><span class=n>size</span><span class=p>(</span><span class=p>)</span> <span class=o>&gt;</span> <span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+                <span class=n>min_heap</span><span class=p>.</span><span class=n>push</span><span class=p>(</span><span class=n>max_heap</span><span class=p>.</span><span class=n>top</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+                <span class=n>max_heap</span><span class=p>.</span><span class=n>pop</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+            <span class=p>}</span>
+        <span class=p>}</span>
+        <span class=k>else</span> <span class=p>{</span>
+            <span class=n>min_heap</span><span class=p>.</span><span class=n>push</span><span class=p>(</span><span class=n>num</span><span class=p>)</span><span class=p>;</span>
+            <span class=k>if</span> <span class=p>(</span><span class=n>min_heap</span><span class=p>.</span><span class=n>size</span><span class=p>(</span><span class=p>)</span> <span class=o>-</span> <span class=n>max_heap</span><span class=p>.</span><span class=n>size</span><span class=p>(</span><span class=p>)</span> <span class=o>&gt;</span> <span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+                <span class=n>max_heap</span><span class=p>.</span><span class=n>push</span><span class=p>(</span><span class=n>min_heap</span><span class=p>.</span><span class=n>top</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+                <span class=n>min_heap</span><span class=p>.</span><span class=n>pop</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+            <span class=p>}</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    
+    <span class=kt>double</span> <span class=nf>findMedian</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>max_heap</span><span class=p>.</span><span class=n>size</span><span class=p>(</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=n>min_heap</span><span class=p>.</span><span class=n>size</span><span class=p>(</span><span class=p>)</span><span class=p>)</span>
+            <span class=k>return</span> <span class=p>(</span><span class=kt>double</span><span class=p>(</span><span class=n>max_heap</span><span class=p>.</span><span class=n>top</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=o>+</span> <span class=kt>double</span><span class=p>(</span><span class=n>min_heap</span><span class=p>.</span><span class=n>top</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>)</span> <span class=o>/</span> <span class=mi>2</span><span class=p>;</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>max_heap</span><span class=p>.</span><span class=n>size</span><span class=p>(</span><span class=p>)</span> <span class=o>&gt;</span> <span class=n>min_heap</span><span class=p>.</span><span class=n>size</span><span class=p>(</span><span class=p>)</span><span class=p>)</span>
+            <span class=k>return</span> <span class=n>max_heap</span><span class=p>.</span><span class=n>top</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>return</span> <span class=n>min_heap</span><span class=p>.</span><span class=n>top</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=p>}</span><span class=p>;</span>
+</code></pre></td></tr></table></div></div><hr><a class=post-dummy-target id=题目3滑动窗口中位数></a><h3>题目3：滑动窗口中位数</h3><p><a href=https://leetcode-cn.com/problems/sliding-window-median/ target=_blank>LeetCode480</a><br>题目描述：给你一个数组 <code>nums</code>，有一个长度为 <code>k</code> 的窗口从最左端滑动到最右端。窗口中有 <code>k</code> 个数，每次窗口向右移动 1 位。你的任务是找出每次窗口移动后得到的新窗口中元素的中位数，并输出由它们组成的数组。<br>思路：很容易想到，我们需要维持一个这样的数据结构来找中位数：</p><ol><li>可以<code>insert(int num)</code></li><li>可以<code>erase(int num)</code></li><li>可以<code>getMiddle()</code></li></ol><p>由上一题，我们可以用双堆的结构来在数据流中快速地找到中位数，但是堆结构不能删除非堆顶元素，所以需要用<strong>延迟删除</strong>方法来删除堆中的非堆顶元素。在该题中，我们维持一个哈希表，记录需要删除的元素以及要删除的次数，并且用两个整型变量来记录双堆的逻辑大小（不能用<code>size()</code>函数计算，因为延迟删除只是在逻辑上删除，而仍存在堆中）。<br>那么，应该何时删除要删除的元素呢？答案是，当要删除的元素出现在堆顶时，删除它。在进行双堆大小调整时，可能会将待删除元素暴露在堆顶，此时删除即可。<br>代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span><span class=lnt>59
+</span><span class=lnt>60
+</span><span class=lnt>61
+</span><span class=lnt>62
+</span><span class=lnt>63
+</span><span class=lnt>64
+</span><span class=lnt>65
+</span><span class=lnt>66
+</span><span class=lnt>67
+</span><span class=lnt>68
+</span><span class=lnt>69
+</span><span class=lnt>70
+</span><span class=lnt>71
+</span><span class=lnt>72
+</span><span class=lnt>73
+</span><span class=lnt>74
+</span><span class=lnt>75
+</span><span class=lnt>76
+</span><span class=lnt>77
+</span><span class=lnt>78
+</span><span class=lnt>79
+</span><span class=lnt>80
+</span><span class=lnt>81
+</span><span class=lnt>82
+</span><span class=lnt>83
+</span><span class=lnt>84
+</span><span class=lnt>85
+</span><span class=lnt>86
+</span><span class=lnt>87
+</span><span class=lnt>88
+</span><span class=lnt>89
+</span><span class=lnt>90
+</span><span class=lnt>91
+</span><span class=lnt>92
+</span><span class=lnt>93
+</span><span class=lnt>94
+</span><span class=lnt>95
+</span><span class=lnt>96
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=k>class</span> <span class=nc>DualHeap</span> <span class=p>{</span>
+<span class=k>private</span><span class=o>:</span>
+    <span class=n>priority_queue</span><span class=o>&lt;</span><span class=kt>int</span><span class=p>,</span> <span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=p>,</span> <span class=n>less</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=o>&gt;</span> <span class=n>small</span><span class=p>;</span>      <span class=c1>// max heap
+</span><span class=c1></span>    <span class=n>priority_queue</span><span class=o>&lt;</span><span class=kt>int</span><span class=p>,</span> <span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=p>,</span> <span class=n>greater</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=o>&gt;</span> <span class=n>large</span><span class=p>;</span>   <span class=c1>// min heap
+</span><span class=c1></span>    <span class=n>unordered_map</span><span class=o>&lt;</span><span class=kt>int</span><span class=p>,</span> <span class=kt>int</span><span class=o>&gt;</span> <span class=n>delayed</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>smallSize</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>largeSize</span><span class=p>;</span>
+    <span class=c1>// 弹出栈顶的待删除元素
+</span><span class=c1></span>    <span class=k>template</span><span class=o>&lt;</span><span class=k>typename</span> <span class=n>T</span><span class=o>&gt;</span>
+    <span class=kt>void</span> <span class=n>prune</span><span class=p>(</span><span class=n>T</span><span class=o>&amp;</span> <span class=n>heap</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>while</span> <span class=p>(</span><span class=o>!</span><span class=n>heap</span><span class=p>.</span><span class=n>empty</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+            <span class=kt>int</span> <span class=n>t</span> <span class=o>=</span> <span class=n>heap</span><span class=p>.</span><span class=n>top</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+            <span class=k>if</span> <span class=p>(</span><span class=n>delayed</span><span class=p>.</span><span class=n>count</span><span class=p>(</span><span class=n>t</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+                <span class=n>heap</span><span class=p>.</span><span class=n>pop</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+                <span class=o>-</span><span class=o>-</span> <span class=n>delayed</span><span class=p>[</span><span class=n>t</span><span class=p>]</span><span class=p>;</span>
+                <span class=k>if</span> <span class=p>(</span><span class=o>!</span><span class=n>delayed</span><span class=p>[</span><span class=n>t</span><span class=p>]</span><span class=p>)</span>
+                    <span class=n>delayed</span><span class=p>.</span><span class=n>erase</span><span class=p>(</span><span class=n>t</span><span class=p>)</span><span class=p>;</span>
+            <span class=p>}</span>
+            <span class=k>else</span>
+                <span class=k>break</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=c1>// 维持双堆平衡
+</span><span class=c1></span>    <span class=kt>void</span> <span class=nf>makeBalance</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>smallSize</span> <span class=o>&gt;</span> <span class=n>largeSize</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>large</span><span class=p>.</span><span class=n>push</span><span class=p>(</span><span class=n>small</span><span class=p>.</span><span class=n>top</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+            <span class=o>+</span><span class=o>+</span> <span class=n>largeSize</span><span class=p>;</span>
+            <span class=n>small</span><span class=p>.</span><span class=n>pop</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+            <span class=o>-</span><span class=o>-</span> <span class=n>smallSize</span><span class=p>;</span>
+            <span class=n>prune</span><span class=p>(</span><span class=n>small</span><span class=p>)</span><span class=p>;</span> <span class=c1>// small堆顶元素改变 需要prune
+</span><span class=c1></span>        <span class=p>}</span>
+        <span class=k>else</span> <span class=k>if</span> <span class=p>(</span><span class=n>largeSize</span> <span class=o>&gt;</span> <span class=n>smallSize</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>small</span><span class=p>.</span><span class=n>push</span><span class=p>(</span><span class=n>large</span><span class=p>.</span><span class=n>top</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+            <span class=o>+</span><span class=o>+</span> <span class=n>smallSize</span><span class=p>;</span>
+            <span class=n>large</span><span class=p>.</span><span class=n>pop</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+            <span class=o>-</span><span class=o>-</span> <span class=n>largeSize</span><span class=p>;</span>
+            <span class=n>prune</span><span class=p>(</span><span class=n>large</span><span class=p>)</span><span class=p>;</span> <span class=c1>// large堆顶元素改变 需要prune
+</span><span class=c1></span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>DualHeap</span><span class=p>(</span><span class=p>)</span> <span class=o>:</span> <span class=n>smallSize</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span><span class=p>,</span> <span class=n>largeSize</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span> <span class=p>{</span><span class=p>}</span>
+    <span class=c1>// 插入新元素
+</span><span class=c1></span>    <span class=kt>void</span> <span class=nf>insert</span><span class=p>(</span><span class=kt>int</span> <span class=n>num</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>small</span><span class=p>.</span><span class=n>empty</span><span class=p>(</span><span class=p>)</span> <span class=o>|</span><span class=o>|</span> <span class=n>num</span> <span class=o>&lt;</span><span class=o>=</span> <span class=n>small</span><span class=p>.</span><span class=n>top</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>small</span><span class=p>.</span><span class=n>push</span><span class=p>(</span><span class=n>num</span><span class=p>)</span><span class=p>;</span>
+            <span class=o>+</span><span class=o>+</span> <span class=n>smallSize</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=k>else</span> <span class=p>{</span>
+            <span class=n>large</span><span class=p>.</span><span class=n>push</span><span class=p>(</span><span class=n>num</span><span class=p>)</span><span class=p>;</span>
+            <span class=o>+</span><span class=o>+</span> <span class=n>largeSize</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=n>makeBalance</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=c1>// 删除指定元素
+</span><span class=c1></span>    <span class=kt>void</span> <span class=nf>erase</span><span class=p>(</span><span class=kt>int</span> <span class=n>num</span><span class=p>)</span> <span class=p>{</span>
+        <span class=o>+</span><span class=o>+</span> <span class=n>delayed</span><span class=p>[</span><span class=n>num</span><span class=p>]</span><span class=p>;</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>num</span> <span class=o>&lt;</span><span class=o>=</span> <span class=n>small</span><span class=p>.</span><span class=n>top</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+            <span class=o>-</span><span class=o>-</span> <span class=n>smallSize</span><span class=p>;</span>
+            <span class=k>if</span> <span class=p>(</span><span class=n>num</span> <span class=o>=</span><span class=o>=</span> <span class=n>small</span><span class=p>.</span><span class=n>top</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> 
+                <span class=n>prune</span><span class=p>(</span><span class=n>small</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=k>else</span> <span class=p>{</span>
+            <span class=o>-</span><span class=o>-</span> <span class=n>largeSize</span><span class=p>;</span>
+            <span class=k>if</span> <span class=p>(</span><span class=n>num</span> <span class=o>=</span><span class=o>=</span> <span class=n>large</span><span class=p>.</span><span class=n>top</span><span class=p>(</span><span class=p>)</span><span class=p>)</span>
+                <span class=n>prune</span><span class=p>(</span><span class=n>large</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=n>makeBalance</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=c1>// 获得中位数
+</span><span class=c1></span>    <span class=kt>double</span> <span class=nf>getMiddle</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>smallSize</span> <span class=o>&gt;</span> <span class=n>largeSize</span><span class=p>)</span>
+            <span class=k>return</span> <span class=n>small</span><span class=p>.</span><span class=n>top</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>else</span>
+            <span class=k>return</span> <span class=p>(</span><span class=kt>double</span><span class=p>(</span><span class=n>small</span><span class=p>.</span><span class=n>top</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=o>+</span> <span class=kt>double</span><span class=p>(</span><span class=n>large</span><span class=p>.</span><span class=n>top</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>)</span> <span class=o>/</span> <span class=mi>2</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=p>}</span><span class=p>;</span>
+
+
+<span class=k>class</span> <span class=nc>Solution</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>vector</span><span class=o>&lt;</span><span class=kt>double</span><span class=o>&gt;</span> <span class=n>medianSlidingWindow</span><span class=p>(</span><span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=o>&amp;</span> <span class=n>nums</span><span class=p>,</span> <span class=kt>int</span> <span class=n>k</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>vector</span><span class=o>&lt;</span><span class=kt>double</span><span class=o>&gt;</span> <span class=n>res</span><span class=p>;</span>
+        <span class=n>DualHeap</span> <span class=n>dualheap</span><span class=p>;</span>
+        <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>k</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> 
+            <span class=n>dualheap</span><span class=p>.</span><span class=n>insert</span><span class=p>(</span><span class=n>nums</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>res</span><span class=p>.</span><span class=n>push_back</span><span class=p>(</span><span class=n>dualheap</span><span class=p>.</span><span class=n>getMiddle</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=n>k</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>nums</span><span class=p>.</span><span class=n>size</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>dualheap</span><span class=p>.</span><span class=n>insert</span><span class=p>(</span><span class=n>nums</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+            <span class=n>dualheap</span><span class=p>.</span><span class=n>erase</span><span class=p>(</span><span class=n>nums</span><span class=p>[</span><span class=n>i</span> <span class=o>-</span> <span class=n>k</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+            <span class=n>res</span><span class=p>.</span><span class=n>push_back</span><span class=p>(</span><span class=n>dualheap</span><span class=p>.</span><span class=n>getMiddle</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=k>return</span> <span class=n>res</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=p>}</span><span class=p>;</span>
+</code></pre></td></tr></table></div></div><hr></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
 <span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
 <span>2022-02-18</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
 <span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2f%25E7%25AE%2597%25E6%25B3%2595%25E5%25A0%2586%25E6%258E%2592%25E5%25BA%258F%2f&text=%e3%80%90%e7%ae%97%e6%b3%95%e3%80%91%e5%a0%86%e6%8e%92%e5%ba%8f&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2f%25E7%25AE%2597%25E6%25B3%2595%25E5%25A0%2586%25E6%258E%2592%25E5%25BA%258F%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2f%25E7%25AE%2597%25E6%25B3%2595%25E5%25A0%2586%25E6%258E%2592%25E5%25BA%258F%2f&title=%e3%80%90%e7%ae%97%e6%b3%95%e3%80%91%e5%a0%86%e6%8e%92%e5%ba%8f" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/%E7%AE%97%E6%B3%95%E4%B8%8E%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/><i class="fas fa-tag fa-fw"></i>&nbsp;算法与数据结构</a>&nbsp;
