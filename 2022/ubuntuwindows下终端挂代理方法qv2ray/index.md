@@ -37,6 +37,12 @@ curl https://api.myip.com
 ftp cip.cc
 ```
 
+写个批处理脚本自动开始写bolg  
+```shell
+@echo on
+start cmd /k "set http_proxy=http://127.0.0.1:10809 & set https_proxy=http://127.0.0.1:10809 & curl https://api.myip.com & cd "D:\Blog\xushun1221.github.io" & code ./content"
+```
+
 powershell：  
 ```shell
 $env:http_proxy="http://127.0.0.1:xxxx"
