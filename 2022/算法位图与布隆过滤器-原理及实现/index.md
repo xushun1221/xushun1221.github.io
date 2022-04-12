@@ -1,0 +1,239 @@
+# 【算法】位图与布隆过滤器 - 原理及实现
+
+
+## 前言
+考虑如下问题：假设你是网管，你有一个文件，其中存储了100亿个违反法律的url（每个url最多64字节），你不想让用户访问这些网站，如何建立一个黑名单结构，能够查询某个url是否在黑名单中。
+
+如果使用哈希表，100亿url最少需要6400亿字节的内存空间，也就是约640GiB内存，未免有些太大了。  
+如果在硬盘中维持哈希表的结构，那查询速度也太慢了。
+
+-----
+
+## 位图 Bitmap
+
+### 定义
+在编程语言中（如C++），各种类型都以字节作为存储单位，如`int`为4Bytes-32bits，`long`为8Bytes-64bits。而位图是以比特为单位的数组结构，数组中每个单位的状态也只有`0`、`1`两种。如一个大小为100的位图，占用空间仅为100bits。  
+在编程语言中，没有以比特为单位的类型，我们需要用其他数据类型来间接表示位图。
+
+### 实现
+```cpp
+// bitmap.h
+#include <cstdint>
+#include <vector>
+using namespace std;
+
+class Bitmap {
+private:
+    uint32_t _size; // 比特位数量
+    vector<int32_t> _array;
+public:
+    Bitmap() : _size(0) {}
+    explicit Bitmap(uint32_t size) : _size(size) {
+        _array.resize(size / 32 + 1, 0);
+    }
+    bool get(uint32_t index) const { // bit index
+        if (index >= _size)
+            return false;
+        uint32_t numIndex = index / 32; // 第几个数
+        uint32_t bitIndex = index % 32; // 第几位
+        return ((_array[numIndex] >> bitIndex) & 1);
+    }
+    void set(uint32_t index) { // index 状态改为1
+        if (index >= _size)
+            return;
+        uint32_t numIndex = index / 32; // 第几个数
+        uint32_t bitIndex = index % 32; // 第几位
+        _array[numIndex] = _array[numIndex] | (1 << bitIndex);
+    }
+    void reset(uint32_t index) { // index 状态改为0
+        if (index >= _size)
+            return;
+        uint32_t numIndex = index / 32; // 第几个数
+        uint32_t bitIndex = index % 32; // 第几位
+        _array[numIndex] = _array[numIndex] & (~ (1 << bitIndex));
+    }
+};
+```
+
+-----
+
+## 布隆过滤器 Bloom Filter
+
+### 定义
+简单来说，布隆过滤器就是在一个**可以添加**、**不能删除**的集合中，查询一个元素**是否存在**的结构。
+
+布隆过滤器总会存在一定程度的**失误率**，失误情况有两种：  
+1. 集合中存在的元素，查询结果为不存在：布隆过滤器不允许这种失误；
+2. 集合中不存在的元素，查询结果为存在：布隆过滤器允许这种失误。
+
+优点和缺点：
+- 优点：对比传统哈希表等结构，布隆过滤器可以极大的减少内存的占用；
+- 缺点：存在一定的失误率。
+
+### 实现
+定义几个参数：
+- `n`：集合中的数据总数
+- `m`：位图的大小（二进制位个数）
+- `p`：允许的失误率
+- `k`：使用的独立哈希函数个数
+
+布隆过滤器使用位图实现：
+1. **添加**：对于集合中的每个元素，对其进行`k`次不同的哈希运算并对`m`取模，得到`k`个位图中的位置，令位图中的这些位置为`1`；
+2. **查询**：对于待查询的元素，对其进行`k`次不同的哈希运算并对`m`取模，得到的`k`个位置必须都为`1`才能返回存在，否则返回不存在。
+
+如何确定参数？（数学推导略）
+1. `n & p`：确定的；
+2. `m`：在`n & p`确定的情况下，`m`越大真实的失误率`p*`就越小，开始时`p*`随着`m`的增大而快速下降，随着`m`持续增大，`p*`减小的越不显著。$m=-\frac{n\times \ln p}{\left(\ln 2 \right)^2}$
+3. `k`：确定了`m`的情况下，开始时，`p*`随着`k`的增大而减小，随着`k`的持续增大，`p*`反而会增加，要选择让`p*`较小的`k`值。$k=\ln 2 \times \frac{m}{n}$
+
+#### 几个哈希函数的实现
+```cpp
+// hashfunc.h
+#include <string>
+#include <cstdint>
+#include <vector>
+using namespace std;
+
+uint32_t SDBMHash(string& str) {
+    uint32_t hash = 0;
+    for (auto ch : str) {
+        hash = ch + (hash << 6) + (hash << 16) - hash;
+        // equivalent to: hash = 65599 * hash + ch;
+    }
+    return (hash & 0x7FFFFFFF);
+}
+
+uint32_t RSHash(string& str) {
+    uint32_t b = 378551;
+    uint32_t a = 63689;
+    uint32_t hash = 0;
+    for (auto ch : str) {
+        hash = hash * a + ch;
+        a *= b;
+    }
+    return (hash & 0x7FFFFFFF);
+}
+
+uint32_t JSHash(string& str) {
+    uint32_t hash = 1315423911;
+    for (auto ch : str) {
+        hash ^= ((hash << 5) + ch + (hash >> 2));
+    }
+    return (hash & 0x7FFFFFFF);
+}
+
+uint32_t PJWHash(string& str)
+{
+    uint32_t BitsInUnignedInt = (uint32_t)(sizeof(uint32_t) * 8);
+    uint32_t ThreeQuarters    = (uint32_t)((BitsInUnignedInt  * 3) / 4);
+    uint32_t OneEighth        = (uint32_t)(BitsInUnignedInt / 8);
+    uint32_t HighBits         = (uint32_t)(0xFFFFFFFF) << (BitsInUnignedInt - OneEighth);
+    uint32_t hash             = 0;
+    uint32_t test             = 0;
+    for (auto ch : str) {
+        hash = (hash << OneEighth) + ch;
+        if ((test = hash & HighBits) != 0) {
+            hash = ((hash ^ (test >> ThreeQuarters)) & (~HighBits));
+        }
+    }
+    return (hash & 0x7FFFFFFF);
+}
+
+uint32_t ELFHash(string& str) {
+    uint32_t hash = 0;
+    uint32_t x    = 0;
+    for (auto ch : str) {
+        hash = (hash << 4) + ch;
+        if ((x = hash & 0xF0000000L) != 0) {
+            hash ^= (x >> 24);
+            hash &= ~x;
+        }
+    }
+    return (hash & 0x7FFFFFFF);
+}
+
+uint32_t BKDRHash(string& str) {
+    uint32_t seed = 131; // 31 131 1313 13131 131313 etc..
+    uint32_t hash = 0;
+    for (auto ch : str) {
+        hash = hash * seed + ch;
+    }
+    return (hash & 0x7FFFFFFF);
+}
+
+uint32_t DJBHash(string& str) {
+    uint32_t hash = 5381;
+    for (auto ch : str) {
+        hash += (hash << 5) + ch;
+    }
+    return (hash & 0x7FFFFFFF);
+}
+
+uint32_t APHash(string& str) {
+    uint32_t hash = 0;
+    int i = 0;
+    for (auto ch : str) {
+        if ((i & 1) == 0) {
+            hash ^= ((hash << 7) ^ ch ^ (hash >> 3));
+        }
+        else {
+            hash ^= (~((hash << 11) ^ ch ^ (hash >> 5)));
+        }
+        ++ i;
+    }
+    return (hash & 0x7FFFFFFF);
+}
+
+```
+
+#### 布隆过滤器的实现
+```cpp
+// bloomfilter.h
+#include "bitmap.h"
+#include "hashfunc.h"
+#include <cstdint>
+#include <cmath>
+#include <iostream>
+#include <string>
+#include <vector>
+#include <cassert>
+using namespace std;
+
+class BloomFilter {
+private:
+    Bitmap* _bitmap;
+    vector<uint32_t(*)(string&)> _hashfuncs;
+    uint32_t _n;    // 数据数量
+    uint32_t _m;    // 需要的位图长度
+    uint32_t _k;    // 需要的哈希函数数量
+    double _p;      // 允许的失误率
+public:
+    BloomFilter() : _n(0), _m(0), _k(0), _p(0) {
+        _bitmap = new Bitmap();
+    }
+    BloomFilter(uint32_t n, double p) : _n(n), _p(p) {
+        _hashfuncs = {SDBMHash, RSHash, JSHash, PJWHash, ELFHash, BKDRHash, DJBHash, APHash};
+        _m = uint32_t(- (n * log(p)) / pow(log(2), 2) ); // n 和 p 决定 m
+        _k = uint32_t(log(2) * _m / _n);                       // m 和 n 决定 k
+        assert(_k <= _hashfuncs.size());
+        _bitmap = new Bitmap(_m);
+    }
+    ~BloomFilter() {
+        delete _bitmap;
+    }
+    void insert(vector<string>& strarr) {
+        for (auto str : strarr) {
+            for (int i = 0; i < _k; ++ i) {
+                _bitmap -> set(_hashfuncs[i](str) % _m);
+            }
+        }
+    }
+    bool search(string str) {
+        for (int i = 0; i < _k; ++ i) {
+            if (!_bitmap -> get(_hashfuncs[i](str) % _m))
+                return false;
+        }
+        return true;
+    }
+};
+```

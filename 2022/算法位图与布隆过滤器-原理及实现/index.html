@@ -1,0 +1,368 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【算法】位图与布隆过滤器 - 原理及实现 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/%E7%AE%97%E6%B3%95%E5%93%88%E5%B8%8C%E5%87%BD%E6%95%B0%E4%B8%8E%E5%93%88%E5%B8%8C%E8%A1%A8%E7%9A%84%E5%AE%9E%E7%8E%B0/><link rel=canonical href=https://xushun1221.github.io/2022/%E7%AE%97%E6%B3%95%E4%BD%8D%E5%9B%BE%E4%B8%8E%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8-%E5%8E%9F%E7%90%86%E5%8F%8A%E5%AE%9E%E7%8E%B0/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【算法】位图与布隆过滤器 - 原理及实现"><meta name=twitter:description content="前言 考虑如下问题：假设你是网管，你有一个文件，其中存储了100亿个违反法律的url（每个url最多64字节），你不想让用户访问这些网站，如何"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【算法】位图与布隆过滤器 - 原理及实现","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/%E7%AE%97%E6%B3%95%E4%BD%8D%E5%9B%BE%E4%B8%8E%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8-%E5%8E%9F%E7%90%86%E5%8F%8A%E5%AE%9E%E7%8E%B0\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"算法与数据结构, C\x2b\x2b","wordcount":1834,"url":"https:\/\/xushun1221.github.io\/2022\/%E7%AE%97%E6%B3%95%E4%BD%8D%E5%9B%BE%E4%B8%8E%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8-%E5%8E%9F%E7%90%86%E5%8F%8A%E5%AE%9E%E7%8E%B0\/","datePublished":"2022-04-12T00:00:00\x2b00:00","dateModified":"2022-04-12T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【算法】位图与布隆过滤器 - 原理及实现</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-04-12>2022-04-12</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 1834 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#前言>前言</a></li><li><a href=#位图-bitmap>位图 Bitmap</a><ul><li><a href=#定义>定义</a></li><li><a href=#实现>实现</a></li></ul></li><li><a href=#布隆过滤器-bloom-filter>布隆过滤器 Bloom Filter</a><ul><li><a href=#定义-1>定义</a></li><li><a href=#实现-1>实现</a><ul><li><a href=#几个哈希函数的实现>几个哈希函数的实现</a></li><li><a href=#布隆过滤器的实现>布隆过滤器的实现</a></li></ul></li></ul></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#前言>前言</a></li><li><a href=#位图-bitmap>位图 Bitmap</a><ul><li><a href=#定义>定义</a></li><li><a href=#实现>实现</a></li></ul></li><li><a href=#布隆过滤器-bloom-filter>布隆过滤器 Bloom Filter</a><ul><li><a href=#定义-1>定义</a></li><li><a href=#实现-1>实现</a><ul><li><a href=#几个哈希函数的实现>几个哈希函数的实现</a></li><li><a href=#布隆过滤器的实现>布隆过滤器的实现</a></li></ul></li></ul></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=前言></a><h2>前言</h2><p>考虑如下问题：假设你是网管，你有一个文件，其中存储了100亿个违反法律的url（每个url最多64字节），你不想让用户访问这些网站，如何建立一个黑名单结构，能够查询某个url是否在黑名单中。</p><p>如果使用哈希表，100亿url最少需要6400亿字节的内存空间，也就是约640GiB内存，未免有些太大了。<br>如果在硬盘中维持哈希表的结构，那查询速度也太慢了。</p><hr><a class=post-dummy-target id=位图-bitmap></a><h2>位图 Bitmap</h2><a class=post-dummy-target id=定义></a><h3>定义</h3><p>在编程语言中（如C++），各种类型都以字节作为存储单位，如<code>int</code>为4Bytes-32bits，<code>long</code>为8Bytes-64bits。而位图是以比特为单位的数组结构，数组中每个单位的状态也只有<code>0</code>、<code>1</code>两种。如一个大小为100的位图，占用空间仅为100bits。<br>在编程语言中，没有以比特为单位的类型，我们需要用其他数据类型来间接表示位图。</p><a class=post-dummy-target id=实现></a><h3>实现</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=c1>// bitmap.h
+</span><span class=c1></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;cstdint&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;vector&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+
+<span class=k>class</span> <span class=nc>Bitmap</span> <span class=p>{</span>
+<span class=k>private</span><span class=o>:</span>
+    <span class=kt>uint32_t</span> <span class=n>_size</span><span class=p>;</span> <span class=c1>// 比特位数量
+</span><span class=c1></span>    <span class=n>vector</span><span class=o>&lt;</span><span class=kt>int32_t</span><span class=o>&gt;</span> <span class=n>_array</span><span class=p>;</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>Bitmap</span><span class=p>(</span><span class=p>)</span> <span class=o>:</span> <span class=n>_size</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span> <span class=p>{</span><span class=p>}</span>
+    <span class=k>explicit</span> <span class=nf>Bitmap</span><span class=p>(</span><span class=kt>uint32_t</span> <span class=n>size</span><span class=p>)</span> <span class=o>:</span> <span class=n>_size</span><span class=p>(</span><span class=n>size</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>_array</span><span class=p>.</span><span class=n>resize</span><span class=p>(</span><span class=n>size</span> <span class=o>/</span> <span class=mi>32</span> <span class=o>+</span> <span class=mi>1</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=kt>bool</span> <span class=nf>get</span><span class=p>(</span><span class=kt>uint32_t</span> <span class=n>index</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=c1>// bit index
+</span><span class=c1></span>        <span class=k>if</span> <span class=p>(</span><span class=n>index</span> <span class=o>&gt;</span><span class=o>=</span> <span class=n>_size</span><span class=p>)</span>
+            <span class=k>return</span> <span class=nb>false</span><span class=p>;</span>
+        <span class=kt>uint32_t</span> <span class=n>numIndex</span> <span class=o>=</span> <span class=n>index</span> <span class=o>/</span> <span class=mi>32</span><span class=p>;</span> <span class=c1>// 第几个数
+</span><span class=c1></span>        <span class=kt>uint32_t</span> <span class=n>bitIndex</span> <span class=o>=</span> <span class=n>index</span> <span class=o>%</span> <span class=mi>32</span><span class=p>;</span> <span class=c1>// 第几位
+</span><span class=c1></span>        <span class=k>return</span> <span class=p>(</span><span class=p>(</span><span class=n>_array</span><span class=p>[</span><span class=n>numIndex</span><span class=p>]</span> <span class=o>&gt;</span><span class=o>&gt;</span> <span class=n>bitIndex</span><span class=p>)</span> <span class=o>&amp;</span> <span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=kt>void</span> <span class=nf>set</span><span class=p>(</span><span class=kt>uint32_t</span> <span class=n>index</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// index 状态改为1
+</span><span class=c1></span>        <span class=k>if</span> <span class=p>(</span><span class=n>index</span> <span class=o>&gt;</span><span class=o>=</span> <span class=n>_size</span><span class=p>)</span>
+            <span class=k>return</span><span class=p>;</span>
+        <span class=kt>uint32_t</span> <span class=n>numIndex</span> <span class=o>=</span> <span class=n>index</span> <span class=o>/</span> <span class=mi>32</span><span class=p>;</span> <span class=c1>// 第几个数
+</span><span class=c1></span>        <span class=kt>uint32_t</span> <span class=n>bitIndex</span> <span class=o>=</span> <span class=n>index</span> <span class=o>%</span> <span class=mi>32</span><span class=p>;</span> <span class=c1>// 第几位
+</span><span class=c1></span>        <span class=n>_array</span><span class=p>[</span><span class=n>numIndex</span><span class=p>]</span> <span class=o>=</span> <span class=n>_array</span><span class=p>[</span><span class=n>numIndex</span><span class=p>]</span> <span class=o>|</span> <span class=p>(</span><span class=mi>1</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>bitIndex</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=kt>void</span> <span class=nf>reset</span><span class=p>(</span><span class=kt>uint32_t</span> <span class=n>index</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// index 状态改为0
+</span><span class=c1></span>        <span class=k>if</span> <span class=p>(</span><span class=n>index</span> <span class=o>&gt;</span><span class=o>=</span> <span class=n>_size</span><span class=p>)</span>
+            <span class=k>return</span><span class=p>;</span>
+        <span class=kt>uint32_t</span> <span class=n>numIndex</span> <span class=o>=</span> <span class=n>index</span> <span class=o>/</span> <span class=mi>32</span><span class=p>;</span> <span class=c1>// 第几个数
+</span><span class=c1></span>        <span class=kt>uint32_t</span> <span class=n>bitIndex</span> <span class=o>=</span> <span class=n>index</span> <span class=o>%</span> <span class=mi>32</span><span class=p>;</span> <span class=c1>// 第几位
+</span><span class=c1></span>        <span class=n>_array</span><span class=p>[</span><span class=n>numIndex</span><span class=p>]</span> <span class=o>=</span> <span class=n>_array</span><span class=p>[</span><span class=n>numIndex</span><span class=p>]</span> <span class=o>&amp;</span> <span class=p>(</span><span class=o>~</span> <span class=p>(</span><span class=mi>1</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>bitIndex</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=p>}</span><span class=p>;</span>
+</code></pre></td></tr></table></div></div><hr><a class=post-dummy-target id=布隆过滤器-bloom-filter></a><h2>布隆过滤器 Bloom Filter</h2><a class=post-dummy-target id=定义-1></a><h3>定义</h3><p>简单来说，布隆过滤器就是在一个<strong>可以添加</strong>、<strong>不能删除</strong>的集合中，查询一个元素<strong>是否存在</strong>的结构。</p><p>布隆过滤器总会存在一定程度的<strong>失误率</strong>，失误情况有两种：</p><ol><li>集合中存在的元素，查询结果为不存在：布隆过滤器不允许这种失误；</li><li>集合中不存在的元素，查询结果为存在：布隆过滤器允许这种失误。</li></ol><p>优点和缺点：</p><ul><li>优点：对比传统哈希表等结构，布隆过滤器可以极大的减少内存的占用；</li><li>缺点：存在一定的失误率。</li></ul><a class=post-dummy-target id=实现-1></a><h3>实现</h3><p>定义几个参数：</p><ul><li><code>n</code>：集合中的数据总数</li><li><code>m</code>：位图的大小（二进制位个数）</li><li><code>p</code>：允许的失误率</li><li><code>k</code>：使用的独立哈希函数个数</li></ul><p>布隆过滤器使用位图实现：</p><ol><li><strong>添加</strong>：对于集合中的每个元素，对其进行<code>k</code>次不同的哈希运算并对<code>m</code>取模，得到<code>k</code>个位图中的位置，令位图中的这些位置为<code>1</code>；</li><li><strong>查询</strong>：对于待查询的元素，对其进行<code>k</code>次不同的哈希运算并对<code>m</code>取模，得到的<code>k</code>个位置必须都为<code>1</code>才能返回存在，否则返回不存在。</li></ol><p>如何确定参数？（数学推导略）</p><ol><li><code>n & p</code>：确定的；</li><li><code>m</code>：在<code>n & p</code>确定的情况下，<code>m</code>越大真实的失误率<code>p*</code>就越小，开始时<code>p*</code>随着<code>m</code>的增大而快速下降，随着<code>m</code>持续增大，<code>p*</code>减小的越不显著。$m=-\frac{n\times \ln p}{\left(\ln 2 \right)^2}$</li><li><code>k</code>：确定了<code>m</code>的情况下，开始时，<code>p*</code>随着<code>k</code>的增大而减小，随着<code>k</code>的持续增大，<code>p*</code>反而会增加，要选择让<code>p*</code>较小的<code>k</code>值。$k=\ln 2 \times \frac{m}{n}$</li></ol><a class=post-dummy-target id=几个哈希函数的实现></a><h4>几个哈希函数的实现</h4><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span><span class=lnt>59
+</span><span class=lnt>60
+</span><span class=lnt>61
+</span><span class=lnt>62
+</span><span class=lnt>63
+</span><span class=lnt>64
+</span><span class=lnt>65
+</span><span class=lnt>66
+</span><span class=lnt>67
+</span><span class=lnt>68
+</span><span class=lnt>69
+</span><span class=lnt>70
+</span><span class=lnt>71
+</span><span class=lnt>72
+</span><span class=lnt>73
+</span><span class=lnt>74
+</span><span class=lnt>75
+</span><span class=lnt>76
+</span><span class=lnt>77
+</span><span class=lnt>78
+</span><span class=lnt>79
+</span><span class=lnt>80
+</span><span class=lnt>81
+</span><span class=lnt>82
+</span><span class=lnt>83
+</span><span class=lnt>84
+</span><span class=lnt>85
+</span><span class=lnt>86
+</span><span class=lnt>87
+</span><span class=lnt>88
+</span><span class=lnt>89
+</span><span class=lnt>90
+</span><span class=lnt>91
+</span><span class=lnt>92
+</span><span class=lnt>93
+</span><span class=lnt>94
+</span><span class=lnt>95
+</span><span class=lnt>96
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=c1>// hashfunc.h
+</span><span class=c1></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;cstdint&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;vector&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+
+<span class=kt>uint32_t</span> <span class=nf>SDBMHash</span><span class=p>(</span><span class=n>string</span><span class=o>&amp;</span> <span class=n>str</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>uint32_t</span> <span class=n>hash</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span><span class=k>auto</span> <span class=nl>ch</span> <span class=p>:</span> <span class=n>str</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>hash</span> <span class=o>=</span> <span class=n>ch</span> <span class=o>+</span> <span class=p>(</span><span class=n>hash</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=mi>6</span><span class=p>)</span> <span class=o>+</span> <span class=p>(</span><span class=n>hash</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=mi>16</span><span class=p>)</span> <span class=o>-</span> <span class=n>hash</span><span class=p>;</span>
+        <span class=c1>// equivalent to: hash = 65599 * hash + ch;
+</span><span class=c1></span>    <span class=p>}</span>
+    <span class=k>return</span> <span class=p>(</span><span class=n>hash</span> <span class=o>&amp;</span> <span class=mh>0x7FFFFFFF</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>uint32_t</span> <span class=nf>RSHash</span><span class=p>(</span><span class=n>string</span><span class=o>&amp;</span> <span class=n>str</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>uint32_t</span> <span class=n>b</span> <span class=o>=</span> <span class=mi>378551</span><span class=p>;</span>
+    <span class=kt>uint32_t</span> <span class=n>a</span> <span class=o>=</span> <span class=mi>63689</span><span class=p>;</span>
+    <span class=kt>uint32_t</span> <span class=n>hash</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span><span class=k>auto</span> <span class=nl>ch</span> <span class=p>:</span> <span class=n>str</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>hash</span> <span class=o>=</span> <span class=n>hash</span> <span class=o>*</span> <span class=n>a</span> <span class=o>+</span> <span class=n>ch</span><span class=p>;</span>
+        <span class=n>a</span> <span class=o>*</span><span class=o>=</span> <span class=n>b</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span> <span class=p>(</span><span class=n>hash</span> <span class=o>&amp;</span> <span class=mh>0x7FFFFFFF</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>uint32_t</span> <span class=nf>JSHash</span><span class=p>(</span><span class=n>string</span><span class=o>&amp;</span> <span class=n>str</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>uint32_t</span> <span class=n>hash</span> <span class=o>=</span> <span class=mi>1315423911</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span><span class=k>auto</span> <span class=nl>ch</span> <span class=p>:</span> <span class=n>str</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>hash</span> <span class=o>^</span><span class=o>=</span> <span class=p>(</span><span class=p>(</span><span class=n>hash</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=mi>5</span><span class=p>)</span> <span class=o>+</span> <span class=n>ch</span> <span class=o>+</span> <span class=p>(</span><span class=n>hash</span> <span class=o>&gt;</span><span class=o>&gt;</span> <span class=mi>2</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span> <span class=p>(</span><span class=n>hash</span> <span class=o>&amp;</span> <span class=mh>0x7FFFFFFF</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>uint32_t</span> <span class=nf>PJWHash</span><span class=p>(</span><span class=n>string</span><span class=o>&amp;</span> <span class=n>str</span><span class=p>)</span>
+<span class=p>{</span>
+    <span class=kt>uint32_t</span> <span class=n>BitsInUnignedInt</span> <span class=o>=</span> <span class=p>(</span><span class=kt>uint32_t</span><span class=p>)</span><span class=p>(</span><span class=k>sizeof</span><span class=p>(</span><span class=kt>uint32_t</span><span class=p>)</span> <span class=o>*</span> <span class=mi>8</span><span class=p>)</span><span class=p>;</span>
+    <span class=kt>uint32_t</span> <span class=n>ThreeQuarters</span>    <span class=o>=</span> <span class=p>(</span><span class=kt>uint32_t</span><span class=p>)</span><span class=p>(</span><span class=p>(</span><span class=n>BitsInUnignedInt</span>  <span class=o>*</span> <span class=mi>3</span><span class=p>)</span> <span class=o>/</span> <span class=mi>4</span><span class=p>)</span><span class=p>;</span>
+    <span class=kt>uint32_t</span> <span class=n>OneEighth</span>        <span class=o>=</span> <span class=p>(</span><span class=kt>uint32_t</span><span class=p>)</span><span class=p>(</span><span class=n>BitsInUnignedInt</span> <span class=o>/</span> <span class=mi>8</span><span class=p>)</span><span class=p>;</span>
+    <span class=kt>uint32_t</span> <span class=n>HighBits</span>         <span class=o>=</span> <span class=p>(</span><span class=kt>uint32_t</span><span class=p>)</span><span class=p>(</span><span class=mh>0xFFFFFFFF</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=p>(</span><span class=n>BitsInUnignedInt</span> <span class=o>-</span> <span class=n>OneEighth</span><span class=p>)</span><span class=p>;</span>
+    <span class=kt>uint32_t</span> <span class=n>hash</span>             <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+    <span class=kt>uint32_t</span> <span class=n>test</span>             <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span><span class=k>auto</span> <span class=nl>ch</span> <span class=p>:</span> <span class=n>str</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>hash</span> <span class=o>=</span> <span class=p>(</span><span class=n>hash</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>OneEighth</span><span class=p>)</span> <span class=o>+</span> <span class=n>ch</span><span class=p>;</span>
+        <span class=k>if</span> <span class=p>(</span><span class=p>(</span><span class=n>test</span> <span class=o>=</span> <span class=n>hash</span> <span class=o>&amp;</span> <span class=n>HighBits</span><span class=p>)</span> <span class=o>!</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>hash</span> <span class=o>=</span> <span class=p>(</span><span class=p>(</span><span class=n>hash</span> <span class=o>^</span> <span class=p>(</span><span class=n>test</span> <span class=o>&gt;</span><span class=o>&gt;</span> <span class=n>ThreeQuarters</span><span class=p>)</span><span class=p>)</span> <span class=o>&amp;</span> <span class=p>(</span><span class=o>~</span><span class=n>HighBits</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=k>return</span> <span class=p>(</span><span class=n>hash</span> <span class=o>&amp;</span> <span class=mh>0x7FFFFFFF</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>uint32_t</span> <span class=nf>ELFHash</span><span class=p>(</span><span class=n>string</span><span class=o>&amp;</span> <span class=n>str</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>uint32_t</span> <span class=n>hash</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+    <span class=kt>uint32_t</span> <span class=n>x</span>    <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span><span class=k>auto</span> <span class=nl>ch</span> <span class=p>:</span> <span class=n>str</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>hash</span> <span class=o>=</span> <span class=p>(</span><span class=n>hash</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=mi>4</span><span class=p>)</span> <span class=o>+</span> <span class=n>ch</span><span class=p>;</span>
+        <span class=k>if</span> <span class=p>(</span><span class=p>(</span><span class=n>x</span> <span class=o>=</span> <span class=n>hash</span> <span class=o>&amp;</span> <span class=mh>0xF0000000L</span><span class=p>)</span> <span class=o>!</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>hash</span> <span class=o>^</span><span class=o>=</span> <span class=p>(</span><span class=n>x</span> <span class=o>&gt;</span><span class=o>&gt;</span> <span class=mi>24</span><span class=p>)</span><span class=p>;</span>
+            <span class=n>hash</span> <span class=o>&amp;</span><span class=o>=</span> <span class=o>~</span><span class=n>x</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=k>return</span> <span class=p>(</span><span class=n>hash</span> <span class=o>&amp;</span> <span class=mh>0x7FFFFFFF</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>uint32_t</span> <span class=nf>BKDRHash</span><span class=p>(</span><span class=n>string</span><span class=o>&amp;</span> <span class=n>str</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>uint32_t</span> <span class=n>seed</span> <span class=o>=</span> <span class=mi>131</span><span class=p>;</span> <span class=c1>// 31 131 1313 13131 131313 etc..
+</span><span class=c1></span>    <span class=kt>uint32_t</span> <span class=n>hash</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span><span class=k>auto</span> <span class=nl>ch</span> <span class=p>:</span> <span class=n>str</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>hash</span> <span class=o>=</span> <span class=n>hash</span> <span class=o>*</span> <span class=n>seed</span> <span class=o>+</span> <span class=n>ch</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span> <span class=p>(</span><span class=n>hash</span> <span class=o>&amp;</span> <span class=mh>0x7FFFFFFF</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>uint32_t</span> <span class=nf>DJBHash</span><span class=p>(</span><span class=n>string</span><span class=o>&amp;</span> <span class=n>str</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>uint32_t</span> <span class=n>hash</span> <span class=o>=</span> <span class=mi>5381</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span><span class=k>auto</span> <span class=nl>ch</span> <span class=p>:</span> <span class=n>str</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>hash</span> <span class=o>+</span><span class=o>=</span> <span class=p>(</span><span class=n>hash</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=mi>5</span><span class=p>)</span> <span class=o>+</span> <span class=n>ch</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span> <span class=p>(</span><span class=n>hash</span> <span class=o>&amp;</span> <span class=mh>0x7FFFFFFF</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>uint32_t</span> <span class=nf>APHash</span><span class=p>(</span><span class=n>string</span><span class=o>&amp;</span> <span class=n>str</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>uint32_t</span> <span class=n>hash</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span><span class=k>auto</span> <span class=nl>ch</span> <span class=p>:</span> <span class=n>str</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>if</span> <span class=p>(</span><span class=p>(</span><span class=n>i</span> <span class=o>&amp;</span> <span class=mi>1</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>hash</span> <span class=o>^</span><span class=o>=</span> <span class=p>(</span><span class=p>(</span><span class=n>hash</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=mi>7</span><span class=p>)</span> <span class=o>^</span> <span class=n>ch</span> <span class=o>^</span> <span class=p>(</span><span class=n>hash</span> <span class=o>&gt;</span><span class=o>&gt;</span> <span class=mi>3</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=k>else</span> <span class=p>{</span>
+            <span class=n>hash</span> <span class=o>^</span><span class=o>=</span> <span class=p>(</span><span class=o>~</span><span class=p>(</span><span class=p>(</span><span class=n>hash</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=mi>11</span><span class=p>)</span> <span class=o>^</span> <span class=n>ch</span> <span class=o>^</span> <span class=p>(</span><span class=n>hash</span> <span class=o>&gt;</span><span class=o>&gt;</span> <span class=mi>5</span><span class=p>)</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span> <span class=p>(</span><span class=n>hash</span> <span class=o>&amp;</span> <span class=mh>0x7FFFFFFF</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=布隆过滤器的实现></a><h4>布隆过滤器的实现</h4><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=c1>// bloomfilter.h
+</span><span class=c1></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;bitmap.h&#34;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;hashfunc.h&#34;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;cstdint&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;cmath&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;vector&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;cassert&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+
+<span class=k>class</span> <span class=nc>BloomFilter</span> <span class=p>{</span>
+<span class=k>private</span><span class=o>:</span>
+    <span class=n>Bitmap</span><span class=o>*</span> <span class=n>_bitmap</span><span class=p>;</span>
+    <span class=n>vector</span><span class=o>&lt;</span><span class=kt>uint32_t</span><span class=p>(</span><span class=o>*</span><span class=p>)</span><span class=p>(</span><span class=n>string</span><span class=o>&amp;</span><span class=p>)</span><span class=o>&gt;</span> <span class=n>_hashfuncs</span><span class=p>;</span>
+    <span class=kt>uint32_t</span> <span class=n>_n</span><span class=p>;</span>    <span class=c1>// 数据数量
+</span><span class=c1></span>    <span class=kt>uint32_t</span> <span class=n>_m</span><span class=p>;</span>    <span class=c1>// 需要的位图长度
+</span><span class=c1></span>    <span class=kt>uint32_t</span> <span class=n>_k</span><span class=p>;</span>    <span class=c1>// 需要的哈希函数数量
+</span><span class=c1></span>    <span class=kt>double</span> <span class=n>_p</span><span class=p>;</span>      <span class=c1>// 允许的失误率
+</span><span class=c1></span><span class=k>public</span><span class=o>:</span>
+    <span class=n>BloomFilter</span><span class=p>(</span><span class=p>)</span> <span class=o>:</span> <span class=n>_n</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span><span class=p>,</span> <span class=n>_m</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span><span class=p>,</span> <span class=n>_k</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span><span class=p>,</span> <span class=n>_p</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>_bitmap</span> <span class=o>=</span> <span class=k>new</span> <span class=n>Bitmap</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>BloomFilter</span><span class=p>(</span><span class=kt>uint32_t</span> <span class=n>n</span><span class=p>,</span> <span class=kt>double</span> <span class=n>p</span><span class=p>)</span> <span class=o>:</span> <span class=n>_n</span><span class=p>(</span><span class=n>n</span><span class=p>)</span><span class=p>,</span> <span class=n>_p</span><span class=p>(</span><span class=n>p</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>_hashfuncs</span> <span class=o>=</span> <span class=p>{</span><span class=n>SDBMHash</span><span class=p>,</span> <span class=n>RSHash</span><span class=p>,</span> <span class=n>JSHash</span><span class=p>,</span> <span class=n>PJWHash</span><span class=p>,</span> <span class=n>ELFHash</span><span class=p>,</span> <span class=n>BKDRHash</span><span class=p>,</span> <span class=n>DJBHash</span><span class=p>,</span> <span class=n>APHash</span><span class=p>}</span><span class=p>;</span>
+        <span class=n>_m</span> <span class=o>=</span> <span class=kt>uint32_t</span><span class=p>(</span><span class=o>-</span> <span class=p>(</span><span class=n>n</span> <span class=o>*</span> <span class=n>log</span><span class=p>(</span><span class=n>p</span><span class=p>)</span><span class=p>)</span> <span class=o>/</span> <span class=n>pow</span><span class=p>(</span><span class=n>log</span><span class=p>(</span><span class=mi>2</span><span class=p>)</span><span class=p>,</span> <span class=mi>2</span><span class=p>)</span> <span class=p>)</span><span class=p>;</span> <span class=c1>// n 和 p 决定 m
+</span><span class=c1></span>        <span class=n>_k</span> <span class=o>=</span> <span class=kt>uint32_t</span><span class=p>(</span><span class=n>log</span><span class=p>(</span><span class=mi>2</span><span class=p>)</span> <span class=o>*</span> <span class=n>_m</span> <span class=o>/</span> <span class=n>_n</span><span class=p>)</span><span class=p>;</span>                       <span class=c1>// m 和 n 决定 k
+</span><span class=c1></span>        <span class=n>assert</span><span class=p>(</span><span class=n>_k</span> <span class=o>&lt;</span><span class=o>=</span> <span class=n>_hashfuncs</span><span class=p>.</span><span class=n>size</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>_bitmap</span> <span class=o>=</span> <span class=k>new</span> <span class=n>Bitmap</span><span class=p>(</span><span class=n>_m</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=o>~</span><span class=n>BloomFilter</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>delete</span> <span class=n>_bitmap</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=kt>void</span> <span class=nf>insert</span><span class=p>(</span><span class=n>vector</span><span class=o>&lt;</span><span class=n>string</span><span class=o>&gt;</span><span class=o>&amp;</span> <span class=n>strarr</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>for</span> <span class=p>(</span><span class=k>auto</span> <span class=nl>str</span> <span class=p>:</span> <span class=n>strarr</span><span class=p>)</span> <span class=p>{</span>
+            <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>_k</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+                <span class=n>_bitmap</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>set</span><span class=p>(</span><span class=n>_hashfuncs</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>(</span><span class=n>str</span><span class=p>)</span> <span class=o>%</span> <span class=n>_m</span><span class=p>)</span><span class=p>;</span>
+            <span class=p>}</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=kt>bool</span> <span class=nf>search</span><span class=p>(</span><span class=n>string</span> <span class=n>str</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>_k</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+            <span class=k>if</span> <span class=p>(</span><span class=o>!</span><span class=n>_bitmap</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>get</span><span class=p>(</span><span class=n>_hashfuncs</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>(</span><span class=n>str</span><span class=p>)</span> <span class=o>%</span> <span class=n>_m</span><span class=p>)</span><span class=p>)</span>
+                <span class=k>return</span> <span class=nb>false</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=k>return</span> <span class=nb>true</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=p>}</span><span class=p>;</span>
+</code></pre></td></tr></table></div></div></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+<span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
+<span>2022-04-12</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
+<span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2f%25E7%25AE%2597%25E6%25B3%2595%25E4%25BD%258D%25E5%259B%25BE%25E4%25B8%258E%25E5%25B8%2583%25E9%259A%2586%25E8%25BF%2587%25E6%25BB%25A4%25E5%2599%25A8-%25E5%258E%259F%25E7%2590%2586%25E5%258F%258A%25E5%25AE%259E%25E7%258E%25B0%2f&text=%e3%80%90%e7%ae%97%e6%b3%95%e3%80%91%e4%bd%8d%e5%9b%be%e4%b8%8e%e5%b8%83%e9%9a%86%e8%bf%87%e6%bb%a4%e5%99%a8%20-%20%e5%8e%9f%e7%90%86%e5%8f%8a%e5%ae%9e%e7%8e%b0&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2f%25E7%25AE%2597%25E6%25B3%2595%25E4%25BD%258D%25E5%259B%25BE%25E4%25B8%258E%25E5%25B8%2583%25E9%259A%2586%25E8%25BF%2587%25E6%25BB%25A4%25E5%2599%25A8-%25E5%258E%259F%25E7%2590%2586%25E5%258F%258A%25E5%25AE%259E%25E7%258E%25B0%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2f%25E7%25AE%2597%25E6%25B3%2595%25E4%25BD%258D%25E5%259B%25BE%25E4%25B8%258E%25E5%25B8%2583%25E9%259A%2586%25E8%25BF%2587%25E6%25BB%25A4%25E5%2599%25A8-%25E5%258E%259F%25E7%2590%2586%25E5%258F%258A%25E5%25AE%259E%25E7%258E%25B0%2f&title=%e3%80%90%e7%ae%97%e6%b3%95%e3%80%91%e4%bd%8d%e5%9b%be%e4%b8%8e%e5%b8%83%e9%9a%86%e8%bf%87%e6%bb%a4%e5%99%a8%20-%20%e5%8e%9f%e7%90%86%e5%8f%8a%e5%ae%9e%e7%8e%b0" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/%E7%AE%97%E6%B3%95%E4%B8%8E%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/><i class="fas fa-tag fa-fw"></i>&nbsp;算法与数据结构</a>&nbsp;
+</span><span class=tag><a href=https://xushun1221.github.io/tags/c++/><i class="fas fa-tag fa-fw"></i>&nbsp;C++</a>&nbsp;</span></section><section><span><a href=javascript:window.history.back();>Back</a></span>&nbsp;|&nbsp;<span><a href=https://xushun1221.github.io>Home</a></span></section></div><div class=post-nav><a href=https://xushun1221.github.io/2022/%E7%AE%97%E6%B3%95%E5%93%88%E5%B8%8C%E5%87%BD%E6%95%B0%E4%B8%8E%E5%93%88%E5%B8%8C%E8%A1%A8%E7%9A%84%E5%AE%9E%E7%8E%B0/ class=prev rel=prev title=【算法】哈希函数与哈希表的实现><i class="fas fa-angle-left fa-fw"></i>【算法】哈希函数与哈希表的实现</a></div><div class=post-comment></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2022</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=https://xushun1221.github.io/about/ target=_blank>xushun</a> | </span>Powered by <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> & <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer">LoveIt</a></div></div></footer></div><a href=# class=dynamic-to-top id=dynamic-to-top data-scroll><span>&nbsp;</span>
+</a><script src=/js/lib/jquery/jquery.slim.min.js></script><script src=/js/lib/lazysizes/lazysizes.min.js></script><script src=/js/lib/smooth-scroll/smooth-scroll.polyfills.min.js></script><script>window.scroll=new SmoothScroll('[data-scroll]',{speed:300,speedAsDuration:true});</script><link rel=stylesheet href=/css/lib/katex/katex.min.css><script src=/js/lib/katex/katex.min.js></script><script defer src=/js/lib/katex/auto-render.min.js></script><link rel=stylesheet href=/css/lib/katex/copy-tex.min.css><script defer src=/js/lib/katex/copy-tex.min.js></script><script defer src=/js/lib/katex/mhchem.min.js></script><script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true},{left:"$",right:"$",display:false},]});});</script><script src=/js/blog.min.js></script></body></html>
