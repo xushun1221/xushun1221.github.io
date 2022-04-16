@@ -63,7 +63,7 @@ Manacher实现过程：
       ![](/post_images/posts/Coding/Manacher算法/2_1.jpg "情况2_1")
    2. 以`i'`为中心的回文部分超过`L~R`的范围：（`i'`回文左边界在`L`的左边，右边界不可能超过`R`）那么`i`为中心的回文为`[R'..i..R]`；
       ![](/post_images/posts/Coding/Manacher算法/2_2.jpg "情况2_2")
-   3. 以`i'`为中心的回文左边界和`L`相等：`i`为中心的回文长度至少为`L~i'`的长度，是否更长，需要以`i`为中心继续扩展（比较`R'-1 R+1`、`R'-2 R+2`...）。
+   3. 以`i'`为中心的回文左边界和`L`相等：`i`为中心的回文长度至少为`L~i'`的长度，是否更长，需要以`i`为中心继续扩展（比较`R'-1 R+1`、`R'-2 R+2`...）。注意，该情况需要把`C`更新为`i`。
       ![](/post_images/posts/Coding/Manacher算法/2_3.jpg "情况2_3")
 
 代码：  
@@ -86,13 +86,13 @@ string longestPalindrome(string s) {
             radius[i] = -- R - i + 1;
             maxIndex = radius[i] > radius[maxIndex] ? i : maxIndex;
         } else { // 2.
-            int isym = C - (i - C), L = C - (R - C);
+            int isym = C - (i - C), L = C - (R - C); // i'
             if (isym - (radius[isym] - 1) > L) { // 2.1
                 radius[i] = radius[isym];
             } else if (isym - (radius[isym] - 1) < L) { // 2.2
                 radius[i] = R - i + 1;
             } else { // 2.3
-                int L = i - (R - i);
+                int L = i - (R - i); // 新的L
                 C = i;
                 while (L >= 0 && R < tmp.size() && tmp[R] == tmp[L]) {
                     -- L; ++ R;
@@ -114,4 +114,3 @@ string longestPalindrome(string s) {
 时间复杂度：$O\left(n\right)$  
 空间复杂度：$O\left(n\right)$
 
------
