@@ -11,6 +11,10 @@
 3. 合并第二步的信息，对左树和右树提出同样的要求，并写出信息结构；
 4. 设计递归函数，递归函数是处理以`x`为头节点的情况下的答案，包括：设计basecase、获得左树和右树返回的信息、整合可能性以及返回信息结构这几步。
 
+### 何时该套路为最优解法
+- 如果解法**必须**做第三次的信息的强整合（即获得左树和右树的信息，并整合得到整棵树的信息），只能使用该套路得到最优解；
+- 如果解法**不必须要**做第三次信息的强整合，那么Morris遍历可以得到最优解。
+
 -----
 
 ## 相关题目
@@ -52,3 +56,48 @@ public:
 };
 ```
 
+-----
+
+### 题目2：二叉树中的最大路径和
+[LeetCode124](https://leetcode-cn.com/problems/binary-tree-maximum-path-sum/)  
+题目描述：**路径**被定义为一条从树中任意节点出发，沿父节点-子节点连接，达到任意节点的序列。同一个节点在一条路径序列中 至多出现一次 。该路径**至少包含一个**节点，且不一定经过根节点。**路径和**是路径中各节点值的总和。给你一个二叉树的根节点 `root` ，返回其 **最大路径和** 。  
+思路：考虑以`x`节点为根的二叉树的最大距离有这些情况：（**根是否参与**）
+1. `x`节点不参与，即最大路径和的路径在左树或右树中；
+2. `x`节点参与，即最大路径和的路径包括`x`节点，这种情况下，最大路径和应该为：`root -> val`、以左树根为起点向下的最大路径和（负值舍弃）、以右树根为起点向下的最大路径和（负值舍弃），三者之和；
+3. 最终结果应为：`max(max(左树最大路径和, 右树最大路径和), root -> val + 左树根向下最大路径和(舍负) + 右树根向下最大路径和(舍负)`；
+4. 需要的信息：左树和右树各自的最大路径和、以根为起点向下的最大路径和。  
+
+代码：  
+```cpp
+struct ReturnData {
+    int _maxpathsum; // 最大路径和
+    int _maxrootsum; // 从root开始向下的最大路径和(只能走一边)
+    ReturnData(int maxpathsum, int maxrootsum) : _maxpathsum(maxpathsum), _maxrootsum(maxrootsum) {}
+};
+class Solution {
+private:
+ReturnData process(TreeNode* root) {
+    if (!root)
+        return ReturnData(INT_MIN, INT_MIN);
+    ReturnData leftRet = process(root -> left);
+    ReturnData rightRet = process(root -> right);
+    int p1 = leftRet._maxpathsum;   // 左树最大路径和
+    int p2 = rightRet._maxpathsum;  // 右树最大路径和
+    int p3 = root -> val;           // root -> val + 两个maxrootsum
+    if (leftRet._maxrootsum > 0)
+        p3 += leftRet._maxrootsum;
+    if (rightRet._maxrootsum > 0)
+        p3 += rightRet._maxrootsum;
+    int maxpathsum = max(p1, max(p2, p3));
+    int largerootsum = max(leftRet._maxrootsum, rightRet._maxrootsum);
+    int maxrootsum = root -> val;  // 获得maxrootsum
+    if (largerootsum > 0)
+        maxrootsum += largerootsum;
+    return ReturnData(maxpathsum, maxrootsum);
+}
+public:
+    int maxPathSum(TreeNode* root) {
+        return process(root)._maxpathsum;
+    }
+};
+```
