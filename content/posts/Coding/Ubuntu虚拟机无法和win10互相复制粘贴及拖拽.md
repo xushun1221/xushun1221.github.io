@@ -1,5 +1,5 @@
 ---
-title: Ubuntu虚拟机无法和win10互相复制粘贴记拖拽
+title: Ubuntu虚拟机无法和win10互相复制粘贴及拖拽
 date: 2022-02-20
 tags: [Linux]
 categories: [Coding]
