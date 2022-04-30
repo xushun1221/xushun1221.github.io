@@ -162,8 +162,8 @@ int walk_way_1(int x, int y, int step) {
 // 超时
 class Solution {
 private:
-    // ****注意：下一行不用注释，使用{{的符号在博客页面构建时会出现莫名其妙的错误
-    //vector<vector<int>> dirs = {{1, 2}, {-1, 2}, {1, -2}, {-1, -2}, {2, 1}, {-2, 1}, {2, -1}, {-2, -1}};
+    // ****注意：下面一行，如果使用两个大括号，在博客页面构建时会出现莫名其妙的错误
+    vector<vector<int>> dirs = \{{1, 2}, {-1, 2}, {1, -2}, {-1, -2}, {2, 1}, {-2, 1}, {2, -1}, {-2, -1}\};
     int process(int n, int row, int col, int rest) {
         if (row < 0 || row >= n || col < 0 || col >= n)
             return 0;
@@ -203,7 +203,7 @@ private:
     }
 public:
     double knightProbability(int n, int k, int row, int column) {
-        //vector<vector<int>> dirs = {{1, 2}, {-1, 2}, {1, -2}, {-1, -2}, {2, 1}, {-2, 1}, {2, -1}, {-2, -1}};
+        vector<vector<int>> dirs = \{{1, 2}, {-1, 2}, {1, -2}, {-1, -2}, {2, 1}, {-2, 1}, {2, -1}, {-2, -1}\};
         vector<vector<vector<int>>> dp(n, vector<vector<int>>(n, vector<int>(k + 1)));
         for (int r = 0; r < n; ++ r)
             for (int c = 0; c < n; ++ c)
@@ -236,7 +236,7 @@ private:
     }
 public:
     double knightProbability(int n, int k, int row, int column) {
-        //vector<vector<int>> dirs = {{1, 2}, {-1, 2}, {1, -2}, {-1, -2}, {2, 1}, {-2, 1}, {2, -1}, {-2, -1}};
+        vector<vector<int>> dirs = \{{1, 2}, {-1, 2}, {1, -2}, {-1, -2}, {2, 1}, {-2, 1}, {2, -1}, {-2, -1}\};
         vector<vector<vector<double>>> dp(n, vector<vector<double>>(n, vector<double>(k + 1)));
         for (int r = 0; r < n; ++ r)
             for (int c = 0; c < n; ++ c)
