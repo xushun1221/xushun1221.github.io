@@ -162,8 +162,12 @@ int walk_way_1(int x, int y, int step) {
 // 超时
 class Solution {
 private:
-    // ****注意：下面一行，如果使用两个大括号，在博客页面构建时会出现莫名其妙的错误
-    vector<vector<int>> dirs = \{{1, 2}, {-1, 2}, {1, -2}, {-1, -2}, {2, 1}, {-2, 1}, {2, -1}, {-2, -1}\};
+    // ****注意：下面一行，如果使用两个大括号（vector<vector<int>> = xxx这种形式），在博客页面构建时会出现莫名其妙的错误
+    int dirs[8][2];
+    dirs[0][0] = 1;dirs[0][1] = 2; dirs[1][0] = -1;dirs[1][1] = 2;
+    dirs[2][0] = 1;dirs[2][1] = -2;dirs[3][0] = -1;dirs[3][1] = -2;
+    dirs[4][0] = 2;dirs[4][1] = 1; dirs[5][0] = -2;dirs[5][1] = 1;
+    dirs[6][0] = 2;dirs[6][1] = -1;dirs[7][0] = -2;dirs[7][1] = -1;
     int process(int n, int row, int col, int rest) {
         if (row < 0 || row >= n || col < 0 || col >= n)
             return 0;
@@ -203,7 +207,11 @@ private:
     }
 public:
     double knightProbability(int n, int k, int row, int column) {
-        vector<vector<int>> dirs = \{{1, 2}, {-1, 2}, {1, -2}, {-1, -2}, {2, 1}, {-2, 1}, {2, -1}, {-2, -1}\};
+        int dirs[8][2];
+        dirs[0][0] = 1;dirs[0][1] = 2; dirs[1][0] = -1;dirs[1][1] = 2;
+        dirs[2][0] = 1;dirs[2][1] = -2;dirs[3][0] = -1;dirs[3][1] = -2;
+        dirs[4][0] = 2;dirs[4][1] = 1; dirs[5][0] = -2;dirs[5][1] = 1;
+        dirs[6][0] = 2;dirs[6][1] = -1;dirs[7][0] = -2;dirs[7][1] = -1;
         vector<vector<vector<int>>> dp(n, vector<vector<int>>(n, vector<int>(k + 1)));
         for (int r = 0; r < n; ++ r)
             for (int c = 0; c < n; ++ c)
@@ -236,7 +244,11 @@ private:
     }
 public:
     double knightProbability(int n, int k, int row, int column) {
-        vector<vector<int>> dirs = \{{1, 2}, {-1, 2}, {1, -2}, {-1, -2}, {2, 1}, {-2, 1}, {2, -1}, {-2, -1}\};
+        int dirs[8][2];
+        dirs[0][0] = 1;dirs[0][1] = 2; dirs[1][0] = -1;dirs[1][1] = 2;
+        dirs[2][0] = 1;dirs[2][1] = -2;dirs[3][0] = -1;dirs[3][1] = -2;
+        dirs[4][0] = 2;dirs[4][1] = 1; dirs[5][0] = -2;dirs[5][1] = 1;
+        dirs[6][0] = 2;dirs[6][1] = -1;dirs[7][0] = -2;dirs[7][1] = -1;
         vector<vector<vector<double>>> dp(n, vector<vector<double>>(n, vector<double>(k + 1)));
         for (int r = 0; r < n; ++ r)
             for (int c = 0; c < n; ++ c)
