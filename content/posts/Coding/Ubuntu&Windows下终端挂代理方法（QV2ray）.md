@@ -37,18 +37,20 @@ set http_proxy=http://127.0.0.1:xxxx
 # 测试
 curl https://api.myip.com
 
-# cip.cc 在cmd里面好像不行
+# curl cip.cc 在cmd里面好像不行
 ftp cip.cc
 ```
 
-写个批处理脚本自动开始写bolg  
+powershell：（需要powershell7以上版本）  
 ```shell
-@echo on
-start cmd /k "set http_proxy=http://127.0.0.1:10809 & set https_proxy=http://127.0.0.1:10809 & curl https://api.myip.com & cd "D:\Blog\xushun1221.github.io" & code ./content"
-```
-
-powershell：  
-```shell
+# 临时代理
 $env:http_proxy="http://127.0.0.1:xxxx"
 $env:https_proxy="http://127.0.0.1:xxxx"
+
+# 查看代理
+$env:http_proxy
+$env:https_proxy
 ```
+
+设置永久代理：  
+电脑属性->选择高级系统设置->选择环境变量->选择系统变量->选择新建新建https_proxy和http_proxy，值设置为http://127.0.0.1:8889。
