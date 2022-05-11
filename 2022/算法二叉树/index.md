@@ -549,6 +549,20 @@ TreeNode* deserialize(string data) {
 	}
 	return process(dataqueue);
 }
+// 自己写的
+// TreeNode* deserialize(string data) {
+// 	queue<string> dataQueue;
+// 	string cur = "";
+// 	for (auto ch : data) {
+// 		if (ch != '_') {
+// 			cur += ch;
+// 		} else if (cur != "") { // ch == '_'
+// 			dataQueue.push(cur);
+// 			cur = "";
+// 		}
+// 	}
+// 	return process(dataQueue);
+// }
 ```
 
 -----
