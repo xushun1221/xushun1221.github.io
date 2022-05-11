@@ -188,11 +188,17 @@ who：
 ### sudo
 `sudo [其他命令]`以系统管理员身份执行命令。
 
+### sudo su
+`sudo su`切换为root用户。
+
 ### adduser
 `sudo adduser newusername`添加新用户。
 
 ### deluser
 `sudo deluser username`删除用户。
+
+### passwd
+`sudo passwd username`设置用户密码。
 
 ### addgroup
 `sudo addgroup newgroupname`创建新组。
@@ -212,7 +218,106 @@ who：
 ### find
 查找文件的命令。
 不同查找参数：
-- `-type`：按文件类型查找（7种类型，不是后缀名），例如`find ./ -type d`，该命令查找目录文件（没有规定查找深度，默认全部查找）；
+- `-type`：按文件类型查找（7种类型，不是后缀名，文件用f），例如`find ./ -type d`，该命令查找目录文件（没有规定查找深度，默认全部查找）；
 - `-name`：按文件名查找，例如`find ./ -name '*.jpg'`，该命令查找所有后缀为`.jpg`的文件；
 - `-maxdepth`：指定查找深度，应作为第一个参数使用，例如`find ./ -maxdepth 1 -name '*.jpg'`，该命令表示在根目录下查找所有后缀为`.jpg`的文件，且查找深度为1，即仅在根目录中查找；
+- `size`：按文件大小查找，大小的单位，b-block-512字节，c-1字节，w-2字节，k-1024字节，M-1024k字节，G-1024M字节，注意大小写，例如，`find /home/xushun -size +20M -size -50M`，该命令表示查找大于20M小于50M的文件，这里需要两个`-size`，不能省略；
+- `-atime -mtime -ctime 天 -amin -mmin -cmin 分钟`：按时间查找，a表示最近访问时间，m表示最近更改时间，指更改文件属性一类的操作，c表示最近改动时间，指更改文件内容的操作。
+- `-exec`：将find搜索得到的结果集执行某一指定命令，例如`find /usr/ -name '*tmp*' -exec ls -l {} \;`，注意空格和末尾的`\;`，大括号表示find命令的结果集（不能直接用管道操作，需要xargs）；
+- `-ok`：以交互式的方法，将find搜索的结果集执行某一指定命令，例如`find ./ -name '*.jpg' -ok ls -l {} \;`
+
+### ps
+`ps`命令用于监控后台进程的工作情况，默认只显示当前可以和用户交互的进程。  
+常用`ps aux`，`a`表示当前系统所有用户的进程，`u`查看进程所有者及其他详细信息，`x`显示没有控制终端的进程（不需要终端交互）。
+
+### grep
+查找文件内容的命令，例如，`grep -r -n 'hello' ./`，`-r`表示递归搜索，`-n`表示给出搜索结果所在行号。
+
+使用grep搜索相关的进程，`ps aux | grep 'kernel'`，从`ps aux`的结果中搜索。如果搜索结果只有一条，这一条就是grep进程本身，说明系统中没有要找的进程。
+
+### xargs
+对find的结果集进行操作，`find /usr/ -name '*tmp*' -exec ls -l {} \;`，还有一种方法是，`find /usr/ -name '*tmp*' | xargs ls -l`。  
+两者的区别：
+- 当结果集合很大的时候，xargs会对结果进行分段处理，所以性能好些；
+- 但xargs也有缺陷，xargs默认用空格来分割结果集，当文件名有空格的时候，会因为文件名被切割失效（创建带空格的文件`touch 'abc xyz'`或转义字符`touch abc\ xyz`）
+- 解决上面的问题可以换用默认的分割符号（NULL）即可，`find ./ -name '*hello*' -print0 | xargs -print0 ls -l`，`-print0`表示指定分割符为NULL，或者用`--null`替换`-print0`亦可。
+
+
+## 安装卸载软件
+- `sudo apt-get install softname`，从服务器上下载安装某个软件；
+- `sudo apt-get update`，从服务器上下载最新的软件列表，安装软件前需要此命令，可以在设置-软件和更新中更改源服务器；
+- `sudo apt-get remove softname`，卸载某个软件。
+- `sudo aptitude show softname`，查看系统是否安装了这个软件，aptitude需要安装先。
+
+使用软件包：debian系列（Ubuntu属于这个系列，安装包以`.deb`为后缀）
+- `sudo dpkg -i xxx.deb`：安装deb软件包；
+- `sudo dpkg -r xxx.deb`：删除软件包；
+- `sudo dpkg -r --purge xxx.deb`：连同配置文件一起删除；
+- `sudo dpkg -info xxx.deb`：查看软件包信息；
+- `sudo dpkg -L xxx.deb`：查看文件拷贝详情；
+- `sudo dpkg -l`：查看系统中已安装软件包列表；
+- `sudo dpkg-reconfigure xxx`：重新配置软件包。
+
+## 压缩和解压
+### gzip gunzip
+- `gzip file`：压缩文件，生成`file.gz`；
+- `gunzip file.gz`：解压文件，生成`file`；
+- 该命令有缺点，只能压缩一个文件，不能压缩目录文件。
 - 
+### tar
+tar命令是结合压缩和打包的命令。  
+`tar -zcvf test.tar.gz file1 dir2`，将`file1 dir2`等多个文件压缩并打包到`test.tar.gz`。  
+参数含义：
+- `z`：使用gzip方式压缩（或解压）；
+- `c`：创建新的档案文件，需要打包目录或一些文件就要使用该选项；
+- `v`：显示压缩过程；
+- `f`：使用文件，必选项；
+- `j`：使用bzip2方式压缩（或解压）；
+- 通常压缩包都以`.tar.gz`为后缀。
+
+解压方式：将`c`改为`x`即可，例如，`tar -zxvf test.tar.gz`，要解压到某个目录需要使用`-C`选项，例如，`tar -zxvf test.tar.gz -C ./testdir`。
+
+### rar
+需要先安装，`sudo apt-get install rar`。  
+- `rar a -r rartest.rar dir1 file2`：打包压缩dir1和file2为testrar.rar；
+- `unrar x testrar.rar`：解压到当前目录；
+- 压缩包名建议带上`.rar`后缀。
+
+### zip
+- `zip -r test.zip dir1 file1`：压缩；
+- `unzip test.zip`：解压到当前目录。
+
+## 其他常用命令
+### who
+`who -uH`，查看当前在线上用户情况。  
+|NAME| LINE 终端设备|TIME 登录时间|IDLE|PID COMMENT 进程号|
+|---|---|---|---|---|
+|xushun|:0|2022-05-11 08:41|?|1730 (:0)|
+
+### jobs
+`jobs`，查看操作系统当前运行了哪些用户作业。
+
+### fg bg
+- `fg [job...]`，作业切换到前台执行；
+- `bg [job...]`，作业切换到后台执行；
+- `job`，是一个或多个进程的PID，或者是命令名称，或者是作业号（作业号前要带一个%号）。
+
+### kill
+`kill pid`，杀死进程。
+
+### env
+`env`，显示环境变量。  
+`env | grep SHELL`。
+
+### top
+`top`，文字版的任务管理器。
+
+### ifconfig
+`ifconfig`，查看网卡信息。
+
+### man
+- `man xxx`，查询xxx的手册。  
+- `man n xxx`，查看xxx的第n章手册，一般来说，开发时需要掌握1（可执行程序或shell命令）、2（系统调用-内核提供的函数）、3（库调用-程序库中的函数）、5（文件格式和规范）、9（内核例程）章的内容，例如，`man 3 printf`。
+
+### alias
+`alias xx='yyy'`，给`yyy`命令起一个别名`xx`。ls、ll都是系统设定的别名。
