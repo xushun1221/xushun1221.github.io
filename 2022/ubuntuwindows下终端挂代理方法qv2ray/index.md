@@ -30,6 +30,13 @@ export https_proxy="http://127.0.0.1:8889"
 export http_proxy="http://127.0.0.1:8889"
 ```
 
+登录Ubuntu自动打开Qv2ray的方法：
+1. 商店搜索`alacarte`，下载一个名为`main menu`的软件；
+2. 打开`main menu`，找到`Qv2ray`，查看详情，复制`Command`项；
+3. 打开`Startup Applications Preferences`软件；
+4. add，将刚刚复制的`Command`粘贴进去即可。
+
+
 ## windows方法
 cmd：  
 ```shell 
