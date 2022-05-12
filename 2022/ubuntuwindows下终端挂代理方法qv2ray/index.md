@@ -23,6 +23,13 @@ curl cip.cc
 ```
 *PS：这个方法在每次使用shell时都要搞一次*
 
+永久生效方法：
+打开`~/.bashrc`配置文件，在最后添加如下内容，重启终端。
+```shell
+export https_proxy="http://127.0.0.1:8889"
+export http_proxy="http://127.0.0.1:8889"
+```
+
 ## windows方法
 cmd：  
 ```shell 
