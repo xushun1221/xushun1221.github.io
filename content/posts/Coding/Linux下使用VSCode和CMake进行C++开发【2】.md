@@ -1,7 +1,7 @@
 ---
 title: Linux下使用VSCode和CMake进行C++开发【2】
 date: 2022-02-13
-tags: [Linux, CMake, C++]
+tags: [Linux, C++, gdb]
 categories: [Coding]
 ---
 
