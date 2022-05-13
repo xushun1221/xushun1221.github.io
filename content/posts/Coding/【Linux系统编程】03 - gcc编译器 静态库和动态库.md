@@ -1,5 +1,5 @@
 ---
-title: 【Linux系统编程】gcc编译器 静态库和动态库
+title: 【Linux系统编程】03 - gcc编译器 静态库和动态库
 date: 2022-05-12
 tags: [Linux, gcc]
 categories: [Coding]

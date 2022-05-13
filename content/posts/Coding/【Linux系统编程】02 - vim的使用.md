@@ -1,5 +1,5 @@
 ---
-title: 【Linux系统编程】vim的使用
+title: 【Linux系统编程】02 - vim的使用
 date: 2022-05-11
 tags: [Linux, vim]
 categories: [Coding]
