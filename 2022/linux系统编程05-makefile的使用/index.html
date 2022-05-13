@@ -1,6 +1,6 @@
-<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【Linux系统编程】05 - Makefile的使用 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B03-gcc%E7%BC%96%E8%AF%91%E5%99%A8-%E9%9D%99%E6%80%81%E5%BA%93%E5%92%8C%E5%8A%A8%E6%80%81%E5%BA%93/><link rel=next href=https://xushun1221.github.io/2022/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B04-gdb%E8%B0%83%E8%AF%95%E5%99%A8%E7%9A%84%E4%BD%BF%E7%94%A8/><link rel=canonical href=https://xushun1221.github.io/2022/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B05-makefile%E7%9A%84%E4%BD%BF%E7%94%A8/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【Linux系统编程】05 - Makefile的使用"><meta name=twitter:description content="Makefile基础 Makefile是用来管理项目的脚本。 Makefile的命名只有两种方式：makefile，Makefile。 Makef"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【Linux系统编程】05 - Makefile的使用","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B05-makefile%E7%9A%84%E4%BD%BF%E7%94%A8\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"Linux, Makefile","wordcount":1070,"url":"https:\/\/xushun1221.github.io\/2022\/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B05-makefile%E7%9A%84%E4%BD%BF%E7%94%A8\/","datePublished":"2022-05-13T00:00:00\x2b00:00","dateModified":"2022-05-13T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【Linux系统编程】05 - Makefile的使用</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-05-13>2022-05-13</time>&nbsp;
-<i class="fas fa-pencil-alt fa-fw"></i>about 1070 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#makefile基础>Makefile基础</a></li><li><a href=#makefile-1个规则>Makefile 1个规则</a><ul><li><a href=#测试项目>测试项目</a></li><li><a href=#版本1全部编译>版本1：全部编译</a></li><li><a href=#版本2部分编译链接>版本2：部分编译、链接</a></li></ul></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
-<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#makefile基础>Makefile基础</a></li><li><a href=#makefile-1个规则>Makefile 1个规则</a><ul><li><a href=#测试项目>测试项目</a></li><li><a href=#版本1全部编译>版本1：全部编译</a></li><li><a href=#版本2部分编译链接>版本2：部分编译、链接</a></li></ul></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=makefile基础></a><h2>Makefile基础</h2><p>Makefile是用来管理项目的脚本。</p><p>Makefile的命名只有两种方式：<code>makefile</code>，<code>Makefile</code>。</p><p>Makefile要掌握的几个要点：</p><ol><li>1个规则：生成目标的规则这样写，<code>目标:依赖条件(空格分开)\n\tab命令</code>。简单来说：<ol><li>如果依赖条件不存在，就去寻找新的规则来产生依赖条件；</li><li>目标的修改时间必须晚于依赖条件的修改时间，否则，更新目标。</li></ol></li><li>2个函数：</li><li>3个自动变量：</li></ol><a class=post-dummy-target id=makefile-1个规则></a><h2>Makefile 1个规则</h2><ol><li>如果想生成目标，检查规则中的依赖条件是否存在，如不存在，则寻找是否有新规则用来生成该依赖文件；</li><li>检查规则中的目标是否需要更新，必须检查它的所有依赖，依赖中有任一个被更新，则目标必须更新：<ol><li>分析各个目标和依赖之间的关系；</li><li>根据依赖关系自底向上执行命令；</li><li>依赖修改时间比目标新，则确定更新；</li><li>如果目标不依赖任何条件，则执行相应命令，以示更新。</li></ol></li></ol><p>注意：make认为第一个目标就是最终目标，生成了第一个目标后，不会执行其他的命令。可以使用<code>ALL:xxx.out</code>命令来指定生成的最终目标，告诉make命令，无论第一条命令是什么，我要生成的最终目标都是<code>xxx.out</code>，这样，书写顺序就无所谓了。</p><a class=post-dummy-target id=测试项目></a><h3>测试项目</h3><p>写一个简单的项目进行测试，项目结构：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【Linux系统编程】05 - Makefile的使用 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B03-gcc%E7%BC%96%E8%AF%91%E5%99%A8-%E9%9D%99%E6%80%81%E5%BA%93%E5%92%8C%E5%8A%A8%E6%80%81%E5%BA%93/><link rel=next href=https://xushun1221.github.io/2022/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B04-gdb%E8%B0%83%E8%AF%95%E5%99%A8%E7%9A%84%E4%BD%BF%E7%94%A8/><link rel=canonical href=https://xushun1221.github.io/2022/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B05-makefile%E7%9A%84%E4%BD%BF%E7%94%A8/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【Linux系统编程】05 - Makefile的使用"><meta name=twitter:description content="Makefile基础 Makefile是用来管理项目的脚本。 Makefile的命名只有两种方式：makefile，Makefile。 Makef"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【Linux系统编程】05 - Makefile的使用","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B05-makefile%E7%9A%84%E4%BD%BF%E7%94%A8\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"Linux, Makefile","wordcount":3141,"url":"https:\/\/xushun1221.github.io\/2022\/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B05-makefile%E7%9A%84%E4%BD%BF%E7%94%A8\/","datePublished":"2022-05-13T00:00:00\x2b00:00","dateModified":"2022-05-13T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【Linux系统编程】05 - Makefile的使用</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-05-13>2022-05-13</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 3141 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#makefile基础>Makefile基础</a></li><li><a href=#makefile-1个规则>Makefile 1个规则</a><ul><li><a href=#测试项目>测试项目</a></li><li><a href=#版本1全部编译>版本1：全部编译</a></li><li><a href=#版本2部分编译链接>版本2：部分编译、链接</a></li></ul></li><li><a href=#makefile-2个函数和clean>Makefile 2个函数和clean</a><ul><li><a href=#版本3自动获取源文件列表以及清理中间文件>版本3：自动获取源文件列表以及清理中间文件</a></li></ul></li><li><a href=#makefile-3个自动变量和模式规则>Makefile 3个自动变量和模式规则</a><ul><li><a href=#版本4引入自动变量>版本4：引入自动变量</a></li><li><a href=#版本5引入模式规则>版本5：引入模式规则</a></li></ul></li><li><a href=#其他问题>其他问题</a><ul><li><a href=#clean和all文件问题>clean和all文件问题</a></li><li><a href=#版本6添加伪目标>版本6：添加伪目标</a></li><li><a href=#添加编译参数>添加编译参数</a></li><li><a href=#版本7加入其他编译参数>版本7：加入其他编译参数</a></li></ul></li><li><a href=#作业---复杂一点的项目makefile>作业 - 复杂一点的项目Makefile</a></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#makefile基础>Makefile基础</a></li><li><a href=#makefile-1个规则>Makefile 1个规则</a><ul><li><a href=#测试项目>测试项目</a></li><li><a href=#版本1全部编译>版本1：全部编译</a></li><li><a href=#版本2部分编译链接>版本2：部分编译、链接</a></li></ul></li><li><a href=#makefile-2个函数和clean>Makefile 2个函数和clean</a><ul><li><a href=#版本3自动获取源文件列表以及清理中间文件>版本3：自动获取源文件列表以及清理中间文件</a></li></ul></li><li><a href=#makefile-3个自动变量和模式规则>Makefile 3个自动变量和模式规则</a><ul><li><a href=#版本4引入自动变量>版本4：引入自动变量</a></li><li><a href=#版本5引入模式规则>版本5：引入模式规则</a></li></ul></li><li><a href=#其他问题>其他问题</a><ul><li><a href=#clean和all文件问题>clean和all文件问题</a></li><li><a href=#版本6添加伪目标>版本6：添加伪目标</a></li><li><a href=#添加编译参数>添加编译参数</a></li><li><a href=#版本7加入其他编译参数>版本7：加入其他编译参数</a></li></ul></li><li><a href=#作业---复杂一点的项目makefile>作业 - 复杂一点的项目Makefile</a></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=makefile基础></a><h2>Makefile基础</h2><p>Makefile是用来管理项目的脚本。</p><p>Makefile的命名只有两种方式：<code>makefile</code>，<code>Makefile</code>。</p><p>Makefile要掌握的几个要点：</p><ol><li>1个规则：生成目标的规则这样写，<code>目标:依赖条件(空格分开)\n\tab命令</code>。简单来说：<ol><li>如果依赖条件不存在，就去寻找新的规则来产生依赖条件；</li><li>目标的修改时间必须晚于依赖条件的修改时间，否则，更新目标。</li></ol></li><li>2个函数：<ol><li><code>src = $(wildcard *.c)</code></li><li><code>obj = $(patsubst %.c, %.o, $(src))</code></li></ol></li><li>3个自动变量：<ol><li><code>$@</code></li><li><code>$&lt;</code></li><li><code>$^</code></li></ol></li></ol><a class=post-dummy-target id=makefile-1个规则></a><h2>Makefile 1个规则</h2><ol><li>如果想生成目标，检查规则中的依赖条件是否存在，如不存在，则寻找是否有新规则用来生成该依赖文件；</li><li>检查规则中的目标是否需要更新，必须检查它的所有依赖，依赖中有任一个被更新，则目标必须更新：<ol><li>分析各个目标和依赖之间的关系；</li><li>根据依赖关系自底向上执行命令；</li><li>依赖修改时间比目标新，则确定更新；</li><li>如果目标不依赖任何条件，则执行相应命令，以示更新。</li></ol></li></ol><p>注意：make认为第一个目标就是最终目标，生成了第一个目标后，不会执行其他的命令。可以使用<code>ALL:xxx.out</code>命令来指定生成的最终目标，告诉make命令，无论第一条命令是什么，我要生成的最终目标都是<code>xxx.out</code>，这样，书写顺序就无所谓了。</p><a class=post-dummy-target id=测试项目></a><h3>测试项目</h3><p>写一个简单的项目进行测试，项目结构：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2
 </span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell>xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_makefile$ ls
 add.c  div1.c  main.c  Makefile  sub.c
@@ -110,7 +110,343 @@ a = 10, b = 5
 a + b = 16
 a - b = 5
 a / b = 2
-</code></pre></td></tr></table></div></div><p>可以看到，<code>make</code>程序只程序编译了<code>add.c</code>文件，并进行了链接，其他未修改文件并没有重新编译。</p></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+</code></pre></td></tr></table></div></div><p>可以看到，<code>make</code>程序只程序编译了<code>add.c</code>文件，并进行了链接，其他未修改文件并没有重新编译。</p><a class=post-dummy-target id=makefile-2个函数和clean></a><h2>Makefile 2个函数和clean</h2><p>两个函数：</p><ol><li><code>wildcard</code>，通配符函数，<code>src = $(wildcard ./*.c)</code>，（<code>src</code>是一个Makefile文件的变量，<code>$()</code>表示函数调用，<code>wildcard</code>表示函数名，<code>*.c</code>是该函数的参数），这句的意思是，找到当前目录下所有后缀为<code>.c</code>的文件，将文件名提取出来，组成一个列表，赋值给<code>src</code>；（在我们的测试项目目录下，相当于，<code>src = main.c add.c sub.c div1.c</code>）</li><li><code>patsubst</code>，替换函数，<code>obj = $(patsubst %.c, %.o, $(src))</code>，（<code>$(变量)</code>是对变量取值，<code>%</code>是匹配符），这句的意思是，将参数3<code>$(src)</code>中，包含参数1<code>%.c</code>的部分，替换为参数2<code>%.o</code>。（相当于，<code>obj=main.o add.o sub.o div1.o</code>）</li></ol><p><code>clean</code>目标：<code>clean:(没有依赖条件)\n\tab-rm -rf $(obj) test.out</code>，这句意思是将所有的<code>.o</code>文件和最终目标<code>test.out</code>删除。</p><p>可以执行<code>make clean</code>来自动清除这些文件。</p><a class=post-dummy-target id=版本3自动获取源文件列表以及清理中间文件></a><h3>版本3：自动获取源文件列表以及清理中间文件</h3><p>利用上面讲的两个函数获取源文件列表，以及<code>clean</code>方法清理中间文件。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-makefile data-lang=makefile><span class=nv>src</span> <span class=o>=</span> <span class=k>$(</span>wildcard *.c<span class=k>)</span>
+<span class=nv>obj</span> <span class=o>=</span> <span class=k>$(</span>patsubst %.c, %.o, <span class=k>$(</span>src<span class=k>)</span><span class=k>)</span>
+
+<span class=nf>ALL</span><span class=o>:</span><span class=n>test</span>.<span class=n>out</span>
+
+<span class=nf>test.out</span><span class=o>:</span><span class=k>$(</span><span class=nv>obj</span><span class=k>)</span>
+	gcc <span class=k>$(</span>obj<span class=k>)</span> -o test.out
+
+<span class=nf>main.o</span><span class=o>:</span><span class=n>main</span>.<span class=n>c</span>
+	gcc -c main.c -o main.o
+<span class=nf>add.o</span><span class=o>:</span><span class=n>add</span>.<span class=n>c</span>
+	gcc -c add.c -o add.o
+<span class=nf>sub.o</span><span class=o>:</span><span class=n>sub</span>.<span class=n>c</span>
+	gcc -c sub.c -o sub.o
+<span class=nf>div1.o</span><span class=o>:</span><span class=n>div</span>1.<span class=n>c</span>
+	gcc -c div1.c -o div1.o
+
+<span class=nf>clean</span><span class=o>:</span>
+	-rm -rf <span class=k>$(</span>obj<span class=k>)</span> test.out <span class=c1># rm之前的- 表示出错依然执行 当删除不存在的文件时 不会报错</span>
+</code></pre></td></tr></table></div></div><p>删除之前生成的<code>.o</code>和out文件，测试：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-fallback data-lang=fallback>xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_makefile$ ls
+add.c  div1.c  main.c  Makefile  sub.c
+xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_makefile$ make
+gcc -c div1.c -o div1.o
+gcc -c main.c -o main.o
+gcc -c add.c -o add.o
+gcc -c sub.c -o sub.o
+gcc  div1.o  main.o  add.o  sub.o -o test.out
+xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_makefile$ ls
+add.c  add.o  div1.c  div1.o  main.c  main.o  Makefile  sub.c  sub.o  test.out
+xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_makefile$ ./test.out
+a = 10, b = 5
+a + b = 15
+a - b = 5
+a / b = 2
+xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_makefile$ make clean -n
+rm -rf  div1.o  add.o  main.o  sub.o test.out
+xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_makefile$ make clean
+rm -rf  div1.o  add.o  main.o  sub.o test.out
+xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_makefile$ ls
+add.c  div1.c  main.c  Makefile  sub.c
+</code></pre></td></tr></table></div></div><p>可以看到编译成功生成可执行文件，<code>make clean -n</code>命令是查看要删除的文件，防止错误删除操作，在<code>make clean</code>执行之前需要执行一次。</p><a class=post-dummy-target id=makefile-3个自动变量和模式规则></a><h2>Makefile 3个自动变量和模式规则</h2><p>3个自动变量：</p><ul><li><code>$@</code>，在规则的命令中（目标和依赖条件中不能出现），表示规则中的目标；</li><li><code>$^</code>，在规则的命令中，表示所有依赖条件；</li><li><code>$&lt;</code>，在规则的命令中，表示第一个依赖条件。如果该变量应用在模式规则中，它可将依赖条件列表中的依赖依次取出，套用模式规则。</li></ul><p>模式规则：</p><ul><li>可以发现版本4的Makefile文件依然不是很完善，如果我们添加一个<code>mul.c</code>的乘法模块，源码可以被<code>src</code>自动识别，而编译为<code>.o</code>文件的过程不能自动进行；</li><li>可以用<code>%.o:%.c\n\tabgcc -c $&lt; -o $@</code>来表示将所有<code>.c</code>文件编译为<code>.o</code>文件，在添加新的<code>.c</code>文件时，无需手动添加编译命令。</li></ul><p>静态模式规则，指定该模式规则给谁用，这里指定这个模式规则给<code>$(obj)</code>用，只需要在开头加上<code>$(obj):</code>即可，<code>$(obj):%.o:%.c\n\tabgcc -c $&lt; -o $@</code>。</p><a class=post-dummy-target id=版本4引入自动变量></a><h3>版本4：引入自动变量</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-makefile data-lang=makefile><span class=nv>src</span> <span class=o>=</span> <span class=k>$(</span>wildcard *.c<span class=k>)</span>
+<span class=nv>obj</span> <span class=o>=</span> <span class=k>$(</span>patsubst %.c, %.o, <span class=k>$(</span>src<span class=k>)</span><span class=k>)</span>
+
+<span class=nf>ALL</span><span class=o>:</span><span class=n>test</span>.<span class=n>out</span>
+
+<span class=nf>test.out</span><span class=o>:</span><span class=k>$(</span><span class=nv>obj</span><span class=k>)</span>
+	gcc $^ -o <span class=nv>$@</span>
+
+<span class=nf>main.o</span><span class=o>:</span><span class=n>main</span>.<span class=n>c</span>
+	gcc -c $&lt; -o <span class=nv>$@</span>
+<span class=nf>add.o</span><span class=o>:</span><span class=n>add</span>.<span class=n>c</span>
+	gcc -c $&lt; -o <span class=nv>$@</span>
+<span class=nf>sub.o</span><span class=o>:</span><span class=n>sub</span>.<span class=n>c</span>
+	gcc -c $&lt; -o <span class=nv>$@</span>
+<span class=nf>div1.o</span><span class=o>:</span><span class=n>div</span>1.<span class=n>c</span>
+	gcc -c $&lt; -o <span class=nv>$@</span>
+
+<span class=nf>clean</span><span class=o>:</span>
+	-rm -rf <span class=k>$(</span>obj<span class=k>)</span> test.out
+</code></pre></td></tr></table></div></div><p>同样可以成功生成。</p><a class=post-dummy-target id=版本5引入模式规则></a><h3>版本5：引入模式规则</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-makefile data-lang=makefile><span class=nv>src</span> <span class=o>=</span> <span class=k>$(</span>wildcard *.c<span class=k>)</span>
+<span class=nv>obj</span> <span class=o>=</span> <span class=k>$(</span>patsubst %.c, %.o, <span class=k>$(</span>src<span class=k>)</span><span class=k>)</span>
+
+<span class=nf>ALL</span><span class=o>:</span><span class=n>test</span>.<span class=n>out</span>
+
+<span class=nf>test.out</span><span class=o>:</span><span class=k>$(</span><span class=nv>obj</span><span class=k>)</span>
+	gcc $^ -o <span class=nv>$@</span>
+
+<span class=nf>%.o</span><span class=o>:</span>%.<span class=n>c</span>
+	gcc -c $&lt; -o <span class=nv>$@</span>
+
+<span class=nf>clean</span><span class=o>:</span>
+	-rm -rf <span class=k>$(</span>obj<span class=k>)</span> test.out
+</code></pre></td></tr></table></div></div><p>同样可以成功生成。这样之后添加其他<code>.c</code>模块进来就无需改动<code>Makefile</code>文件，直接<code>make</code>即可。</p><a class=post-dummy-target id=其他问题></a><h2>其他问题</h2><a class=post-dummy-target id=clean和all文件问题></a><h3>clean和all文件问题</h3><p>如果当前目录下有<code>clean</code>或<code>ALL</code>文件，会影响<code>make</code>的指令判断，会觉得需要生成<code>clean</code>和<code>ALL</code>目标。<br>解决这个问题需要将<code>clean</code>生成一个<strong>伪目标</strong>，不管条件是什么伪目标都要被执行。在<code>Makefile</code>文件最后加入一行<code>.PHONY: clean ALL</code>即可。</p><a class=post-dummy-target id=版本6添加伪目标></a><h3>版本6：添加伪目标</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-makefile data-lang=makefile><span class=nv>src</span> <span class=o>=</span> <span class=k>$(</span>wildcard *.c<span class=k>)</span>
+<span class=nv>obj</span> <span class=o>=</span> <span class=k>$(</span>patsubst %.c, %.o, <span class=k>$(</span>src<span class=k>)</span><span class=k>)</span>
+
+<span class=nf>ALL</span><span class=o>:</span><span class=n>test</span>.<span class=n>out</span>
+
+<span class=nf>test.out</span><span class=o>:</span><span class=k>$(</span><span class=nv>obj</span><span class=k>)</span>
+	gcc $^ -o <span class=nv>$@</span>
+
+<span class=nf>%.o</span><span class=o>:</span>%.<span class=n>c</span>
+	gcc -c $&lt; -o <span class=nv>$@</span>
+
+<span class=nf>clean</span><span class=o>:</span>
+	-rm -rf <span class=k>$(</span>obj<span class=k>)</span> test.out
+
+<span class=nf>.PHONY</span><span class=o>:</span> <span class=n>clean</span> <span class=n>ALL</span>
+</code></pre></td></tr></table></div></div><p>测试，可以看到即使存在<code>clean</code>文件，<code>make clean</code>命令也不会报错：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-fallback data-lang=fallback>xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_makefile$ ls
+add.c  div1.c  main.c  Makefile  sub.c
+xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_makefile$ touch clean
+xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_makefile$ ls
+add.c  clean  div1.c  main.c  Makefile  sub.c
+xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_makefile$ make
+gcc -c div1.c -o div1.o
+gcc -c main.c -o main.o
+gcc -c add.c -o add.o
+gcc -c sub.c -o sub.o
+gcc div1.o main.o add.o sub.o -o test.out
+xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_makefile$ ./test.out
+a = 10, b = 5
+a + b = 15
+a - b = 5
+a / b = 2
+xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_makefile$ make clean
+rm -rf  div1.o  add.o  main.o  sub.o test.out
+xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_makefile$ ls
+add.c  clean  div1.c  main.c  Makefile  sub.c
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=添加编译参数></a><h3>添加编译参数</h3><p>编译时可能会使用其他的编译参数，例如<code>-Wall -g -I -l -L</code>等等，也可以加入<code>Makefile</code>文件。</p><a class=post-dummy-target id=版本7加入其他编译参数></a><h3>版本7：加入其他编译参数</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-makefile data-lang=makefile><span class=nv>src</span> <span class=o>=</span> <span class=k>$(</span>wildcard *.c<span class=k>)</span>
+<span class=nv>obj</span> <span class=o>=</span> <span class=k>$(</span>patsubst %.c, %.o, <span class=k>$(</span>src<span class=k>)</span><span class=k>)</span>
+
+<span class=nv>myArgs</span> <span class=o>=</span> -Wall <span class=c1>#-g ...</span>
+
+<span class=nf>ALL</span><span class=o>:</span><span class=n>test</span>.<span class=n>out</span>
+
+<span class=nf>test.out</span><span class=o>:</span><span class=k>$(</span><span class=nv>obj</span><span class=k>)</span>
+	gcc $^ -o <span class=nv>$@</span> <span class=k>$(</span>myArgs<span class=k>)</span>
+
+<span class=nf>%.o</span><span class=o>:</span>%.<span class=n>c</span>
+	gcc -c $&lt; -o <span class=nv>$@</span> <span class=k>$(</span>myArgs<span class=k>)</span>
+
+<span class=nf>clean</span><span class=o>:</span>
+	-rm -rf <span class=k>$(</span>obj<span class=k>)</span> test.out
+
+<span class=nf>.PHONY</span><span class=o>:</span> <span class=n>clean</span> <span class=n>ALL</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=作业---复杂一点的项目makefile></a><h2>作业 - 复杂一点的项目Makefile</h2><p>项目目录如下：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-fallback data-lang=fallback>xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_makefile$ tree
+.
+├── bin
+├── inc
+│   └── head.h
+├── Makefile
+├── obj
+└── src
+    ├── add.c
+    ├── div1.c
+    ├── main.c
+    └── sub.c
+</code></pre></td></tr></table></div></div><p>将源码文件全部放在<code>src</code>目录下，<code>.o</code>文件放在<code>obj</code>目录下，头文件放在<code>inc</code>目录下，生成的二进制可执行文件放在<code>bin</code>目录下。<br><code>main.c</code>：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;head.h&#34;</span><span class=cp>
+</span><span class=cp></span><span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>a</span> <span class=o>=</span> <span class=mi>10</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>b</span> <span class=o>=</span> <span class=mi>5</span><span class=p>;</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>a = %d, b = %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>a</span><span class=p>,</span> <span class=n>b</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>a + b = %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>add</span><span class=p>(</span><span class=n>a</span><span class=p>,</span> <span class=n>b</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>a - b = %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>sub</span><span class=p>(</span><span class=n>a</span><span class=p>,</span> <span class=n>b</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>a / b = %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>div1</span><span class=p>(</span><span class=n>a</span><span class=p>,</span> <span class=n>b</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p><code>head.h</code>：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span><span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=kt>int</span> <span class=nf>add</span><span class=p>(</span><span class=kt>int</span><span class=p>,</span> <span class=kt>int</span><span class=p>)</span><span class=p>;</span>
+<span class=kt>int</span> <span class=nf>sub</span><span class=p>(</span><span class=kt>int</span><span class=p>,</span> <span class=kt>int</span><span class=p>)</span><span class=p>;</span>
+<span class=kt>int</span> <span class=nf>div1</span><span class=p>(</span><span class=kt>int</span><span class=p>,</span> <span class=kt>int</span><span class=p>)</span><span class=p>;</span>
+</code></pre></td></tr></table></div></div><p>编写<code>Makefile</code>文件，测试通过。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-makefile data-lang=makefile><span class=nv>src</span> <span class=o>=</span> <span class=k>$(</span>wildcard ./src/*.c<span class=k>)</span>
+<span class=nv>obj</span> <span class=o>=</span> <span class=k>$(</span>patsubst ./src/%.c, ./obj/%.o, <span class=k>$(</span>src<span class=k>)</span><span class=k>)</span>
+
+<span class=nv>incPath</span> <span class=o>=</span> ./inc
+<span class=nv>myArgs</span> <span class=o>=</span> -Wall <span class=c1>#-g ...</span>
+
+<span class=nf>ALL</span><span class=o>:</span><span class=n>test</span>.<span class=n>out</span>
+
+<span class=nf>test.out</span><span class=o>:</span><span class=k>$(</span><span class=nv>obj</span><span class=k>)</span>
+	gcc $^ -o ./bin/<span class=nv>$@</span> <span class=k>$(</span>myArgs<span class=k>)</span>
+
+<span class=nf>$(obj)</span><span class=o>:</span>./<span class=n>obj</span>/%.<span class=n>o</span>:./<span class=n>src</span>/%.<span class=n>c</span>
+	gcc -c $&lt; -o <span class=nv>$@</span> <span class=k>$(</span>myArgs<span class=k>)</span> -I <span class=k>$(</span>incPath<span class=k>)</span> <span class=c1># 热知识 头文件在预处理阶段展开</span>
+
+<span class=nf>clean</span><span class=o>:</span>
+	-rm -rf <span class=k>$(</span>obj<span class=k>)</span> ./bin/test.out
+
+<span class=nf>.PHONY</span><span class=o>:</span> <span class=n>clean</span> <span class=n>ALL</span>
+</code></pre></td></tr></table></div></div></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
 <span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
 <span>2022-05-13</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
 <span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2flinux%25E7%25B3%25BB%25E7%25BB%259F%25E7%25BC%2596%25E7%25A8%258B05-makefile%25E7%259A%2584%25E4%25BD%25BF%25E7%2594%25A8%2f&text=%e3%80%90Linux%e7%b3%bb%e7%bb%9f%e7%bc%96%e7%a8%8b%e3%80%9105%20-%20Makefile%e7%9a%84%e4%bd%bf%e7%94%a8&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2flinux%25E7%25B3%25BB%25E7%25BB%259F%25E7%25BC%2596%25E7%25A8%258B05-makefile%25E7%259A%2584%25E4%25BD%25BF%25E7%2594%25A8%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2flinux%25E7%25B3%25BB%25E7%25BB%259F%25E7%25BC%2596%25E7%25A8%258B05-makefile%25E7%259A%2584%25E4%25BD%25BF%25E7%2594%25A8%2f&title=%e3%80%90Linux%e7%b3%bb%e7%bb%9f%e7%bc%96%e7%a8%8b%e3%80%9105%20-%20Makefile%e7%9a%84%e4%bd%bf%e7%94%a8" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/linux/><i class="fas fa-tag fa-fw"></i>&nbsp;Linux</a>&nbsp;
