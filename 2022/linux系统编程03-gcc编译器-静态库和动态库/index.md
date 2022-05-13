@@ -1,4 +1,4 @@
-# 【Linux系统编程】gcc编译器 静态库和动态库
+# 【Linux系统编程】03 - gcc编译器 静态库和动态库
 
 
 gcc编译器可以参考[gcc编译器](https://xushun1221.github.io/2022/linux%E4%B8%8B%E4%BD%BF%E7%94%A8vscode%E5%92%8Ccmake%E8%BF%9B%E8%A1%8Cc-%E5%BC%80%E5%8F%911/)  
