@@ -323,5 +323,11 @@ tar命令是结合压缩和打包的命令。
 - `man xxx`，查询xxx的手册。  
 - `man n xxx`，查看xxx的第n章手册，一般来说，开发时需要掌握1（可执行程序或shell命令）、2（系统调用-内核提供的函数）、3（库调用-程序库中的函数）、5（文件格式和规范）、9（内核例程）章的内容，例如，`man 3 printf`。
 
+如何安装中文的manpages：
+1. `sudo apt-get install manpages-zh`，安装中文manpages；
+2. `dpkg -L manpages-zh | less`，查看中文manpages的安装位置(`/usr/share/man/zh_CN`)；
+3. 为中文manpages设置一个别名，修改`~/.bashrc`，添加行，`alias cman='man -M /usr/share/man/zh_CN'`；
+4. 重启终端即可。
+
 ### alias
 `alias xx='yyy'`，给`yyy`命令起一个别名`xx`。ls、ll都是系统设定的别名。
