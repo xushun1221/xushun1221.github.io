@@ -104,7 +104,8 @@ ssize_t write(int fd, const void *buf, size_t count);
 - 返回值：有符号整数；
   - 成功写出，会返回写出的字节数；
   - 如果返回`0`，表示没有数据可以写出；
-  - 如果失败，返回`-1`并设置`errno`。
+  - 如果失败，返回`-1`并设置`errno`；
+  - 如果返回`-1`且`errorno == EAGAIN 或 EWOULDBLOCK`,说明正在读取非阻塞文件且无数据（设备文件或网络文件）。
 - `fd`：文件描述符；
 - `buf`：从该缓冲区写出；
 - `count`：实际要写出的数据大小。
@@ -284,4 +285,132 @@ write(4, "a", 1)                        = 1
 
 ## 文件描述符
 文件描述符的图示如下：  
-![](/post_images/posts/Coding/【Linux系统编程】06/文件描述符.jpg "文件描述符")
+![](/post_images/posts/Coding/【Linux系统编程】06/文件描述符.jpg "文件描述符")  
+- 文件描述符这个概念是属于进程的，在PCB进程控制块中，有一个指针指向一个文件描述符表，每一个表项就是一个该进程打开的文件；
+- 文件描述符（整数）可以理解为一个指针数组的索引（key），数组内容是指向文件结构体（`struct file`，文件的描述信息）的指针（value）；
+- 操作系统不想让用户知道该表的具体细节，所以只将索引暴露给用户；
+- 文件描述符表的前三项（0、1、2），分别对应标准输入、标准输出、标准错误，推荐使用对应的宏（`STDIN_FILENO`，`STDOUT_FILENO`，`STDERR_FILENO`）而非数字012；
+- 进程打开的其他文件从`3`号开始，最大为`1023`号，所以一个进程最多打开1024个文件；
+- 新打开的文件使用的文件描述符，是表中可用的最小的序号，例如已打开3、4、5、6号，此时关闭3号，下次打开文件的描述符就为3。
+
+## 阻塞和非阻塞
+产生阻塞的场景：读设备文件、读网络。（阻塞是设备文件、网络文件的属性，常规文件无阻塞概念）  
+
+终端对应的文件为：`/dev/tty`，尝试使用这个文件。  
+从标准输入（键盘）读数据，写到标准输出：  
+```c
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+int main() {
+    char buf[10];
+    int read_bytes = read(STDIN_FILENO, buf, 10); // 阻塞
+    if (n < 0) {
+        perror("read STDIO_FILENO");
+        exit();
+    }
+    write(STDOUT_FILENO, buf, read_bytes);
+    return 0;
+}
+```
+编译运行该程序，发现终端的光标在闪烁，该程序阻塞在了`read`函数处，随便输入一些字符，回车，阻塞状态结束，`read`读到了字符，并由`write`函数回显到终端。这说明`/dev/tty`这个文件默认就是阻塞的。
+
+如果一个阻塞文件被读取，没有数据它就会等待数据；而一个非阻塞文件被读取，但是它没有数据，`read`会直接返回`-1`，并且`errno`会被设置为`EAGAIN`或`EWOULDBLOCK`，但这种情况不是读取错误，表示正在读取非阻塞文件而没有数据。
+
+`/dev/tty`可以直接读，说明它已经是打开的状态，如果想要使用非阻塞方式，我们需要重新打开这个文件，并添加`O_NONBLOCK`flag，设备文件不需要关闭。  
+```c
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <fcntl.h>
+#include <errno.h>
+int main() {
+    char buf[10];
+    int fd = open("/dev/tty", O_RDONLY | O_NONBLOCK); // 非阻塞
+    if (fd < 0) {
+        perror("open /dev/tty");
+        exit(1);
+    }
+    int read_bytes;
+tryagain:
+    read_bytes = read(fd, buf, 10);
+    if (read_bytes < 0) {
+        if (errno != EAGAIN) {
+            perror("read /dev/tty");
+            exit(1);
+        } else {
+            write(STDOUT_FILENO, "try again\n", strlen("try again\n"));
+            sleep(2);
+            goto tryagain;
+        }
+    }
+    write(STDOUT_FILENO, buf, read_bytes);
+    close(fd);
+    return 0;
+}
+```
+编译运行，可以看到每隔2秒，终端就会输出`try again`提示进行输入，输入一些字符后回车，终端就会回显这些字符并退出。
+
+## fcntl
+获取和设置文件访问模式属性。
+
+上一部分我们使用重新打开文件的方法来设置文件的访问模式，其实可以不重新打开文件，直接使用`fcntl`函数进行设置即可。（file control）
+
+函数原型：  
+```c
+#include <unistd.h>
+#include <fcntl.h>
+
+int fcntl(int fd, int cmd, ... /* arg */ );
+```
+- 返回值：
+  - `-1`，出错，`errno`设置；
+  - 成功情况的返回值和操作相关。
+- `fd`：文件描述符；
+- `cmd`：命令；
+- `/*arg*/`：根据`cmd`决定后续的参数。
+
+重点掌握的命令：
+- `F_GETFL`：获取文件的访问模式（get file flags），不需要参数；
+- `F_SETFL`：设置文件的访问模式（set file flags），需要一个`int flags`参数；
+- 要给文件添加一个访问模式，可以使用`F_GETFL`获取文件的`flags`然后或等上需要添加的访问模式flag(bitmap)，再使用`F_SETFL`进行设置即可。
+
+示例，非阻塞终端回显：  
+```c
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <string.h>
+int main() {
+    char buf[10];
+    int flags = fcntl(STDIN_FILENO, F_GETFL);
+    if (flags == 1) {
+        perror("fcntl error");
+        exit(1);
+    }
+    flags |= O_NONBLOCK; // 设置为非阻塞
+    int ret = fcntl(STDIN_FILENO, F_SETFL, flags);
+    if (ret == -1) {
+        perror("fcntl error");
+        exit(1);
+    }
+    int read_bytes;
+tryagain:
+    read_bytes = read(STDIN_FILENO, buf, 10);
+    if (read_bytes < 0) {
+        if (errno != EAGAIN) {
+            perror("read /dev/tty");
+            exit(1);
+        } else {
+            write(STDOUT_FILENO, "try again\n", strlen("try again\n"));
+            sleep(2);
+            goto tryagain;
+        }
+    }
+    write(STDOUT_FILENO, buf, read_bytes);
+    return 0;
+}
+```
