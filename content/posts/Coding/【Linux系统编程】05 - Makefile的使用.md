@@ -296,7 +296,7 @@ clean:
 .PHONY: clean ALL
 ```
 
-## 作业 - 复杂一点的项目Makefile
+## 作业1 - 复杂一点的项目Makefile
 项目目录如下：  
 ```console
 xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_makefile$ tree
@@ -352,6 +352,25 @@ $(obj):./obj/%.o:./src/%.c
 
 clean:
 	-rm -rf $(obj) ./bin/test.out
+
+.PHONY: clean ALL
+```
+
+## 作业2 - 编译所有C文件
+- 使用`make`命令可以将该目录下所有的c文件编译；
+- 使用`make xxx`命令可以将该目录下`xxx.c`文件编译为`xxx`可执行文件。
+
+```makefile
+src = $(wildcard *.c)
+target = $(patsubst %.c, %, $(src)) # 目标是.c文件编译为可执行文件
+
+ALL:$(target)
+
+%:%.c
+	gcc $< -o $@
+
+clean:
+	-rm -rf $(target)
 
 .PHONY: clean ALL
 ```
