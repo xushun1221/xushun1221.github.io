@@ -414,3 +414,31 @@ tryagain:
     return 0;
 }
 ```
+
+## lseek
+定位读写文件的偏移值。
+
+函数原型：
+```c
+#include <sys/types.h>
+#include <unistd.h>
+
+off_t lseek(int fd, off_t offset, int whence);
+```
+- 返回值：从文件起始位置开始的偏移长度，出错返回`-1`，且设置`errno`；
+- `fd`：文件描述符；
+- `offset`：偏移量（可正可负）；
+- `whence`：偏移的起始位置
+  - `SEEK_SET`：起始字节；
+  - `SEEK_CUR`：当前字节，假如已经读了10个字节，`SEEK_CUR == 11`;
+  - `SEEK_END`：末尾后一个字节。
+
+`lseek`应用场景：
+- 文件的读和写使用的是同一个偏移量；
+- 使用lseek获取文件大小（并不是非常正规的方式）`lseek(fd, 0, SEEK_END);`；
+- 使用lseek拓展文件大小，`lseek(fd, 100, SEEK_END);`，在文件后追加100个字节，这里还没有真正拓展，如果要使文件正在拓展，必须在lseek之后引起IO操作（在结尾随便写一个字符`'\0'`即可，这样就追加了101个字节）。
+
+补充：
+- `od -tcx filename`：查看文件的 16 进制表示形式；
+- `od -tcd filename`：查看文件的 10 进制表示形式；
+- 使用`truncate`函数，直接拓展文件。`int ret = truncate("test.txt", 250)`，成功返回`0`，失败返回`-1`并设置`errno`;（它不能创建文件，只能拓展现有文件）
