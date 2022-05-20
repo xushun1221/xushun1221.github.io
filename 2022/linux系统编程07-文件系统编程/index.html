@@ -295,8 +295,8 @@
 </span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
 </span><span class=cp></span>
 <span class=kt>int</span> <span class=nf>chdir</span><span class=p>(</span><span class=k>const</span> <span class=kt>char</span> <span class=o>*</span><span class=n>path</span><span class=p>)</span><span class=p>;</span>
-</code></pre></td></tr></table></div></div><ul><li>返回值：成功返回<code>0</code>，失败返回<code>-1</code>并设置<code>errno</code>；</li><li><code>path</code>：新的工作目录。</li></ul><a class=post-dummy-target id=文件目录的权限></a><h2>文件、目录的权限</h2><p>在Linux系统中，所见皆文件。目录也是文件，其文件内容是该目录下所有子文件的目录项（dentry），可以尝试用vim打开一个目录。</p><p>文件和目录文件的权限含义有所不同：<br>||r|w|x|
-|&mdash;|&mdash;|&mdash;|&mdash;|
+</code></pre></td></tr></table></div></div><ul><li>返回值：成功返回<code>0</code>，失败返回<code>-1</code>并设置<code>errno</code>；</li><li><code>path</code>：新的工作目录。</li></ul><a class=post-dummy-target id=文件目录的权限></a><h2>文件、目录的权限</h2><p>在Linux系统中，所见皆文件。目录也是文件，其文件内容是该目录下所有子文件的目录项（dentry），可以尝试用vim打开一个目录。</p><p>文件和目录文件的权限含义有所不同：<br>|.|r|w|x|
+|&mdash;&ndash;|&mdash;&ndash;|&mdash;&ndash;|&mdash;&ndash;|
 |文件|文件的内容可以被查看 cat,more,less|文件可以被修改 vi|可以运行产生一个进程 ./xx|
 |目录|目录可以被浏览 ls,tree|创建、删除、修改文件 mv,touch,mkdir|可以被打开、进入 cd|</p><a class=post-dummy-target id=opendir></a><h2>opendir</h2><p>打开一个目录。（标准库函数）</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2
