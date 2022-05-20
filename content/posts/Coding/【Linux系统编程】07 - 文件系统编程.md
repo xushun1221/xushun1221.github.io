@@ -229,4 +229,262 @@ int main() {
 
 但是最好不要依赖这个特性。
 
-## 
+## readlink
+读取符号链接本身的内容，得到链接所指向的文件名。
+
+函数原型：  
+```c
+#include <unistd.h>
+
+ssize_t readlink(const char *pathname, char *buf, size_t bufsiz);
+```
+- 返回值：成功返回`0`，失败返回`-1`并设置`errno`；
+- `path`：链接的路径；
+- `buf`：保存内容的缓冲区。
+
+## rename
+重命名一个文件。（其实和mv一样）
+
+函数原型：  
+```c
+#include <stdio.h>
+
+int rename(const char *oldpath, const char *newpath);
+```
+- 返回值：成功返回`0`，失败返回`-1`并设置`errno`。
+
+## getcwd
+获得当前进程的工作目录。（标准库函数）
+
+函数原型：  
+```c
+#include <unistd.h>
+
+char *getcwd(char *buf, size_t size);
+```
+- 返回值：成功返回当前工作目录字符串指针，失败返回`NULL`；
+- `buf size`：存放当前目录字符串，buf的大小。
+
+## chdir
+改变当前进程的工作目录。（系统函数）
+
+函数原型：  
+```c
+#include <unistd.h>
+
+int chdir(const char *path);
+```
+- 返回值：成功返回`0`，失败返回`-1`并设置`errno`；
+- `path`：新的工作目录。
+
+## 文件、目录的权限
+在Linux系统中，所见皆文件。目录也是文件，其文件内容是该目录下所有子文件的目录项（dentry），可以尝试用vim打开一个目录。
+
+文件和目录文件的权限含义有所不同：  
+||r|w|x|
+|---|---|---|---|
+|文件|文件的内容可以被查看 cat,more,less|文件可以被修改 vi|可以运行产生一个进程 ./xx|
+|目录|目录可以被浏览 ls,tree|创建、删除、修改文件 mv,touch,mkdir|可以被打开、进入 cd|
+
+## opendir
+打开一个目录。（标准库函数）
+
+函数原型：  
+```c
+#include <sys/types.h>
+#include <dirent.h> // directory entry
+
+DIR *opendir(const char *name);
+```
+- 返回值：成功返回指向该目录结构体的指针，失败返回`NULL`设置`errno`；
+- `name`：参数支持相对路径和绝对路径两种方式。
+
+## closedir
+关闭打开的目录。（标准库函数）
+
+函数原型：  
+```c
+#include <sys/types.h>
+#include <dirent.h>
+
+int closedir(DIR *dirp);
+```
+- 返回值：成功返回`0`，失败返回`-1`并设置`errno`。
+
+## readdir
+读取目录内容。（标准库函数）
+
+函数原型：  
+```c
+#include <dirent.h>
+
+struct dirent *readdir(DIR *dirp);
+
+struct dirent {
+    ino_t          d_ino;       /* Inode number */
+    off_t          d_off;       /* Not an offset; see below */
+    unsigned short d_reclen;    /* Length of this record */
+    unsigned char  d_type;      /* Type of file; not supported
+                                              by all filesystem types */
+    char           d_name[256]; /* Null-terminated filename */
+};
+
+```
+- 返回值：成功返回目录项结构体指针，失败返回`NULL`设置`errno`，读到结尾返回`UNLL`不设置`error`；
+- `struct dirent`：`ino_t`和`char d_name[256]`重要。
+
+## mkdir
+创建一个目录。（系统函数）
+
+函数原型：  
+```c
+#include <sys/stat.h>
+#include <sys/types.h>
+
+int mkdir(const char *pathname, mode_t mode);
+```
+- 返回值：成功返回`0`，失败`-1`设置`errno`；
+- `pathname`：目录名；
+- `mode`：访问模式，权限。
+
+`mode`计算方式：`mode & (~umask)`。  
+终端命令`umask`查看，`umask`的值为`0002`，`~umask`就是`0775`。
+
+## 练习 - 实现ls
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include <sys/types.h>
+#include <dirent.h>
+int main(int argc, char* argv[]) {
+    DIR* dp = opendir(argv[1]);
+    if (dp == NULL) {
+        perror("opendir error");
+        exit(1);
+    }
+    struct dirent* sdp;
+    while ((sdp = readdir(dp)) != NULL) {
+        printf("%s\n", sdp-> d_name);
+    }
+    closedir(dp);
+    return 0;
+}
+```
+
+## 练习 - 实现递归遍历目录
+思路：
+1. 判断命令行参数`argv[1]`，获取用户查询的目录名；
+2. 判断用户指定的是否为目录，`stat S_ISDIR()`，封装一个函数；
+3. 读目录`opendir readdir closedir`
+   1. 普通文件，直接打印；
+   2. 目录文件，拼接访问的绝对路径，递归调用；
+
+代码：  
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <unistd.h>
+#include <dirent.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+void fetchdir(char* dirpath);
+void printFile(char* path);
+
+void fetchdir(char* dirpath) {
+    DIR* dp = opendir(dirpath);
+    if (dp == NULL) {
+        fprintf(stderr, "fetchdir: can't open %s\n", dirpath);
+        exit(1);
+    }
+    struct dirent* sdp;
+    char subpath[257];
+    while ((sdp = readdir(dp)) != NULL) {
+        if (strcmp(sdp -> d_name, ".") == 0 || strcmp(sdp -> d_name, "..") == 0)
+            continue; // ；处理"."".."目录 防止无限递归
+        if (strlen(dirpath) + strlen(sdp -> d_name) + 2 > 256) { // 路径长度太长
+            fprintf(stderr, "fetchdir: name %s %s too long\n", dirpath, sdp -> d_name);
+        } else {
+            sprintf(subpath, "%s/%s", dirpath, sdp -> d_name); // 拼接路径
+            printFile(subpath); // 递归
+        }
+    }
+    closedir(dp);
+}
+
+void printFile(char* path) {
+    struct stat sbuf;
+    if (lstat(path, &sbuf) == -1) {
+        fprintf(stderr, "isFile: can't access %s\n", path);
+        exit(1);
+    }
+    if ((sbuf.st_mode & S_IFMT) == S_IFDIR) { // 如果是目录 就展开
+        fetchdir(path);
+    } else { // 普通文件 直接打印 文件大小 和 路径
+        printf("%8ld %s\n", sbuf.st_size, path);
+    }
+}
+
+int main(int argc, char* argv[]) {
+    if (argc == 1) { // 没有命令行参数默认当前目录
+        printFile(".");
+    } else {
+        while (-- argc > 0) { // 处理多个命令行参数
+            printFile(*++ argv);
+        }
+    }
+    return 0;
+}
+```
+
+## 重定向 dup / dup2
+复制一个文件描述符。（系统函数）
+
+函数原型：  
+```c
+#include <unistd.h>
+
+int dup(int oldfd);
+int dup2(int oldfd, int newfd); // dup to
+```
+- 返回值：成功，返回新的文件描述符，失败返回`-1`设置`errno`；
+- `oldfd`：已有的文件描述符；
+- `newfd`：新的文件描述符（旧的复制给新的）。
+
+- `dup`返回的文件描述符是，未使用的最小的文件描述符，它是`oldfd`的一个复制，和`oldfd`指向相同的文件。`dup`基本就起一个保存文件描述符的作用；
+- `dup2`返回的文件描述符是，`newfd`，也是`oldfd`的复制，和`oldfd`指向相同的文件；
+- 区别在于，`dup`自动分配，`dup2`可以指定。
+
+一般用该函数来进行重定向的功能，demo，将写入屏幕的内容重定向到文件：  
+```c
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <string.h>
+int main(int argc, char* argv[]) {
+    int fd = open("test.txt", O_RDWR);
+    if (fd == -1) {
+        perror("open error");
+        exit(1);
+    }
+    // 把标准输出重定向到test.txt
+    if (dup2(fd, STDOUT_FILENO) == -1) {
+        perror("dup2 error");
+        exit(1);
+    }
+    printf("dup2 test write to STDOUT\n");
+    close(fd);
+    return 0;
+}
+```
+编译运行，本来要输入到`STDOUT`的内容，被重定向到`test.txt`文件中。
+
+注：`fcntl`函数也可以实现dup操作。
