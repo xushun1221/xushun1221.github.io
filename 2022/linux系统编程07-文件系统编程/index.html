@@ -1,13 +1,13 @@
-<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【Linux系统编程】07 - 文件系统编程 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B06-%E6%96%87%E4%BB%B6io/><link rel=next href=https://xushun1221.github.io/2022/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B08-%E8%BF%9B%E7%A8%8B/><link rel=canonical href=https://xushun1221.github.io/2022/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B07-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【Linux系统编程】07 - 文件系统编程"><meta name=twitter:description content="Inode和dentry Inode的本质是一个结构体，存储文件的属性信息。如：权限、类型、大小、时间、用户、盘块位置等等。也叫作文件属性管理"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【Linux系统编程】07 - 文件系统编程","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B07-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"Linux","wordcount":4274,"url":"https:\/\/xushun1221.github.io\/2022\/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B07-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B\/","datePublished":"2022-05-18T00:00:00\x2b00:00","dateModified":"2022-05-18T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【Linux系统编程】07 - 文件系统编程</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-05-18>2022-05-18</time>&nbsp;
-<i class="fas fa-pencil-alt fa-fw"></i>about 4274 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#inode和dentry>Inode和dentry</a></li><li><a href=#stat--lstat>stat / lstat</a><ul><li><a href=#查询文件大小和类型>查询文件大小和类型</a></li><li><a href=#stat穿透现象>stat穿透现象</a></li><li><a href=#掩码方式判断文件类型>掩码方式判断文件类型</a></li></ul></li><li><a href=#link--unlink>link / unlink</a><ul><li><a href=#link>link</a></li><li><a href=#unlink>unlink</a></li></ul></li><li><a href=#隐式回收>隐式回收</a></li><li><a href=#readlink>readlink</a></li><li><a href=#rename>rename</a></li><li><a href=#getcwd>getcwd</a></li><li><a href=#chdir>chdir</a></li><li><a href=#文件目录的权限>文件、目录的权限</a></li><li><a href=#opendir>opendir</a></li><li><a href=#closedir>closedir</a></li><li><a href=#readdir>readdir</a></li><li><a href=#mkdir>mkdir</a></li><li><a href=#练习---实现ls>练习 - 实现ls</a></li><li><a href=#练习---实现递归遍历目录>练习 - 实现递归遍历目录</a></li><li><a href=#重定向-dup--dup2>重定向 dup / dup2</a></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【Linux系统编程】07 - 文件系统编程 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B06-%E6%96%87%E4%BB%B6io/><link rel=next href=https://xushun1221.github.io/2022/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B08-%E8%BF%9B%E7%A8%8B/><link rel=canonical href=https://xushun1221.github.io/2022/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B07-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【Linux系统编程】07 - 文件系统编程"><meta name=twitter:description content="Inode和dentry Inode的本质是一个结构体，存储文件的属性信息。如：权限、类型、大小、时间、用户、盘块位置等等。也叫作文件属性管理"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【Linux系统编程】07 - 文件系统编程","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B07-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"Linux","wordcount":4232,"url":"https:\/\/xushun1221.github.io\/2022\/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B07-%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B\/","datePublished":"2022-05-18T00:00:00\x2b00:00","dateModified":"2022-05-18T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【Linux系统编程】07 - 文件系统编程</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-05-18>2022-05-18</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 4232 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#inode和dentry>Inode和dentry</a></li><li><a href=#stat--lstat>stat / lstat</a><ul><li><a href=#查询文件大小和类型>查询文件大小和类型</a></li><li><a href=#stat穿透现象>stat穿透现象</a></li><li><a href=#掩码方式判断文件类型>掩码方式判断文件类型</a></li></ul></li><li><a href=#link--unlink>link / unlink</a><ul><li><a href=#link>link</a></li><li><a href=#unlink>unlink</a></li></ul></li><li><a href=#隐式回收>隐式回收</a></li><li><a href=#readlink>readlink</a></li><li><a href=#rename>rename</a></li><li><a href=#getcwd>getcwd</a></li><li><a href=#chdir>chdir</a></li><li><a href=#文件目录的权限>文件、目录的权限</a></li><li><a href=#opendir>opendir</a></li><li><a href=#closedir>closedir</a></li><li><a href=#readdir>readdir</a></li><li><a href=#mkdir>mkdir</a></li><li><a href=#练习---实现ls>练习 - 实现ls</a></li><li><a href=#练习---实现递归遍历目录>练习 - 实现递归遍历目录</a></li><li><a href=#重定向-dup--dup2>重定向 dup / dup2</a></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
 <span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#inode和dentry>Inode和dentry</a></li><li><a href=#stat--lstat>stat / lstat</a><ul><li><a href=#查询文件大小和类型>查询文件大小和类型</a></li><li><a href=#stat穿透现象>stat穿透现象</a></li><li><a href=#掩码方式判断文件类型>掩码方式判断文件类型</a></li></ul></li><li><a href=#link--unlink>link / unlink</a><ul><li><a href=#link>link</a></li><li><a href=#unlink>unlink</a></li></ul></li><li><a href=#隐式回收>隐式回收</a></li><li><a href=#readlink>readlink</a></li><li><a href=#rename>rename</a></li><li><a href=#getcwd>getcwd</a></li><li><a href=#chdir>chdir</a></li><li><a href=#文件目录的权限>文件、目录的权限</a></li><li><a href=#opendir>opendir</a></li><li><a href=#closedir>closedir</a></li><li><a href=#readdir>readdir</a></li><li><a href=#mkdir>mkdir</a></li><li><a href=#练习---实现ls>练习 - 实现ls</a></li><li><a href=#练习---实现递归遍历目录>练习 - 实现递归遍历目录</a></li><li><a href=#重定向-dup--dup2>重定向 dup / dup2</a></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=inode和dentry></a><h2>Inode和dentry</h2><p>Inode的本质是一个结构体，存储文件的属性信息。如：权限、类型、大小、时间、用户、盘块位置等等。也叫作文件属性管理结构，大多数的Inode都存储在磁盘上。少量常用、近期使用的Inode会被缓存到内存中。</p><p>dentry（directory entry），目录项，本质也是一个结构体，重要的成员变量有两个（文件名，指向Inode的指针，&mldr;），目录项所对应的文件存放在磁盘中。</p><p>dentry和Inode的关系可以参考下图：<br><figure><img src=/svg/loading.min.svg data-sizes=auto data-src=/post_images/posts/Coding/%e3%80%90Linux%e7%b3%bb%e7%bb%9f%e7%bc%96%e7%a8%8b%e3%80%9107/dentry%e5%92%8cInode.jpg alt title=dentry和Inode class=lazyload><figcaption class=image-caption>dentry和Inode</figcaption></figure></p><ul><li>我们的数据存储在磁盘上的某个区域内，但是我们需要一种结构来帮助我们找到这些数据存放的位置，这个结构就是Inode；</li><li>同时我们也要通过文件名来找到这个Inode，使用dentry目录项结构来封装文件名和Inode编号，通过Inode编号我们就能找到Inode结构体从而找到文件数据；</li><li>一个文件的主要就是由目录项dentry和Inode组成；</li><li>操作系统对文件创建硬链接的原理是，各个硬链接都有相同的Inode号，只是dentry不同，删除一个硬链接实际上就是去掉一个dentry。</li></ul><a class=post-dummy-target id=stat--lstat></a><h2>stat / lstat</h2><p>获取文件的状态。（从Inode中获得）</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2
 </span><span class=lnt>3
 </span><span class=lnt>4
 </span><span class=lnt>5
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/types.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/stat.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/types.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/stat.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
 </span><span class=cp></span>
 <span class=kt>int</span> <span class=nf>stat</span><span class=p>(</span><span class=k>const</span> <span class=kt>char</span> <span class=o>*</span><span class=n>pathname</span><span class=p>,</span> <span class=k>struct</span> <span class=n>stat</span> <span class=o>*</span><span class=n>statbuf</span><span class=p>)</span><span class=p>;</span>
 </code></pre></td></tr></table></div></div><ul><li>返回值：成功<code>0</code>，失败<code>-1</code>且设置<code>errno</code>；</li><li><code>path</code>：文件路径；</li><li><code>statbuf</code>：返回参数，用于返回文件属性；（stat结构体参考manpages）</li></ul><a class=post-dummy-target id=查询文件大小和类型></a><h3>查询文件大小和类型</h3><p>demo：查询文件大小和类型</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
@@ -39,12 +39,12 @@
 </span><span class=lnt>27
 </span><span class=lnt>28
 </span><span class=lnt>29
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/types.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/stat.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string.h&gt;</span><span class=cp>
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/types.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/stat.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string.h&gt;</span><span class=cp>
 </span><span class=cp></span><span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=kt>int</span> <span class=n>argc</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span> <span class=n>argv</span><span class=p>[</span><span class=p>]</span><span class=p>)</span> <span class=p>{</span>
     <span class=k>struct</span> <span class=n>stat</span> <span class=n>sbuf</span><span class=p>;</span>
     <span class=kt>int</span> <span class=n>ret</span> <span class=o>=</span> <span class=n>stat</span><span class=p>(</span><span class=n>argv</span><span class=p>[</span><span class=mi>1</span><span class=p>]</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>sbuf</span><span class=p>)</span><span class=p>;</span>
@@ -116,12 +116,12 @@
 </span><span class=lnt>46
 </span><span class=lnt>47
 </span><span class=lnt>48
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/types.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/stat.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;time.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/sysmacros.h&gt;</span><span class=cp>
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/types.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/stat.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;time.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/sysmacros.h&gt;</span><span class=cp>
 </span><span class=cp></span>
 <span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=kt>int</span> <span class=n>argc</span><span class=p>,</span> <span class=kt>char</span> <span class=o>*</span><span class=n>argv</span><span class=p>[</span><span class=p>]</span><span class=p>)</span>
 <span class=p>{</span>
@@ -167,13 +167,13 @@
 </code></pre></td></tr></table></div></div><a class=post-dummy-target id=link--unlink></a><h2>link / unlink</h2><a class=post-dummy-target id=link></a><h3>link</h3><p>给文件创建（硬）链接。（给文件创建一个新dentry）</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2
 </span><span class=lnt>3
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
 </span><span class=cp></span>
 <span class=kt>int</span> <span class=nf>link</span><span class=p>(</span><span class=k>const</span> <span class=kt>char</span> <span class=o>*</span><span class=n>oldpath</span><span class=p>,</span> <span class=k>const</span> <span class=kt>char</span> <span class=o>*</span><span class=n>newpath</span><span class=p>)</span><span class=p>;</span>
 </code></pre></td></tr></table></div></div><ul><li>返回值：成功<code>0</code>，失败<code>-1</code>且设置<code>errno</code>。</li></ul><a class=post-dummy-target id=unlink></a><h3>unlink</h3><p>删除一个文件的目录项（硬链接计数减一）。</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2
 </span><span class=lnt>3
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
 </span><span class=cp></span>
 <span class=kt>int</span> <span class=nf>unlink</span><span class=p>(</span><span class=k>const</span> <span class=kt>char</span> <span class=o>*</span><span class=n>pathname</span><span class=p>)</span><span class=p>;</span>
 </code></pre></td></tr></table></div></div><ul><li>返回值：成功<code>0</code>，失败<code>-1</code>且设置<code>errno</code>。</li></ul><p>Linux下删除文件的机制：不断将<code>st_nlink</code>减一，直到减到0为止。无目录项dentry对应的文件，系统会择机释放。</p><p>我们删除文件，实际上只是让文件具备了被释放的条件。</p><p><code>unlink</code>函数的特征，清除文件时，如果文件的硬链接计数为0了，没有dentry对应，但该文件不会被立即释放，要等到所有打开该文件的进程关闭该文件，系统才会挑时间将该文件释放掉。</p><p>写一个demo测试一下该特性：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
@@ -218,12 +218,12 @@
 </span><span class=lnt>40
 </span><span class=lnt>41
 </span><span class=lnt>42
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;errno.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;fcntl.h&gt;</span><span class=cp>
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;errno.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;fcntl.h&gt;</span><span class=cp>
 </span><span class=cp></span>
 <span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
     <span class=kt>int</span> <span class=n>fd</span> <span class=o>=</span> <span class=n>open</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>test.txt</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>O_RDWR</span> <span class=o>|</span> <span class=n>O_CREAT</span> <span class=o>|</span> <span class=n>O_TRUNC</span><span class=p>,</span> <span class=mo>0664</span><span class=p>)</span><span class=p>;</span>
@@ -263,41 +263,41 @@
 </code></pre></td></tr></table></div></div><p>编译运行该程序。会发现文件<code>test.txt</code>被成功创建并写入，当输入字符结束阻塞后，该文件被关闭，程序运行结束后，文件被释放。</p><p>将代码段2注释掉，代码段1取消注释，编译运行。（将<code>unlink</code>放在前面的意义是，刚<code>open</code>就<code>unlink</code>，即使程序后面出错，也会将该文件删除掉）发现文件依然可以被成功创建和写入（这体现了<code>unlink</code>的特性，即使文件被<code>unlink</code>，它也会在所有打开该文件的进程关闭它之后，才会被删除。），但是在阻塞时，找不到该文件，这是由于内容并没有被写入到磁盘上，而是在内核空间的缓冲区中。</p><a class=post-dummy-target id=隐式回收></a><h2>隐式回收</h2><p>当进程结束运行时，所有进程打开的文件会被关闭，申请的内存空间会被释放。系统的这一特性称之为隐式回收系统资源。</p><p>比如上面那个程序，要是没有在程序中关闭文件描述符，没有隐式回收的话，这个文件描述符会保留，多次出现这种情况会导致系统文件描述符耗尽。所以隐式回收会在程序结束时收回它打开的文件使用的文件描述符。</p><p>但是最好不要依赖这个特性。</p><a class=post-dummy-target id=readlink></a><h2>readlink</h2><p>读取符号链接本身的内容，得到链接所指向的文件名。</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2
 </span><span class=lnt>3
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
 </span><span class=cp></span>
 <span class=n>ssize_t</span> <span class=nf>readlink</span><span class=p>(</span><span class=k>const</span> <span class=kt>char</span> <span class=o>*</span><span class=n>pathname</span><span class=p>,</span> <span class=kt>char</span> <span class=o>*</span><span class=n>buf</span><span class=p>,</span> <span class=n>size_t</span> <span class=n>bufsiz</span><span class=p>)</span><span class=p>;</span>
 </code></pre></td></tr></table></div></div><ul><li>返回值：成功返回<code>0</code>，失败返回<code>-1</code>并设置<code>errno</code>；</li><li><code>path</code>：链接的路径；</li><li><code>buf</code>：保存内容的缓冲区。</li></ul><a class=post-dummy-target id=rename></a><h2>rename</h2><p>重命名一个文件。（其实和mv一样）</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2
 </span><span class=lnt>3
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
 </span><span class=cp></span>
 <span class=kt>int</span> <span class=nf>rename</span><span class=p>(</span><span class=k>const</span> <span class=kt>char</span> <span class=o>*</span><span class=n>oldpath</span><span class=p>,</span> <span class=k>const</span> <span class=kt>char</span> <span class=o>*</span><span class=n>newpath</span><span class=p>)</span><span class=p>;</span>
 </code></pre></td></tr></table></div></div><ul><li>返回值：成功返回<code>0</code>，失败返回<code>-1</code>并设置<code>errno</code>。</li></ul><a class=post-dummy-target id=getcwd></a><h2>getcwd</h2><p>获得当前进程的工作目录。（标准库函数）</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2
 </span><span class=lnt>3
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
 </span><span class=cp></span>
 <span class=kt>char</span> <span class=o>*</span><span class=nf>getcwd</span><span class=p>(</span><span class=kt>char</span> <span class=o>*</span><span class=n>buf</span><span class=p>,</span> <span class=n>size_t</span> <span class=n>size</span><span class=p>)</span><span class=p>;</span>
 </code></pre></td></tr></table></div></div><ul><li>返回值：成功返回当前工作目录字符串指针，失败返回<code>NULL</code>；</li><li><code>buf size</code>：存放当前目录字符串，buf的大小。</li></ul><a class=post-dummy-target id=chdir></a><h2>chdir</h2><p>改变当前进程的工作目录。（系统函数）</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2
 </span><span class=lnt>3
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
 </span><span class=cp></span>
 <span class=kt>int</span> <span class=nf>chdir</span><span class=p>(</span><span class=k>const</span> <span class=kt>char</span> <span class=o>*</span><span class=n>path</span><span class=p>)</span><span class=p>;</span>
 </code></pre></td></tr></table></div></div><ul><li>返回值：成功返回<code>0</code>，失败返回<code>-1</code>并设置<code>errno</code>；</li><li><code>path</code>：新的工作目录。</li></ul><a class=post-dummy-target id=文件目录的权限></a><h2>文件、目录的权限</h2><p>在Linux系统中，所见皆文件。目录也是文件，其文件内容是该目录下所有子文件的目录项（dentry），可以尝试用vim打开一个目录。</p><p>文件和目录文件的权限含义有所不同：</p><table><thead><tr><th>.</th><th>r</th><th>w</th><th>x</th></tr></thead><tbody><tr><td>文件</td><td>文件的内容可以被查看 cat,more,less</td><td>文件可以被修改 vi</td><td>可以运行产生一个进程 ./xx</td></tr><tr><td>目录</td><td>目录可以被浏览 ls,tree</td><td>创建、删除、修改文件 mv,touch,mkdir</td><td>可以被打开、进入 cd</td></tr></tbody></table><a class=post-dummy-target id=opendir></a><h2>opendir</h2><p>打开一个目录。（标准库函数）</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2
 </span><span class=lnt>3
 </span><span class=lnt>4
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/types.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;dirent.h&gt; // directory entry</span><span class=cp>
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/types.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;dirent.h&gt; // directory entry</span><span class=cp>
 </span><span class=cp></span>
 <span class=n>DIR</span> <span class=o>*</span><span class=nf>opendir</span><span class=p>(</span><span class=k>const</span> <span class=kt>char</span> <span class=o>*</span><span class=n>name</span><span class=p>)</span><span class=p>;</span>
 </code></pre></td></tr></table></div></div><ul><li>返回值：成功返回指向该目录结构体的指针，失败返回<code>NULL</code>设置<code>errno</code>；</li><li><code>name</code>：参数支持相对路径和绝对路径两种方式。</li></ul><a class=post-dummy-target id=closedir></a><h2>closedir</h2><p>关闭打开的目录。（标准库函数）</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2
 </span><span class=lnt>3
 </span><span class=lnt>4
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/types.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;dirent.h&gt;</span><span class=cp>
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/types.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;dirent.h&gt;</span><span class=cp>
 </span><span class=cp></span>
 <span class=kt>int</span> <span class=nf>closedir</span><span class=p>(</span><span class=n>DIR</span> <span class=o>*</span><span class=n>dirp</span><span class=p>)</span><span class=p>;</span>
 </code></pre></td></tr></table></div></div><ul><li>返回值：成功返回<code>0</code>，失败返回<code>-1</code>并设置<code>errno</code>。</li></ul><a class=post-dummy-target id=readdir></a><h2>readdir</h2><p>读取目录内容。（标准库函数）</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
@@ -313,7 +313,7 @@
 </span><span class=lnt>11
 </span><span class=lnt>12
 </span><span class=lnt>13
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;dirent.h&gt;</span><span class=cp>
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;dirent.h&gt;</span><span class=cp>
 </span><span class=cp></span>
 <span class=k>struct</span> <span class=n>dirent</span> <span class=o>*</span><span class=nf>readdir</span><span class=p>(</span><span class=n>DIR</span> <span class=o>*</span><span class=n>dirp</span><span class=p>)</span><span class=p>;</span>
 
@@ -330,8 +330,8 @@
 </span><span class=lnt>2
 </span><span class=lnt>3
 </span><span class=lnt>4
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/stat.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/types.h&gt;</span><span class=cp>
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/stat.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/types.h&gt;</span><span class=cp>
 </span><span class=cp></span>
 <span class=kt>int</span> <span class=nf>mkdir</span><span class=p>(</span><span class=k>const</span> <span class=kt>char</span> <span class=o>*</span><span class=n>pathname</span><span class=p>,</span> <span class=n>mode_t</span> <span class=n>mode</span><span class=p>)</span><span class=p>;</span>
 </code></pre></td></tr></table></div></div><ul><li>返回值：成功返回<code>0</code>，失败<code>-1</code>设置<code>errno</code>；</li><li><code>pathname</code>：目录名；</li><li><code>mode</code>：访问模式，权限。</li></ul><p><code>mode</code>计算方式：<code>mode & (~umask)</code>。<br>终端命令<code>umask</code>查看，<code>umask</code>的值为<code>0002</code>，<code>~umask</code>就是<code>0775</code>。</p><a class=post-dummy-target id=练习---实现ls></a><h2>练习 - 实现ls</h2><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
@@ -354,13 +354,13 @@
 </span><span class=lnt>18
 </span><span class=lnt>19
 </span><span class=lnt>20
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;errno.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/types.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;dirent.h&gt;</span><span class=cp>
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;errno.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/types.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;dirent.h&gt;</span><span class=cp>
 </span><span class=cp></span><span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=kt>int</span> <span class=n>argc</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span> <span class=n>argv</span><span class=p>[</span><span class=p>]</span><span class=p>)</span> <span class=p>{</span>
     <span class=n>DIR</span><span class=o>*</span> <span class=n>dp</span> <span class=o>=</span> <span class=n>opendir</span><span class=p>(</span><span class=n>argv</span><span class=p>[</span><span class=mi>1</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
     <span class=k>if</span> <span class=p>(</span><span class=n>dp</span> <span class=o>=</span><span class=o>=</span> <span class=nb>NULL</span><span class=p>)</span> <span class=p>{</span>
@@ -431,15 +431,15 @@
 </span><span class=lnt>55
 </span><span class=lnt>56
 </span><span class=lnt>57
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;errno.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;dirent.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;fcntl.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/types.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/stat.h&gt;</span><span class=cp>
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;errno.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;dirent.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;fcntl.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/types.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/stat.h&gt;</span><span class=cp>
 </span><span class=cp></span>
 <span class=kt>void</span> <span class=nf>fetchdir</span><span class=p>(</span><span class=kt>char</span><span class=o>*</span> <span class=n>dirpath</span><span class=p>)</span><span class=p>;</span>
 <span class=kt>void</span> <span class=nf>printFile</span><span class=p>(</span><span class=kt>char</span><span class=o>*</span> <span class=n>path</span><span class=p>)</span><span class=p>;</span>
@@ -492,7 +492,7 @@
 </span><span class=lnt>2
 </span><span class=lnt>3
 </span><span class=lnt>4
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
 </span><span class=cp></span>
 <span class=kt>int</span> <span class=nf>dup</span><span class=p>(</span><span class=kt>int</span> <span class=n>oldfd</span><span class=p>)</span><span class=p>;</span>
 <span class=kt>int</span> <span class=nf>dup2</span><span class=p>(</span><span class=kt>int</span> <span class=n>oldfd</span><span class=p>,</span> <span class=kt>int</span> <span class=n>newfd</span><span class=p>)</span><span class=p>;</span> <span class=c1>// dup to
@@ -517,12 +517,12 @@
 </span><span class=lnt>19
 </span><span class=lnt>20
 </span><span class=lnt>21
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;fcntl.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;errno.h&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string.h&gt;</span><span class=cp>
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;fcntl.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;errno.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string.h&gt;</span><span class=cp>
 </span><span class=cp></span><span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=kt>int</span> <span class=n>argc</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span> <span class=n>argv</span><span class=p>[</span><span class=p>]</span><span class=p>)</span> <span class=p>{</span>
     <span class=kt>int</span> <span class=n>fd</span> <span class=o>=</span> <span class=n>open</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>test.txt</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>O_RDWR</span><span class=p>)</span><span class=p>;</span>
     <span class=k>if</span> <span class=p>(</span><span class=n>fd</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
