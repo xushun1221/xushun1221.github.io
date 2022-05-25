@@ -405,4 +405,13 @@ int main(int argc, char* argv[]) {
 ```
 
 ### waitpid
+作用和`wait`相同，但可指定PID，可选非阻塞模式。
 
+函数原型：  
+```c
+
+#include <sys/types.h>
+#include <sys/wait.h>
+
+pid_t waitpid(pid_t pid, int *wstatus, int options);
+```
