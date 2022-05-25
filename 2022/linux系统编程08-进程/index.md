@@ -247,3 +247,162 @@ xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_process$ ./fork_shared
 注意，一定要在fork函数调用之前设置才有效。
 
 ## exec函数族
+`fork`创建子进程后执行的是和父进程相同的程序（但有可能执行不同的代码分支），子进程往往要调用一种 `exec` 函数以执行另一个程序。
+
+当进程调用一种 `exec` 函数时，该进程的用户空间代码和数据完全被新程序替换，从新程序的启动例程开始执行。
+
+调用 `exec` 并不创建新进程，所以调用 `exec` 前后该进程的 PID 并未改变。
+
+将当前进程的`.text`、`.data` 替换为所要加载的程序的`.text`、`.data`，然后让进程从新的`.text`第一条指令开始执行，但进程 PID 不变，换核不换壳。
+
+### execlp
+加载一个进程，借助`PATH`环境变量。（库函数）
+
+函数原型：  
+```c
+#include <unistd.h>
+
+int execlp(const char *file, const char *arg, ...
+                /* (char  *) NULL */);
+```
+- 返回值：成功无返回值，失败返回`-1`；
+- `file`：要加载的程序名字，在`PATH`的目录中进行查找，找不到就出错返回；
+- `arg`：程序的参数，需要以`NULL`结尾（作为哨兵），例如`execlp("ls", "ls", "-l", "-h", NULL);`，注意，`arg`从`argv[0]`开始算起；
+- 该函数常用来调用系统程序，如`ls date cp cat`等命令。
+
+### execl
+加载一个进程，通过路径和程序名来加载。
+
+函数原型：  
+```c
+#include <unistd.h>
+
+int execl(const char *pathname, const char *arg, ...
+                /* (char  *) NULL */);
+```
+- 返回值：成功无返回值，失败返回`-1`；
+- `pathname`：程序的路径名，绝对路径和相对路径都行；
+- `arg`：同样是从`argv[0]`开始算起，以哨兵`NULL`结尾；
+- 例如，`execl("/bin/ls", "ls", "-l", NULL);`。
+
+### 练习 - 将系统进程信息保存到文件中
+代码：  
+```c
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+int main(int argc, char* argv[]) {
+    int fd = open("ps.out", O_WRONLY | O_CREAT | O_TRUNC, 0664);
+    if (fd == -1) {
+        perror("open ps.out error");
+        exit(1);
+    }
+    dup2(fd, STDOUT_FILENO);
+    execlp("ps", "ps", "aux", NULL);
+    // close(fd); // 这里close没用 因为execlp会从之前的进程切换 之后可以使用信号知识处理 暂时先不管
+    return 0;
+}
+```
+
+### execvp
+加载一个进程，通过`PATH`，和参数数组。和`execlp`基本相同。
+
+函数原型：  
+```c
+#include <unistd.h>
+
+int execvp(const char *file, char *const argv[]);
+```
+- 返回值：成功无返回值，失败返回`-1`；
+- `file`：程序名；
+- `argv`：参数列表；
+- 例如，`char* argv[] = {"ls", "-l", NULL}; execvp("ls", argv);`。
+
+### exec函数族总结
+`exec` 函数一旦调用成功即执行新的程序，不返回。只有失败才返回，错误值`-1`。所以通常我们直接在 `exec` 函数调用后直接调用 `perror()`和 `exit()`，无需 `if` 判断。
+
+- `l (list)` 命令行参数列表
+- `p (path)` 搜素 file 时使用 path 变量
+- `v (vector)` 使用命令行参数数组
+- `e (environment)` 使用环境变量数组,不使用进程原有的环境变量，设置新加载程序运行的环境变量
+
+事实上，只有 `execve` 是真正的系统调用，其它五个函数最终都调用 `execve`，所以 `execve`在 man 手册第 2 节，其它函数在 man 手册第 3 节。这些函数之间的关系如下图所示。  
+![](/post_images/posts/Coding/【Linux系统编程】08/exec函数族.jpg "exec函数族")
+
+## 回收子进程
+### 孤儿进程
+通常来说，进程都是从某个进程`fork`而来，而当父进程先于子进程结束，则子进程成为孤儿进程，子进程的父进程变为`init`进程（进程孤儿院），这个事件称为*`init`进程领养孤儿进程*。
+
+### 僵尸进程
+子进程的残留资源应被父进程回收，当子进程终止，而父进程尚未回收时，子进程残留资源（PCB）存放于内核中，变成僵尸进程。
+
+当父进程尚未结束，而子进程已经结束，但是父进程没有处理子进程的退出状态（获取子进程的退出码，退出码写在PCB中），子进程的PCB会保留一段时间等待父进程获取退出码，直到父进程获取了子进程的退出状态，子进程的PCB才会被移除。
+
+不能用`kill`命令来解决僵尸进程，因为它已经死了。可以杀掉父进程，`init`进程领养后会释放资源。
+
+### wait
+一个进程在终止时会关闭所有文件描述符，释放在用户空间分配的内存，但它的 `PCB`还保留着，内核在其中保存了一些信息：如果是正常终止则保存着退出状态，如果是异常终止则保存着导致该进程终止的信号是哪个。
+
+这个进程的父进程可以调用 `wait` 或 `waitpid` 获取这些信息，然后彻底清除掉这个进程。
+
+我们知道一个进程的退出状态可以在 Shell 中用特殊变量`$?`查看，因为 Shell 是它的父进程，当它终止时 Shell 调用 `wait` 或 `waitpid` 得到它的退出状态同时彻底清除掉这个进程。
+
+`wait`函数有以下三个功能：
+1. 阻塞，等待子进程退出；
+2. 回收子进程残留资源；
+3. 获取子进程结束状态。
+
+函数原型：  
+```c
+#include <sys/types.h>
+#include <sys/wait.h>
+
+pid_t wait(int *wstatus);
+```
+- 返回值：成功，清理掉的子进程PID，失败，`-1`（没有子进程）；
+- `wstatus`：用来保存进程的退出状态，借助宏函数进行判断；（也可传入`NULL`，表示不关心进程如何终止）
+
+#### 获取子进程退出值和异常终止信号
+用到的宏函数：
+- `WIFEXITED(wstatus)`，非0，子进程正常终止；
+  - `WEXITSTATUS(wstatus)`，子进程正常退出情况下的退出状态（`exit()`的参数）。
+- `WIFSIGNALED(wstatus)`，非0，子进程被异常终止；
+  - `WTERMSIG(wstatus)`，使得子进程异常终止的**信号**。
+- `WIFSTOPPED(wstatus)`，非0，进程处于暂停状态（阻塞）；（非重点）
+  - `WSTOPSIG(wstatus)`，使得子进程暂停的**信号**；
+  - `WIFCONTINUED(wstatus)`，进程暂停后已经继续运行。
+
+测试代码：  
+```c
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
+int main(int argc, char* argv[]) {
+    pid_t pid = fork();
+    if (pid == 0) { // 子进程
+        printf("-- child process : my pid = %d, sleep 10s\n", getpid());
+        sleep(10);
+        printf("-- child process : die\n");
+    } else if (pid > 0) { // 父进程
+        int wstatus;
+        pid_t wpid = wait(&wstatus);
+        if (wpid == -1) {
+            perror("-- parent process : wait error");
+            exit(1);
+        }
+        if (WIFEXITED(wstatus)) {
+            printf("-- parent process : child exit with %d\n", WEXITSTATUS(wstatus));
+        } else if (WIFSIGNALED(wstatus)) {
+            printf("-- parent process : child killed by signal %d\n", WTERMSIG(wstatus));
+        }
+    }
+    return 0;
+}
+```
+
+### waitpid
+
