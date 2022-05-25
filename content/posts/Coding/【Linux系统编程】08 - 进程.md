@@ -5,8 +5,6 @@ tags: [Linux]
 categories: [Coding]
 ---
 
-题外话，markdown表格不能光写表头。
-
 ## 进程相关概念
 ### 程序和进程
 - 程序：非活动的，只占用磁盘空间；
