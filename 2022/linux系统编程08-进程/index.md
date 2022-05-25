@@ -351,6 +351,8 @@ int execvp(const char *file, char *const argv[]);
 2. 回收子进程残留资源；
 3. 获取子进程结束状态。
 
+只能回收一个子进程。
+
 函数原型：  
 ```c
 #include <sys/types.h>
@@ -411,4 +413,85 @@ int main(int argc, char* argv[]) {
 #include <sys/wait.h>
 
 pid_t waitpid(pid_t pid, int *wstatus, int options);
+```
+- 返回值：
+  - 成功，返回清理掉的子进程PID（`>0`）；
+  - 失败，返回`-1`（无子进程），设置`errno`；
+  - `options = WNOHANG`且子进程正在运行（没有子进程终止），返回`0`。
+- `pid`：
+  - `>0`，回收指定pid的子进程；
+  - `-1`，回收任意子进程（相当于`wait`）；
+  - `0`，回收和当前调用`waitpid`一个组的所有子进程；
+  - `<-1`，回收指定进程组内的任意子进程。
+- `wstatus`：和`wait`相同；
+- `options`：`WNOHANG`指定回收方式为非阻塞，阻塞方式应为`0`。
+
+注意：一次`wait`或`waitpid`调用只能清理一个子进程，清理多个需要使用循环。
+
+测试，创建5个子进程，清理第3个：  
+```c
+#include <unistd.h>
+#include <sys/types.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <string.h>
+int main(int argc, char* argv[]) {
+    pid_t pid, tpid, wpid;
+    int i;
+    for (i = 0; i < 5; ++ i) {
+        pid = fork();
+        if (pid == 0) { // 子
+            break;
+        } else if (i == 2) { // 父
+            tpid = pid;
+        }
+    }
+    if (i == 5) { // 父
+        sleep(5); // 保证能回收掉
+        wpid = waitpid(tpid, NULL, WNOHANG); // 非阻塞
+        if (wpid == -1) {
+            perror("waitpid error");
+            exit(1);
+        }
+        printf("I'm parent, waitpid %d\n", tpid);
+    } else { // 子
+        sleep(i);
+        printf("I'm %dth child, my pid = %d\n", i + 1, getpid());
+    }
+    return 0;
+}
+```
+
+### waitpid回收多个子进程
+代码：  
+```c
+#include <unistd.h>
+#include <sys/types.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <string.h>
+int main(int argc, char* argv[]) {
+    int i;
+    for (i = 0; i < 5; ++ i) {
+        if (fork() == 0) { // 子
+            break;
+        }
+    }
+    if (i == 5) { // 父
+        pid_t wpid;
+        while ((wpid = waitpid(-1, NULL, WNOHANG)) != -1) {
+            if (wpid > 0) {
+                printf("wait child %d\n", wpid);
+            } else if (wpid == 0) { // 没终止
+                sleep(1);
+            }
+        }
+    } else { // 子
+        sleep(i);
+        printf("I'm %dth child, my pid = %d\n", i + 1, getpid());
+    }
+    return 0;
+}
 ```
