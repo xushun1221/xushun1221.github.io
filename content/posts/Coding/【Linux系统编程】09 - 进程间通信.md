@@ -5,7 +5,7 @@ tags: [Linux]
 categories: [Coding]
 ---
 
-## IPC - Inter Process Communiccation
+## IPC - Inter Process Communication
 Linux环境下，进程地址空间相互独立，每个进程各自有不同的用户地址空间。任何一个进程的全局变量在另一个进程中都看不到，所以进程和进程之间不能相互访问，要交换数据必须通过内核，在内核中开辟一块缓冲区，进程 1 把数据从用户空间拷到内核缓冲区，进程 2 再从内核缓冲区把数据读走，内核提供的这种机制称为进程间通信（IPC，InterProcess Communication）。
 
 ![](/post_images/posts/Coding/【Linux系统编程】09/IPC示意图.jpg "IPC示意图")
@@ -352,3 +352,32 @@ int main (int argc, char** argv) {
 ![](/post_images/posts/Coding/【Linux系统编程】09/存储映射IO.jpg "存储映射IO")
 
 ### mmap 函数
+将文件映射到内存。（系统函数）
+
+函数原型：  
+```c
+#include <sys/mman.h>
+
+void *mmap(void *addr, size_t length, int prot, int flags,
+            int fd, off_t offset);
+```
+- 返回值：
+  - 成功，返回创建的映射区的首地址；
+  - 失败：返回`MAP_FAILED`，实际上是一个`(void*) -1`的宏，并设置`errno`。
+- `addr`：指定映射区的首地址（通常传入`NULL`，表示让系统自动分配）；
+- `length`：指定映射区的大小；
+- `prot`：映射区的读写属性，
+  - `PROT_READ`，读；
+  - `PROT_WRITE`，写；
+  - `PROT_READ | PROT_WRITE`，读写。
+- `flags`：共享内存的共享属性，
+  - `MAP_SHARED`，共享的；
+  - `MAP_PRIVATE`，私有的。
+- `fd`，用于创建映射区的文件的文件描述符；
+- `offset`，偏移位置（4KiB的整数倍）。
+
+### mmap 建立映射区
+
+
+
+###
