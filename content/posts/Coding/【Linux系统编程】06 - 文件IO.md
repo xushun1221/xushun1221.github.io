@@ -93,6 +93,7 @@ ssize_t read(int fd, void *buf, size_t count);
   - 成功读取会返回读到的字节数；
   - 如果返回`0`，表示读到文件结尾；
   - 如果失败，返回`-1`并设置`errno`。
+  - 如果返回`-1`且`errorno == EAGAIN 或 EWOULDBLOCK`,说明正在读取非阻塞文件且无数据（设备文件或网络文件）。
 - `fd`：文件描述符；
 - `buf`：缓冲区；
 - `count`：缓冲区的大小。
@@ -109,7 +110,6 @@ ssize_t write(int fd, const void *buf, size_t count);
   - 成功写出，会返回写出的字节数；
   - 如果返回`0`，表示没有数据可以写出；
   - 如果失败，返回`-1`并设置`errno`；
-  - 如果返回`-1`且`errorno == EAGAIN 或 EWOULDBLOCK`,说明正在读取非阻塞文件且无数据（设备文件或网络文件）。
 - `fd`：文件描述符；
 - `buf`：从该缓冲区写出；
 - `count`：实际要写出的数据大小。
