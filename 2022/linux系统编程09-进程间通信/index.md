@@ -1,7 +1,7 @@
 # 【Linux系统编程】09 - 进程间通信
 
 
-## IPC - Inter Process Communiccation
+## IPC - Inter Process Communication
 Linux环境下，进程地址空间相互独立，每个进程各自有不同的用户地址空间。任何一个进程的全局变量在另一个进程中都看不到，所以进程和进程之间不能相互访问，要交换数据必须通过内核，在内核中开辟一块缓冲区，进程 1 把数据从用户空间拷到内核缓冲区，进程 2 再从内核缓冲区把数据读走，内核提供的这种机制称为进程间通信（IPC，InterProcess Communication）。
 
 ![](/post_images/posts/Coding/【Linux系统编程】09/IPC示意图.jpg "IPC示意图")
@@ -243,3 +243,137 @@ int main(int argc, char** argv) {
 - 缺点
   1. 只能单向通信，双向通信需要建立两个管道；
   2. 只能用于父子、兄弟进程之间。（该问题由fifo有名管道解决）
+
+## FIFO
+FIFO常被称为**命名管道**，以区分管道（pipe），pipe只能用于有血缘关系的进程之间通信，但通过FIFO，不相关的进程之间也可以交换数据。
+
+FIFO是Linux基础文件类型的一种，但是，FIFO文件在磁盘上没有数据块，仅仅用来标识内核中的一条通道。各个进程可以打开这个文件进行读写，实际上是在读写内核通道，这样就实现了进程间通信。
+
+### 创建FIFO
+终端命令：`mkfifo fifoname`。
+
+库函数：`mkfifo`  
+函数原型：  
+```c
+#include <sys/types.h>
+#include <sys/stat.h>
+
+int mkfifo(const char *pathname, mode_t mode);
+```
+- 返回值：成功返回`0`，失败返回`-1`；
+- `pathname`：管道名；
+- `mode`：访问权限，计算公式为`mode & (~umask)`
+
+使用`mkfifo`创建FIFO后，就可以使用`open`打开它，常见的IO函数都可以用于FIFO，如`close read write unlink`等。
+
+### FIFO - 实现非血缘关系进程间通信
+`fifo_w.c`：  
+```c
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <string.h>
+#include <fcntl.h>
+#include <time.h>
+
+int main (int argc, char** argv) {
+    if (argc < 2) {
+        printf("enter like : fifo_c fifoname\n");
+        return -1;
+    }
+    int fd = open(argv[1], O_WRONLY);
+    if (fd == -1) {
+        perror("open fifo error");
+        exit(1);
+    }
+    srand(time(NULL));
+    char buf[1024];
+    int i = 0;
+    while (1) {
+        sprintf(buf, "pid %d : write to %s : %d\n", getpid(), argv[1], ++ i);
+        write(fd, buf, strlen(buf));
+        sleep(rand() % 3 + 1);
+    }
+    close(fd);
+    return 0;
+}
+```
+
+`fifo_r.c`：  
+```c
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <string.h>
+#include <fcntl.h>
+#include <time.h>
+
+int main (int argc, char** argv) {
+    if (argc < 2) {
+        printf("enter like : fifo_c fifoname\n");
+        return -1;
+    }
+    int fd = open(argv[1], O_RDONLY);
+    if (fd == -1) {
+        perror("open fifo error");
+        exit(1);
+    }
+    char buf[1024];
+    while (1) {
+        int read_bytes = read(fd, buf, sizeof(buf));
+        write(STDOUT_FILENO, buf, read_bytes);
+    }
+    close(fd);
+    return 0;
+}
+```
+
+测试1，打开多个终端执行`./fifo_w testfile`，打开一个终端执行`./fifo_r testfifo`，结果显示，读端可以读取多个写端写入的数据。
+
+测试2，打开一个终端执行`./fifo_w testfile`，打开多个终端执行`./fifo_r testfifo`，结果显示，多个读端竞争FIFO内的数据，FIFO内的数据只能被读一次。
+
+## 文件
+使用文件也可以进行进程间通信。
+
+- 有血缘关系的进程：fork后，父子进程共享文件描述符，它们的同一个文件描述符对应同一个文件，父进程向文件中写数据，子进程从文件中读数据，同样也是借助内核的缓冲区实现的；
+- 无血缘关系的进程：也可以使用文件进行进程间通信，只要对同一个文件进行读写即可，和父子进程不同的是，它们打开的文件描述符可能不一样，但只要对应的是同一个文件就行。
+
+## 存储映射 I/O
+存储映射I/O（Memory-mapped I/O）,使一个磁盘文件与内存空间中的一个缓冲区映射。从缓冲区中取数据，就相当于读文件中的对应字节；将数据存入缓冲区，就相当于将相应的字节写入文件。这样就可以在不使用`read write`函数的情况下，使用地址（指针）来完成IO操作。
+
+使用这种方法，需要通知内核，将一个指定文件映射到存储区域中，这个映射工作通过`mmap`函数来实现。图示如下：
+
+![](/post_images/posts/Coding/【Linux系统编程】09/存储映射IO.jpg "存储映射IO")
+
+### mmap 函数
+将文件映射到内存。（系统函数）
+
+函数原型：  
+```c
+#include <sys/mman.h>
+
+void *mmap(void *addr, size_t length, int prot, int flags,
+            int fd, off_t offset);
+```
+- 返回值：
+  - 成功，返回创建的映射区的首地址；
+  - 失败：返回`MAP_FAILED`，实际上是一个`(void*) -1`的宏，并设置`errno`。
+- `addr`：指定映射区的首地址（通常传入`NULL`，表示让系统自动分配）；
+- `length`：指定映射区的大小；
+- `prot`：映射区的读写属性，
+  - `PROT_READ`，读；
+  - `PROT_WRITE`，写；
+  - `PROT_READ | PROT_WRITE`，读写。
+- `flags`：共享内存的共享属性，
+  - `MAP_SHARED`，共享的；
+  - `MAP_PRIVATE`，私有的。
+- `fd`，用于创建映射区的文件的文件描述符；
+- `offset`，偏移位置（4KiB的整数倍）。
+
+### mmap 建立映射区
+
+
+
+###
