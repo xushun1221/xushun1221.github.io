@@ -335,7 +335,7 @@ int main (int argc, char** argv) {
 测试2，打开一个终端执行`./fifo_w testfile`，打开多个终端执行`./fifo_r testfifo`，结果显示，多个读端竞争FIFO内的数据，FIFO内的数据只能被读一次。
 
 ## 文件
-使用文件也可以进行进程间通信。
+使用文件也可以进行进程间通信。（当然不建议使用这种方式）
 
 - 有血缘关系的进程：fork后，父子进程共享文件描述符，它们的同一个文件描述符对应同一个文件，父进程向文件中写数据，子进程从文件中读数据，同样也是借助内核的缓冲区实现的；
 - 无血缘关系的进程：也可以使用文件进行进程间通信，只要对同一个文件进行读写即可，和父子进程不同的是，它们打开的文件描述符可能不一样，但只要对应的是同一个文件就行。
@@ -367,13 +367,259 @@ void *mmap(void *addr, size_t length, int prot, int flags,
   - `PROT_WRITE`，写；
   - `PROT_READ | PROT_WRITE`，读写。
 - `flags`：共享内存的共享属性，
-  - `MAP_SHARED`，共享的；
-  - `MAP_PRIVATE`，私有的。
+  - `MAP_SHARED`，共享的（对内存修改会同步修改磁盘上的文件）；
+  - `MAP_PRIVATE`，私有的（不会同步修改磁盘）。
 - `fd`，用于创建映射区的文件的文件描述符；
-- `offset`，偏移位置（4KiB的整数倍）。
+- `offset`，偏移位置（4K的整数倍）。
 
-### mmap 建立映射区
+### munmap 函数
+释放映射区。（系统函数）
 
+使用`mmap`建立的映射区，在结束使用后也应该调用`munmap`来释放映射区。
 
+函数原型：  
+```c
+#include <sys/mman.h>
 
-###
+int munmap(void *addr, size_t length);
+```
+- 返回值：
+  - 成功，返回`0`；
+  - 失败，返回`-1`，并设置`errno`。
+- `addr`：`mmap`的返回值；
+- `length`：映射区大小。
+
+### 建立映射区 - 测试
+代码：  
+```c
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <string.h>
+int main(int argc, char** argv) {
+    int fd = open("test.txt", O_CREAT | O_TRUNC | O_RDWR, 0664);
+    if (fd == -1) {
+        perror("open error");
+        exit(1);
+    }
+    lseek(fd, 99, SEEK_END);
+    if (write(fd, "\0", 1) == -1) { // 扩展文件
+        perror("write error");
+        exit(1);
+    }
+    int len = lseek(fd, 0, SEEK_END); // 文件长度
+    void* p = mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0); // 创建映射区
+    if (p == MAP_FAILED) {
+        perror("mmap error");
+        exit(1);
+    }
+    // 对内存中的映射区进行读写
+    strcpy(p, "hello mmap\n");
+    printf("read from mmap : %s", p);
+
+    if (munmap(p, len) == -1) {
+        perror("munmap error");
+        exit(1);
+    }
+    close(fd);
+    return 0;
+}
+```
+对内存中映射区的读写可以反应到磁盘的文件中。
+
+### mmap - 注意事项
+1. 可以`open O_CREAT`一个新文件并创建它的映射区吗？
+   - 可以，但是要注意拓展文件长度，并且避免以下错误：
+   - 文件大小为0，创建大小大于0的映射区，**总线错误**；
+   - 文件大小为0，创建大小为0的映射区，**无效参数**，创建出错；
+2. 文件读写方式为**只读**，而创建**读写**方式的映射区，**无效参数**，创建出错；
+3. 创建映射区时，文件必须要有read权限（只写是不行的）；
+4. `MAP_SHARED`时，mmap的权限`<=`文件的权限；`MAP_PRIVATE`时则无所谓，因为mmap的权限是对内存的限制；
+5. 文件描述符要在映射区创建之后关闭，不一定在映射区关闭之后关闭；
+6. `offset`必须是4K（4096）的整数倍，否则**无效参数**，创建出错（原因是MMU映射的最小单位是4096）；
+7. 不能对映射区进行越界访问；
+8. 对`mem`指针（`mmap`返回的指针）进行改变，如自增运算等，`munmap`就无法释放映射区，`munmap`的只接收`mmap`返回的指针；
+9. 使用`mmap`时，必须检查其返回值；
+10. 当`MAP_PRIVATE`时，对映射区的修改不会反映到磁盘上，文件的读写方式只需只读`RDONLY`即可，而映射区的权限可以为读写。
+
+创建读写映射区的最佳方式：  
+```c
+fd = open("filename", O_RDWR);
+mmap(NULL, 有效文件大小, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+```
+
+### mmap - 父子进程间通信
+父子进程可以通过共享一块内存映射区来实现进程间的通信。  
+1. 父进程创建映射区，`open(RDWR) mmap(MAP_SHARED)`（注意，要想共享一块内存区域，必须使用`MAP_SHARED`参数，如果使用`MAP_PRIVATE`，父子进程将各自独享一块内存映射区）；
+2. fork；
+3. 对映射区进行读写。
+
+示例，父子进程共享一个`int`变量：  
+```c
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+
+int global_int = 100;
+
+int main(int argc, char** argv) {
+    int fd = open("temp", O_CREAT | O_TRUNC | O_RDWR, 0664);
+    if (fd == -1) {
+        perror("open error");
+        exit(1);
+    }
+    if (ftruncate(fd, sizeof(int)) == -1) {
+        perror("ftruncate error");
+        exit(1);
+    }
+    int* shared_int = (int*)mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    // int* shared_int = (int*)mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
+    if (shared_int == MAP_FAILED) {
+        perror("mmap error");
+        exit(1);
+    }
+    close(fd);
+    
+    pid_t pid = fork();
+    if (pid > 0) {
+        sleep(2); // 等待子进程修改变量
+        // 读共享内存
+        printf("parent process : global_int = %d, shared_int = %d\n", global_int, *shared_int);
+        wait(NULL);
+    } else if (pid == 0) {
+        *shared_int = 666; // 写共享内存
+        global_int = 777;
+        printf(" child process : global_int = %d, shared_int = %d\n", global_int, *shared_int);
+    } else {
+        perror("fork error");
+        exit(1);
+    }
+    if (munmap(shared_int, sizeof(int)) == -1) {
+        perror("munmap error");
+        exit(1);
+    }
+    return 0;
+}
+```
+
+测试结果：使用共享映射区的内存可以共享  
+```console
+xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_mmap$ ./test_mmap_family 
+ child process : global_int = 777, shared_int = 666
+parent process : global_int = 100, shared_int = 666
+```
+
+### mmap - 无血缘关系进程间通信
+为同一个文件创建共享映射区即可。
+
+示例，两个进程读写结构体：打开两个终端分别执行读写  
+`mmap_w.c`：  
+```c
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <string.h>
+
+typedef struct {
+    int id;
+    char name[256];
+    int age;
+} student;
+
+int main(int argc, char** argv) {
+    // write a struct student to mmap
+    int fd = open("temp", O_RDWR | O_CREAT | O_TRUNC, 0664);
+    if (fd == -1) {
+        perror("open error");
+        exit(1);
+    }
+    if (ftruncate(fd, sizeof(student)) == -1) {
+        perror("ftruncate error");
+        exit(1);
+    }
+    student* mem = (student*)mmap(NULL, sizeof(student), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if (mem == MAP_FAILED) {
+        perror("mmap error");
+        exit(1);
+    }
+    close(fd);
+    sleep(5);
+    student stu = {1, "Alice", 18};
+    while (1) {
+        // update mem every 2 secs
+        memcpy(mem, &stu, sizeof(student)); // string.h
+        stu.id ++;
+        sleep(2);
+    }
+    if (munmap(mem, sizeof(student)) == -1) {
+        perror("munmap error");
+        exit(1);
+    }
+    return 0;
+}
+```
+`mmap_r.c`：  
+```c
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <string.h>
+
+typedef struct {
+    int id;
+    char name[256];
+    int age;
+} student;
+
+int main(int argc, char** argv) {
+    // read a struct student from mmap
+    int fd = open("temp", O_RDONLY, 0664);
+    if (fd == -1) {
+        perror("open error");
+        exit(1);
+    }
+    student* mem = (student*)mmap(NULL, sizeof(student), PROT_READ, MAP_SHARED, fd, 0);
+    if (mem == MAP_FAILED) {
+        perror("mmap error");
+        exit(1);
+    }
+    close(fd);
+
+    while (1) {
+        // read mem every sec
+        printf("id = %d, name = %s, age = %d\n", mem -> id, mem -> name, mem -> age);
+        sleep(1);
+    }
+    if (munmap(mem, sizeof(student)) == -1) {
+        perror("munmap error");
+        exit(1);
+    }
+    return 0;
+}
+```
+
+### mmap - 多个读写端
+可以使用多个读写端进行读写，因为mmap是缓冲区的模式。与pipe和FIFO不同，共享映射区可以重复读取。
+
+### (匿名)mmap - 父子进程间通信
+使用共享映射区来进行文件读写和父子进程间通信比较方便，但缺陷是，每次创建映射区都需要依赖于一个文件才行。通常为了建立映射区，需要`open`一个临时文件，创建完成后再`unlink close`，比较麻烦。
+
+这种父子进程间的通信可以使用**匿名映射区**来实现。Linux系统为我们提供了这样的方法，无需依赖文件即可创建映射区，需要借助标志位参数`flags`来指定。
+
+使用方法：`void* mem = mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS, -1, 0);`
+
+注：`MAP_ANON`和`MAP_ANONYMOUS`同义，但不推荐使用。
+
+上述两个宏是Linux系统特有的宏，在类Unix系统中如果无法使用该宏定义，可以使用如下两步来完成匿名映射区的建立：  
+```c
+int fd = open("dev/zero", O_RDWR);
+void* mem = mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+```

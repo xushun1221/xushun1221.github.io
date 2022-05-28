@@ -1,6 +1,6 @@
-<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【Linux系统编程】09 - 进程间通信 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B08-%E8%BF%9B%E7%A8%8B/><link rel=canonical href=https://xushun1221.github.io/2022/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B09-%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%80%9A%E4%BF%A1/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【Linux系统编程】09 - 进程间通信"><meta name=twitter:description content="IPC - Inter Process Communication Linux环境下，进程地址空间相互独立，每个进程各自有不同的用户地址空间。任何一个进程的全局变量在另一个进程中都看不到，所以进程和"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【Linux系统编程】09 - 进程间通信","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B09-%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%80%9A%E4%BF%A1\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"Linux","wordcount":4066,"url":"https:\/\/xushun1221.github.io\/2022\/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B09-%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%80%9A%E4%BF%A1\/","datePublished":"2022-05-26T00:00:00\x2b00:00","dateModified":"2022-05-26T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【Linux系统编程】09 - 进程间通信</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-05-26>2022-05-26</time>&nbsp;
-<i class="fas fa-pencil-alt fa-fw"></i>about 4066 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#ipc---inter-process-communication>IPC - Inter Process Communication</a></li><li><a href=#管道>管道</a><ul><li><a href=#管道的概念>管道的概念</a></li><li><a href=#pipe>pipe</a></li><li><a href=#管道的读写行为>管道的读写行为</a><ul><li><a href=#读管道>读管道</a></li><li><a href=#写管道>写管道</a></li></ul></li><li><a href=#练习---父子进程实现-ls--wc--l>练习 - 父子进程实现 ls | wc -l</a></li><li><a href=#练习---兄弟进程实现-ls--wc--l>练习 - 兄弟进程实现 ls | wc -l</a></li><li><a href=#管道的缓冲区大小>管道的缓冲区大小</a></li><li><a href=#管道的优劣>管道的优劣</a></li></ul></li><li><a href=#fifo>FIFO</a><ul><li><a href=#创建fifo>创建FIFO</a></li><li><a href=#fifo---实现非血缘关系进程间通信>FIFO - 实现非血缘关系进程间通信</a></li></ul></li><li><a href=#文件>文件</a></li><li><a href=#存储映射-io>存储映射 I/O</a><ul><li><a href=#mmap-函数>mmap 函数</a></li><li><a href=#mmap-建立映射区>mmap 建立映射区</a></li></ul></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
-<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#ipc---inter-process-communication>IPC - Inter Process Communication</a></li><li><a href=#管道>管道</a><ul><li><a href=#管道的概念>管道的概念</a></li><li><a href=#pipe>pipe</a></li><li><a href=#管道的读写行为>管道的读写行为</a><ul><li><a href=#读管道>读管道</a></li><li><a href=#写管道>写管道</a></li></ul></li><li><a href=#练习---父子进程实现-ls--wc--l>练习 - 父子进程实现 ls | wc -l</a></li><li><a href=#练习---兄弟进程实现-ls--wc--l>练习 - 兄弟进程实现 ls | wc -l</a></li><li><a href=#管道的缓冲区大小>管道的缓冲区大小</a></li><li><a href=#管道的优劣>管道的优劣</a></li></ul></li><li><a href=#fifo>FIFO</a><ul><li><a href=#创建fifo>创建FIFO</a></li><li><a href=#fifo---实现非血缘关系进程间通信>FIFO - 实现非血缘关系进程间通信</a></li></ul></li><li><a href=#文件>文件</a></li><li><a href=#存储映射-io>存储映射 I/O</a><ul><li><a href=#mmap-函数>mmap 函数</a></li><li><a href=#mmap-建立映射区>mmap 建立映射区</a></li></ul></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=ipc---inter-process-communication></a><h2>IPC - Inter Process Communication</h2><p>Linux环境下，进程地址空间相互独立，每个进程各自有不同的用户地址空间。任何一个进程的全局变量在另一个进程中都看不到，所以进程和进程之间不能相互访问，要交换数据必须通过内核，在内核中开辟一块缓冲区，进程 1 把数据从用户空间拷到内核缓冲区，进程 2 再从内核缓冲区把数据读走，内核提供的这种机制称为进程间通信（IPC，InterProcess Communication）。</p><p><figure><img src=/svg/loading.min.svg data-sizes=auto data-src=/post_images/posts/Coding/%e3%80%90Linux%e7%b3%bb%e7%bb%9f%e7%bc%96%e7%a8%8b%e3%80%9109/IPC%e7%a4%ba%e6%84%8f%e5%9b%be.jpg alt title=IPC示意图 class=lazyload><figcaption class=image-caption>IPC示意图</figcaption></figure></p><p>在进程之间完成数据传递需要借助操作系统提供特殊的方法，如：文件、管道、信号、共享内存、消息队列、套接字、命名管道等。随着计算机的发展，一些方法由于自身的设计缺陷被淘汰或弃用，如今常用的进程间通信的方法有：</p><ol><li>管道（使用最简单）；</li><li>信号（开销最小）；</li><li>共享映射区（无血缘关系）；</li><li>本地套接字（最稳定）。</li></ol><a class=post-dummy-target id=管道></a><h2>管道</h2><a class=post-dummy-target id=管道的概念></a><h3>管道的概念</h3><p>管道是一种最基本的IPC机制，作用于<strong>有血缘关系</strong>的进程之间，完成数据传递。调用<code>pipe</code>函数即可创建一个管道。特性如下：</p><ol><li>管道的本质是一个伪文件（实质为内核缓冲区）；</li><li>由两个文件描述符引用，一个表示读端，一个表示写端；</li><li>管道的数据只能读一次；</li><li>数据只能从写端流入，读端流出。</li></ol><p>管道的实现原理：内核使用环形队列机制，借助内核缓冲区（4KiB）实现。</p><p>管道的局限性：</p><ol><li>数据不能进程自己写，自己读；</li><li>管道中的数据不能反复读取，一旦读走，就不再存在；</li><li>采用半双工通信，数据只能在单方向上流动。</li></ol><a class=post-dummy-target id=pipe></a><h3>pipe</h3><p>创建（并打开）一个管道。（系统函数）</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【Linux系统编程】09 - 进程间通信 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B08-%E8%BF%9B%E7%A8%8B/><link rel=canonical href=https://xushun1221.github.io/2022/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B09-%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%80%9A%E4%BF%A1/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【Linux系统编程】09 - 进程间通信"><meta name=twitter:description content="IPC - Inter Process Communication Linux环境下，进程地址空间相互独立，每个进程各自有不同的用户地址空间。任何一个进程的全局变量在另一个进程中都看不到，所以进程和"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【Linux系统编程】09 - 进程间通信","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B09-%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%80%9A%E4%BF%A1\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"Linux","wordcount":6091,"url":"https:\/\/xushun1221.github.io\/2022\/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B09-%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%80%9A%E4%BF%A1\/","datePublished":"2022-05-26T00:00:00\x2b00:00","dateModified":"2022-05-26T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【Linux系统编程】09 - 进程间通信</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-05-26>2022-05-26</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 6091 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#ipc---inter-process-communication>IPC - Inter Process Communication</a></li><li><a href=#管道>管道</a><ul><li><a href=#管道的概念>管道的概念</a></li><li><a href=#pipe>pipe</a></li><li><a href=#管道的读写行为>管道的读写行为</a><ul><li><a href=#读管道>读管道</a></li><li><a href=#写管道>写管道</a></li></ul></li><li><a href=#练习---父子进程实现-ls--wc--l>练习 - 父子进程实现 ls | wc -l</a></li><li><a href=#练习---兄弟进程实现-ls--wc--l>练习 - 兄弟进程实现 ls | wc -l</a></li><li><a href=#管道的缓冲区大小>管道的缓冲区大小</a></li><li><a href=#管道的优劣>管道的优劣</a></li></ul></li><li><a href=#fifo>FIFO</a><ul><li><a href=#创建fifo>创建FIFO</a></li><li><a href=#fifo---实现非血缘关系进程间通信>FIFO - 实现非血缘关系进程间通信</a></li></ul></li><li><a href=#文件>文件</a></li><li><a href=#存储映射-io>存储映射 I/O</a><ul><li><a href=#mmap-函数>mmap 函数</a></li><li><a href=#munmap-函数>munmap 函数</a></li><li><a href=#建立映射区---测试>建立映射区 - 测试</a></li><li><a href=#mmap---注意事项>mmap - 注意事项</a></li><li><a href=#mmap---父子进程间通信>mmap - 父子进程间通信</a></li><li><a href=#mmap---无血缘关系进程间通信>mmap - 无血缘关系进程间通信</a></li><li><a href=#mmap---多个读写端>mmap - 多个读写端</a></li><li><a href=#匿名mmap---父子进程间通信>(匿名)mmap - 父子进程间通信</a></li></ul></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#ipc---inter-process-communication>IPC - Inter Process Communication</a></li><li><a href=#管道>管道</a><ul><li><a href=#管道的概念>管道的概念</a></li><li><a href=#pipe>pipe</a></li><li><a href=#管道的读写行为>管道的读写行为</a><ul><li><a href=#读管道>读管道</a></li><li><a href=#写管道>写管道</a></li></ul></li><li><a href=#练习---父子进程实现-ls--wc--l>练习 - 父子进程实现 ls | wc -l</a></li><li><a href=#练习---兄弟进程实现-ls--wc--l>练习 - 兄弟进程实现 ls | wc -l</a></li><li><a href=#管道的缓冲区大小>管道的缓冲区大小</a></li><li><a href=#管道的优劣>管道的优劣</a></li></ul></li><li><a href=#fifo>FIFO</a><ul><li><a href=#创建fifo>创建FIFO</a></li><li><a href=#fifo---实现非血缘关系进程间通信>FIFO - 实现非血缘关系进程间通信</a></li></ul></li><li><a href=#文件>文件</a></li><li><a href=#存储映射-io>存储映射 I/O</a><ul><li><a href=#mmap-函数>mmap 函数</a></li><li><a href=#munmap-函数>munmap 函数</a></li><li><a href=#建立映射区---测试>建立映射区 - 测试</a></li><li><a href=#mmap---注意事项>mmap - 注意事项</a></li><li><a href=#mmap---父子进程间通信>mmap - 父子进程间通信</a></li><li><a href=#mmap---无血缘关系进程间通信>mmap - 无血缘关系进程间通信</a></li><li><a href=#mmap---多个读写端>mmap - 多个读写端</a></li><li><a href=#匿名mmap---父子进程间通信>(匿名)mmap - 父子进程间通信</a></li></ul></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=ipc---inter-process-communication></a><h2>IPC - Inter Process Communication</h2><p>Linux环境下，进程地址空间相互独立，每个进程各自有不同的用户地址空间。任何一个进程的全局变量在另一个进程中都看不到，所以进程和进程之间不能相互访问，要交换数据必须通过内核，在内核中开辟一块缓冲区，进程 1 把数据从用户空间拷到内核缓冲区，进程 2 再从内核缓冲区把数据读走，内核提供的这种机制称为进程间通信（IPC，InterProcess Communication）。</p><p><figure><img src=/svg/loading.min.svg data-sizes=auto data-src=/post_images/posts/Coding/%e3%80%90Linux%e7%b3%bb%e7%bb%9f%e7%bc%96%e7%a8%8b%e3%80%9109/IPC%e7%a4%ba%e6%84%8f%e5%9b%be.jpg alt title=IPC示意图 class=lazyload><figcaption class=image-caption>IPC示意图</figcaption></figure></p><p>在进程之间完成数据传递需要借助操作系统提供特殊的方法，如：文件、管道、信号、共享内存、消息队列、套接字、命名管道等。随着计算机的发展，一些方法由于自身的设计缺陷被淘汰或弃用，如今常用的进程间通信的方法有：</p><ol><li>管道（使用最简单）；</li><li>信号（开销最小）；</li><li>共享映射区（无血缘关系）；</li><li>本地套接字（最稳定）。</li></ol><a class=post-dummy-target id=管道></a><h2>管道</h2><a class=post-dummy-target id=管道的概念></a><h3>管道的概念</h3><p>管道是一种最基本的IPC机制，作用于<strong>有血缘关系</strong>的进程之间，完成数据传递。调用<code>pipe</code>函数即可创建一个管道。特性如下：</p><ol><li>管道的本质是一个伪文件（实质为内核缓冲区）；</li><li>由两个文件描述符引用，一个表示读端，一个表示写端；</li><li>管道的数据只能读一次；</li><li>数据只能从写端流入，读端流出。</li></ol><p>管道的实现原理：内核使用环形队列机制，借助内核缓冲区（4KiB）实现。</p><p>管道的局限性：</p><ol><li>数据不能进程自己写，自己读；</li><li>管道中的数据不能反复读取，一旦读走，就不再存在；</li><li>采用半双工通信，数据只能在单方向上流动。</li></ol><a class=post-dummy-target id=pipe></a><h3>pipe</h3><p>创建（并打开）一个管道。（系统函数）</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2
 </span><span class=lnt>3
 </span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
@@ -410,7 +410,7 @@ xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_IPC$ 5
     <span class=n>close</span><span class=p>(</span><span class=n>fd</span><span class=p>)</span><span class=p>;</span>
     <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
 <span class=p>}</span>
-</code></pre></td></tr></table></div></div><p>测试1，打开多个终端执行<code>./fifo_w testfile</code>，打开一个终端执行<code>./fifo_r testfifo</code>，结果显示，读端可以读取多个写端写入的数据。</p><p>测试2，打开一个终端执行<code>./fifo_w testfile</code>，打开多个终端执行<code>./fifo_r testfifo</code>，结果显示，多个读端竞争FIFO内的数据，FIFO内的数据只能被读一次。</p><a class=post-dummy-target id=文件></a><h2>文件</h2><p>使用文件也可以进行进程间通信。</p><ul><li>有血缘关系的进程：fork后，父子进程共享文件描述符，它们的同一个文件描述符对应同一个文件，父进程向文件中写数据，子进程从文件中读数据，同样也是借助内核的缓冲区实现的；</li><li>无血缘关系的进程：也可以使用文件进行进程间通信，只要对同一个文件进行读写即可，和父子进程不同的是，它们打开的文件描述符可能不一样，但只要对应的是同一个文件就行。</li></ul><a class=post-dummy-target id=存储映射-io></a><h2>存储映射 I/O</h2><p>存储映射I/O（Memory-mapped I/O）,使一个磁盘文件与内存空间中的一个缓冲区映射。从缓冲区中取数据，就相当于读文件中的对应字节；将数据存入缓冲区，就相当于将相应的字节写入文件。这样就可以在不使用<code>read write</code>函数的情况下，使用地址（指针）来完成IO操作。</p><p>使用这种方法，需要通知内核，将一个指定文件映射到存储区域中，这个映射工作通过<code>mmap</code>函数来实现。图示如下：</p><p><figure><img src=/svg/loading.min.svg data-sizes=auto data-src=/post_images/posts/Coding/%e3%80%90Linux%e7%b3%bb%e7%bb%9f%e7%bc%96%e7%a8%8b%e3%80%9109/%e5%ad%98%e5%82%a8%e6%98%a0%e5%b0%84IO.jpg alt title=存储映射IO class=lazyload><figcaption class=image-caption>存储映射IO</figcaption></figure></p><a class=post-dummy-target id=mmap-函数></a><h3>mmap 函数</h3><p>将文件映射到内存。（系统函数）</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</code></pre></td></tr></table></div></div><p>测试1，打开多个终端执行<code>./fifo_w testfile</code>，打开一个终端执行<code>./fifo_r testfifo</code>，结果显示，读端可以读取多个写端写入的数据。</p><p>测试2，打开一个终端执行<code>./fifo_w testfile</code>，打开多个终端执行<code>./fifo_r testfifo</code>，结果显示，多个读端竞争FIFO内的数据，FIFO内的数据只能被读一次。</p><a class=post-dummy-target id=文件></a><h2>文件</h2><p>使用文件也可以进行进程间通信。（当然不建议使用这种方式）</p><ul><li>有血缘关系的进程：fork后，父子进程共享文件描述符，它们的同一个文件描述符对应同一个文件，父进程向文件中写数据，子进程从文件中读数据，同样也是借助内核的缓冲区实现的；</li><li>无血缘关系的进程：也可以使用文件进行进程间通信，只要对同一个文件进行读写即可，和父子进程不同的是，它们打开的文件描述符可能不一样，但只要对应的是同一个文件就行。</li></ul><a class=post-dummy-target id=存储映射-io></a><h2>存储映射 I/O</h2><p>存储映射I/O（Memory-mapped I/O）,使一个磁盘文件与内存空间中的一个缓冲区映射。从缓冲区中取数据，就相当于读文件中的对应字节；将数据存入缓冲区，就相当于将相应的字节写入文件。这样就可以在不使用<code>read write</code>函数的情况下，使用地址（指针）来完成IO操作。</p><p>使用这种方法，需要通知内核，将一个指定文件映射到存储区域中，这个映射工作通过<code>mmap</code>函数来实现。图示如下：</p><p><figure><img src=/svg/loading.min.svg data-sizes=auto data-src=/post_images/posts/Coding/%e3%80%90Linux%e7%b3%bb%e7%bb%9f%e7%bc%96%e7%a8%8b%e3%80%9109/%e5%ad%98%e5%82%a8%e6%98%a0%e5%b0%84IO.jpg alt title=存储映射IO class=lazyload><figcaption class=image-caption>存储映射IO</figcaption></figure></p><a class=post-dummy-target id=mmap-函数></a><h3>mmap 函数</h3><p>将文件映射到内存。（系统函数）</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2
 </span><span class=lnt>3
 </span><span class=lnt>4
@@ -418,7 +418,351 @@ xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_IPC$ 5
 </span><span class=cp></span>
 <span class=kt>void</span> <span class=o>*</span><span class=nf>mmap</span><span class=p>(</span><span class=kt>void</span> <span class=o>*</span><span class=n>addr</span><span class=p>,</span> <span class=n>size_t</span> <span class=n>length</span><span class=p>,</span> <span class=kt>int</span> <span class=n>prot</span><span class=p>,</span> <span class=kt>int</span> <span class=n>flags</span><span class=p>,</span>
             <span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=n>off_t</span> <span class=n>offset</span><span class=p>)</span><span class=p>;</span>
-</code></pre></td></tr></table></div></div><ul><li>返回值：<ul><li>成功，返回创建的映射区的首地址；</li><li>失败：返回<code>MAP_FAILED</code>，实际上是一个<code>(void*) -1</code>的宏，并设置<code>errno</code>。</li></ul></li><li><code>addr</code>：指定映射区的首地址（通常传入<code>NULL</code>，表示让系统自动分配）；</li><li><code>length</code>：指定映射区的大小；</li><li><code>prot</code>：映射区的读写属性，<ul><li><code>PROT_READ</code>，读；</li><li><code>PROT_WRITE</code>，写；</li><li><code>PROT_READ | PROT_WRITE</code>，读写。</li></ul></li><li><code>flags</code>：共享内存的共享属性，<ul><li><code>MAP_SHARED</code>，共享的；</li><li><code>MAP_PRIVATE</code>，私有的。</li></ul></li><li><code>fd</code>，用于创建映射区的文件的文件描述符；</li><li><code>offset</code>，偏移位置（4KiB的整数倍）。</li></ul><a class=post-dummy-target id=mmap-建立映射区></a><h3>mmap 建立映射区</h3><p>###</p></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+</code></pre></td></tr></table></div></div><ul><li>返回值：<ul><li>成功，返回创建的映射区的首地址；</li><li>失败：返回<code>MAP_FAILED</code>，实际上是一个<code>(void*) -1</code>的宏，并设置<code>errno</code>。</li></ul></li><li><code>addr</code>：指定映射区的首地址（通常传入<code>NULL</code>，表示让系统自动分配）；</li><li><code>length</code>：指定映射区的大小；</li><li><code>prot</code>：映射区的读写属性，<ul><li><code>PROT_READ</code>，读；</li><li><code>PROT_WRITE</code>，写；</li><li><code>PROT_READ | PROT_WRITE</code>，读写。</li></ul></li><li><code>flags</code>：共享内存的共享属性，<ul><li><code>MAP_SHARED</code>，共享的（对内存修改会同步修改磁盘上的文件）；</li><li><code>MAP_PRIVATE</code>，私有的（不会同步修改磁盘）。</li></ul></li><li><code>fd</code>，用于创建映射区的文件的文件描述符；</li><li><code>offset</code>，偏移位置（4K的整数倍）。</li></ul><a class=post-dummy-target id=munmap-函数></a><h3>munmap 函数</h3><p>释放映射区。（系统函数）</p><p>使用<code>mmap</code>建立的映射区，在结束使用后也应该调用<code>munmap</code>来释放映射区。</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/mman.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=kt>int</span> <span class=nf>munmap</span><span class=p>(</span><span class=kt>void</span> <span class=o>*</span><span class=n>addr</span><span class=p>,</span> <span class=n>size_t</span> <span class=n>length</span><span class=p>)</span><span class=p>;</span>
+</code></pre></td></tr></table></div></div><ul><li>返回值：<ul><li>成功，返回<code>0</code>；</li><li>失败，返回<code>-1</code>，并设置<code>errno</code>。</li></ul></li><li><code>addr</code>：<code>mmap</code>的返回值；</li><li><code>length</code>：映射区大小。</li></ul><a class=post-dummy-target id=建立映射区---测试></a><h3>建立映射区 - 测试</h3><p>代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;fcntl.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/mman.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=kt>int</span> <span class=n>argc</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span><span class=o>*</span> <span class=n>argv</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>fd</span> <span class=o>=</span> <span class=n>open</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>test.txt</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>O_CREAT</span> <span class=o>|</span> <span class=n>O_TRUNC</span> <span class=o>|</span> <span class=n>O_RDWR</span><span class=p>,</span> <span class=mo>0664</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>fd</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>open error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>lseek</span><span class=p>(</span><span class=n>fd</span><span class=p>,</span> <span class=mi>99</span><span class=p>,</span> <span class=n>SEEK_END</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>write</span><span class=p>(</span><span class=n>fd</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=se>\0</span><span class=s>&#34;</span><span class=p>,</span> <span class=mi>1</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// 扩展文件
+</span><span class=c1></span>        <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>write error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=kt>int</span> <span class=n>len</span> <span class=o>=</span> <span class=n>lseek</span><span class=p>(</span><span class=n>fd</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=n>SEEK_END</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 文件长度
+</span><span class=c1></span>    <span class=kt>void</span><span class=o>*</span> <span class=n>p</span> <span class=o>=</span> <span class=n>mmap</span><span class=p>(</span><span class=nb>NULL</span><span class=p>,</span> <span class=n>len</span><span class=p>,</span> <span class=n>PROT_READ</span> <span class=o>|</span> <span class=n>PROT_WRITE</span><span class=p>,</span> <span class=n>MAP_SHARED</span><span class=p>,</span> <span class=n>fd</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 创建映射区
+</span><span class=c1></span>    <span class=k>if</span> <span class=p>(</span><span class=n>p</span> <span class=o>=</span><span class=o>=</span> <span class=n>MAP_FAILED</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>mmap error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=c1>// 对内存中的映射区进行读写
+</span><span class=c1></span>    <span class=n>strcpy</span><span class=p>(</span><span class=n>p</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>hello mmap</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>read from mmap : %s</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>p</span><span class=p>)</span><span class=p>;</span>
+
+    <span class=k>if</span> <span class=p>(</span><span class=n>munmap</span><span class=p>(</span><span class=n>p</span><span class=p>,</span> <span class=n>len</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>munmap error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>close</span><span class=p>(</span><span class=n>fd</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>对内存中映射区的读写可以反应到磁盘的文件中。</p><a class=post-dummy-target id=mmap---注意事项></a><h3>mmap - 注意事项</h3><ol><li>可以<code>open O_CREAT</code>一个新文件并创建它的映射区吗？<ul><li>可以，但是要注意拓展文件长度，并且避免以下错误：</li><li>文件大小为0，创建大小大于0的映射区，<strong>总线错误</strong>；</li><li>文件大小为0，创建大小为0的映射区，<strong>无效参数</strong>，创建出错；</li></ul></li><li>文件读写方式为<strong>只读</strong>，而创建<strong>读写</strong>方式的映射区，<strong>无效参数</strong>，创建出错；</li><li>创建映射区时，文件必须要有read权限（只写是不行的）；</li><li><code>MAP_SHARED</code>时，mmap的权限<code>&lt;=</code>文件的权限；<code>MAP_PRIVATE</code>时则无所谓，因为mmap的权限是对内存的限制；</li><li>文件描述符要在映射区创建之后关闭，不一定在映射区关闭之后关闭；</li><li><code>offset</code>必须是4K（4096）的整数倍，否则<strong>无效参数</strong>，创建出错（原因是MMU映射的最小单位是4096）；</li><li>不能对映射区进行越界访问；</li><li>对<code>mem</code>指针（<code>mmap</code>返回的指针）进行改变，如自增运算等，<code>munmap</code>就无法释放映射区，<code>munmap</code>的只接收<code>mmap</code>返回的指针；</li><li>使用<code>mmap</code>时，必须检查其返回值；</li><li>当<code>MAP_PRIVATE</code>时，对映射区的修改不会反映到磁盘上，文件的读写方式只需只读<code>RDONLY</code>即可，而映射区的权限可以为读写。</li></ol><p>创建读写映射区的最佳方式：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=n>fd</span> <span class=o>=</span> <span class=n>open</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>filename</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>O_RDWR</span><span class=p>)</span><span class=p>;</span>
+<span class=n>mmap</span><span class=p>(</span><span class=nb>NULL</span><span class=p>,</span> <span class=err>有</span><span class=err>效</span><span class=err>文</span><span class=err>件</span><span class=err>大</span><span class=err>小</span><span class=p>,</span> <span class=n>PROT_READ</span><span class=o>|</span><span class=n>PROT_WRITE</span><span class=p>,</span> <span class=n>MAP_SHARED</span><span class=p>,</span> <span class=n>fd</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=mmap---父子进程间通信></a><h3>mmap - 父子进程间通信</h3><p>父子进程可以通过共享一块内存映射区来实现进程间的通信。</p><ol><li>父进程创建映射区，<code>open(RDWR) mmap(MAP_SHARED)</code>（注意，要想共享一块内存区域，必须使用<code>MAP_SHARED</code>参数，如果使用<code>MAP_PRIVATE</code>，父子进程将各自独享一块内存映射区）；</li><li>fork；</li><li>对映射区进行读写。</li></ol><p>示例，父子进程共享一个<code>int</code>变量：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;fcntl.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/mman.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=kt>int</span> <span class=n>global_int</span> <span class=o>=</span> <span class=mi>100</span><span class=p>;</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=kt>int</span> <span class=n>argc</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span><span class=o>*</span> <span class=n>argv</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>fd</span> <span class=o>=</span> <span class=n>open</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>temp</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>O_CREAT</span> <span class=o>|</span> <span class=n>O_TRUNC</span> <span class=o>|</span> <span class=n>O_RDWR</span><span class=p>,</span> <span class=mo>0664</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>fd</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>open error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>ftruncate</span><span class=p>(</span><span class=n>fd</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=kt>int</span><span class=p>)</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>ftruncate error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=kt>int</span><span class=o>*</span> <span class=n>shared_int</span> <span class=o>=</span> <span class=p>(</span><span class=kt>int</span><span class=o>*</span><span class=p>)</span><span class=n>mmap</span><span class=p>(</span><span class=nb>NULL</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=kt>int</span><span class=p>)</span><span class=p>,</span> <span class=n>PROT_READ</span> <span class=o>|</span> <span class=n>PROT_WRITE</span><span class=p>,</span> <span class=n>MAP_SHARED</span><span class=p>,</span> <span class=n>fd</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// int* shared_int = (int*)mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
+</span><span class=c1></span>    <span class=k>if</span> <span class=p>(</span><span class=n>shared_int</span> <span class=o>=</span><span class=o>=</span> <span class=n>MAP_FAILED</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>mmap error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>close</span><span class=p>(</span><span class=n>fd</span><span class=p>)</span><span class=p>;</span>
+    
+    <span class=n>pid_t</span> <span class=n>pid</span> <span class=o>=</span> <span class=n>fork</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>pid</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>sleep</span><span class=p>(</span><span class=mi>2</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 等待子进程修改变量
+</span><span class=c1></span>        <span class=c1>// 读共享内存
+</span><span class=c1></span>        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>parent process : global_int = %d, shared_int = %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>global_int</span><span class=p>,</span> <span class=o>*</span><span class=n>shared_int</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>wait</span><span class=p>(</span><span class=nb>NULL</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span> <span class=k>else</span> <span class=k>if</span> <span class=p>(</span><span class=n>pid</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=o>*</span><span class=n>shared_int</span> <span class=o>=</span> <span class=mi>666</span><span class=p>;</span> <span class=c1>// 写共享内存
+</span><span class=c1></span>        <span class=n>global_int</span> <span class=o>=</span> <span class=mi>777</span><span class=p>;</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s> child process : global_int = %d, shared_int = %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>global_int</span><span class=p>,</span> <span class=o>*</span><span class=n>shared_int</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+        <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>fork error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>munmap</span><span class=p>(</span><span class=n>shared_int</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=kt>int</span><span class=p>)</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>munmap error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>测试结果：使用共享映射区的内存可以共享</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-fallback data-lang=fallback>xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_mmap$ ./test_mmap_family 
+ child process : global_int = 777, shared_int = 666
+parent process : global_int = 100, shared_int = 666
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=mmap---无血缘关系进程间通信></a><h3>mmap - 无血缘关系进程间通信</h3><p>为同一个文件创建共享映射区即可。</p><p>示例，两个进程读写结构体：打开两个终端分别执行读写<br><code>mmap_w.c</code>：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;fcntl.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/mman.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=k>typedef</span> <span class=k>struct</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>id</span><span class=p>;</span>
+    <span class=kt>char</span> <span class=n>name</span><span class=p>[</span><span class=mi>256</span><span class=p>]</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>age</span><span class=p>;</span>
+<span class=p>}</span> <span class=n>student</span><span class=p>;</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=kt>int</span> <span class=n>argc</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span><span class=o>*</span> <span class=n>argv</span><span class=p>)</span> <span class=p>{</span>
+    <span class=c1>// write a struct student to mmap
+</span><span class=c1></span>    <span class=kt>int</span> <span class=n>fd</span> <span class=o>=</span> <span class=n>open</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>temp</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>O_RDWR</span> <span class=o>|</span> <span class=n>O_CREAT</span> <span class=o>|</span> <span class=n>O_TRUNC</span><span class=p>,</span> <span class=mo>0664</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>fd</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>open error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>ftruncate</span><span class=p>(</span><span class=n>fd</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>student</span><span class=p>)</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>ftruncate error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>student</span><span class=o>*</span> <span class=n>mem</span> <span class=o>=</span> <span class=p>(</span><span class=n>student</span><span class=o>*</span><span class=p>)</span><span class=n>mmap</span><span class=p>(</span><span class=nb>NULL</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>student</span><span class=p>)</span><span class=p>,</span> <span class=n>PROT_READ</span> <span class=o>|</span> <span class=n>PROT_WRITE</span><span class=p>,</span> <span class=n>MAP_SHARED</span><span class=p>,</span> <span class=n>fd</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>mem</span> <span class=o>=</span><span class=o>=</span> <span class=n>MAP_FAILED</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>mmap error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>close</span><span class=p>(</span><span class=n>fd</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>sleep</span><span class=p>(</span><span class=mi>5</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>student</span> <span class=n>stu</span> <span class=o>=</span> <span class=p>{</span><span class=mi>1</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>Alice</span><span class=s>&#34;</span><span class=p>,</span> <span class=mi>18</span><span class=p>}</span><span class=p>;</span>
+    <span class=k>while</span> <span class=p>(</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=c1>// update mem every 2 secs
+</span><span class=c1></span>        <span class=n>memcpy</span><span class=p>(</span><span class=n>mem</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>stu</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>student</span><span class=p>)</span><span class=p>)</span><span class=p>;</span> <span class=c1>// string.h
+</span><span class=c1></span>        <span class=n>stu</span><span class=p>.</span><span class=n>id</span> <span class=o>+</span><span class=o>+</span><span class=p>;</span>
+        <span class=n>sleep</span><span class=p>(</span><span class=mi>2</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>munmap</span><span class=p>(</span><span class=n>mem</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>student</span><span class=p>)</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>munmap error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p><code>mmap_r.c</code>：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;fcntl.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/mman.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=k>typedef</span> <span class=k>struct</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>id</span><span class=p>;</span>
+    <span class=kt>char</span> <span class=n>name</span><span class=p>[</span><span class=mi>256</span><span class=p>]</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>age</span><span class=p>;</span>
+<span class=p>}</span> <span class=n>student</span><span class=p>;</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=kt>int</span> <span class=n>argc</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span><span class=o>*</span> <span class=n>argv</span><span class=p>)</span> <span class=p>{</span>
+    <span class=c1>// read a struct student from mmap
+</span><span class=c1></span>    <span class=kt>int</span> <span class=n>fd</span> <span class=o>=</span> <span class=n>open</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>temp</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>O_RDONLY</span><span class=p>,</span> <span class=mo>0664</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>fd</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>open error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>student</span><span class=o>*</span> <span class=n>mem</span> <span class=o>=</span> <span class=p>(</span><span class=n>student</span><span class=o>*</span><span class=p>)</span><span class=n>mmap</span><span class=p>(</span><span class=nb>NULL</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>student</span><span class=p>)</span><span class=p>,</span> <span class=n>PROT_READ</span><span class=p>,</span> <span class=n>MAP_SHARED</span><span class=p>,</span> <span class=n>fd</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>mem</span> <span class=o>=</span><span class=o>=</span> <span class=n>MAP_FAILED</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>mmap error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>close</span><span class=p>(</span><span class=n>fd</span><span class=p>)</span><span class=p>;</span>
+
+    <span class=k>while</span> <span class=p>(</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=c1>// read mem every sec
+</span><span class=c1></span>        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>id = %d, name = %s, age = %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>mem</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>id</span><span class=p>,</span> <span class=n>mem</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>name</span><span class=p>,</span> <span class=n>mem</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>age</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>sleep</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>munmap</span><span class=p>(</span><span class=n>mem</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>student</span><span class=p>)</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>munmap error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=mmap---多个读写端></a><h3>mmap - 多个读写端</h3><p>可以使用多个读写端进行读写，因为mmap是缓冲区的模式。与pipe和FIFO不同，共享映射区可以重复读取。</p><a class=post-dummy-target id=匿名mmap---父子进程间通信></a><h3>(匿名)mmap - 父子进程间通信</h3><p>使用共享映射区来进行文件读写和父子进程间通信比较方便，但缺陷是，每次创建映射区都需要依赖于一个文件才行。通常为了建立映射区，需要<code>open</code>一个临时文件，创建完成后再<code>unlink close</code>，比较麻烦。</p><p>这种父子进程间的通信可以使用<strong>匿名映射区</strong>来实现。Linux系统为我们提供了这样的方法，无需依赖文件即可创建映射区，需要借助标志位参数<code>flags</code>来指定。</p><p>使用方法：<code>void* mem = mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS, -1, 0);</code></p><p>注：<code>MAP_ANON</code>和<code>MAP_ANONYMOUS</code>同义，但不推荐使用。</p><p>上述两个宏是Linux系统特有的宏，在类Unix系统中如果无法使用该宏定义，可以使用如下两步来完成匿名映射区的建立：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=kt>int</span> <span class=n>fd</span> <span class=o>=</span> <span class=n>open</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>dev/zero</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>O_RDWR</span><span class=p>)</span><span class=p>;</span>
+<span class=kt>void</span><span class=o>*</span> <span class=n>mem</span> <span class=o>=</span> <span class=n>mmap</span><span class=p>(</span><span class=nb>NULL</span><span class=p>,</span> <span class=n>size</span><span class=p>,</span> <span class=n>PROT_READ</span><span class=o>|</span><span class=n>PROT_WRITE</span><span class=p>,</span> <span class=n>MAP_SHARED</span><span class=p>,</span> <span class=n>fd</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+</code></pre></td></tr></table></div></div></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
 <span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
 <span>2022-05-26</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
 <span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2flinux%25E7%25B3%25BB%25E7%25BB%259F%25E7%25BC%2596%25E7%25A8%258B09-%25E8%25BF%259B%25E7%25A8%258B%25E9%2597%25B4%25E9%2580%259A%25E4%25BF%25A1%2f&text=%e3%80%90Linux%e7%b3%bb%e7%bb%9f%e7%bc%96%e7%a8%8b%e3%80%9109%20-%20%e8%bf%9b%e7%a8%8b%e9%97%b4%e9%80%9a%e4%bf%a1&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2flinux%25E7%25B3%25BB%25E7%25BB%259F%25E7%25BC%2596%25E7%25A8%258B09-%25E8%25BF%259B%25E7%25A8%258B%25E9%2597%25B4%25E9%2580%259A%25E4%25BF%25A1%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2flinux%25E7%25B3%25BB%25E7%25BB%259F%25E7%25BC%2596%25E7%25A8%258B09-%25E8%25BF%259B%25E7%25A8%258B%25E9%2597%25B4%25E9%2580%259A%25E4%25BF%25A1%2f&title=%e3%80%90Linux%e7%b3%bb%e7%bb%9f%e7%bc%96%e7%a8%8b%e3%80%9109%20-%20%e8%bf%9b%e7%a8%8b%e9%97%b4%e9%80%9a%e4%bf%a1" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/linux/><i class="fas fa-tag fa-fw"></i>&nbsp;Linux</a>&nbsp;</span></section><section><span><a href=javascript:window.history.back();>Back</a></span>&nbsp;|&nbsp;<span><a href=https://xushun1221.github.io>Home</a></span></section></div><div class=post-nav><a href=https://xushun1221.github.io/2022/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B08-%E8%BF%9B%E7%A8%8B/ class=prev rel=prev title="【Linux系统编程】08 - 进程"><i class="fas fa-angle-left fa-fw"></i>【Linux系统编程】08 - 进程</a></div><div class=post-comment></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2022</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=https://xushun1221.github.io/about/ target=_blank>xushun</a> | </span>Powered by <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> & <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer">LoveIt</a></div></div></footer></div><a href=# class=dynamic-to-top id=dynamic-to-top data-scroll><span>&nbsp;</span>
