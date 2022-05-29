@@ -125,4 +125,218 @@ xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_sigal$ kill -l
 |34-64|SIGRTMIN - SIGRTMAX|LINUX 的实时信号，它们没有固定的含义（可以由用户自定义）。|所有的实时信号的默认动作都为终止进程。|
 
 ## 信号的产生
+### 终端按键产生信号
+- `ctrl + c`， 2) SIGINT（终止/中断） "INT" ----Interrupt
+- `Ctrl + z`， 20) SIGTSTP（暂停/停止） "T" ----Terminal 终端。
+- `Ctrl + \`， 3) SIGQUIT（退出）
 
+### 硬件异常产生信号
+- 除0操作，8) SIGFPE（浮点数例外） "F" ----Float 浮点数
+- 非法访问内存，11) SIGSEGV（段错误）
+- 总线错误，7) SIGBUS
+
+### kill函数/命令产生信号
+注意，kill函数或命令的作用是给某个进程发送指定信号（不一定是杀死该进程）。
+
+#### kill命令
+`kill -SIGKILL pid`，发送SIGKILL（啥信号都行）到pid号进程。
+
+#### kill函数
+给指定进程发送指定信号。（系统函数）
+
+函数原型：  
+```c
+#include <sys/types.h>
+#include <signal.h>
+
+int kill(pid_t pid, int sig);
+```
+- 返回值：
+  - 成功，返回`0`；
+  - 失败，返回`-1`，并设置`errno`，原因可能是ID非法、信号非法、普通用户杀init进程等权级问题。
+- `sig`：要发送的信号，应使用宏名称而非数字；
+- `pid`：
+  - `pid > 0`：发送信号给pid进程；
+  - `pid == 0`：发送信号给与调用kill函数进程属于同一进程组的所有进程；
+  - `pid < -1`：取`abs(pid)`发送给对应进程组（因为进程组长和进程组ID相同，以此区分）；
+  - `pid == -1`：发送给进程有权发送的系统中的所有进程。
+
+进程组：每个进程都属于一个进程组，进程组是一个或多个进程集合，它们互相关联，共同完成一个实体任务，每个进程组都有一个进程组组长，默认进程组ID与组长ID相同。
+
+权限保护：root用户可以发送信号给任意用户，普通用户是不能向系统用户发送信号的。同样，普通用户也不能向其他普通用户发送信号，终止其进程。只能向自己创建的进程发送信号。普通用户的基本规则是：发送者实际或有效用户ID==接收者实际或有效用户ID。
+
+测试，父进程杀死一个子进程：  
+```c
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <signal.h>
+
+int main(int argc, char** argv) {
+    int child_index = 0;
+    pid_t pid, kpid;
+    for (child_index = 0; child_index < 5; ++ child_index) {
+        pid = fork();
+        if (pid == 0) {
+            break;
+        } else if(pid > 0) {
+            if (child_index == 2) { // kill 3th child
+                kpid = pid;
+            }
+        } else {
+            perror("fork error");
+            exit(1);
+        }
+    }
+    if (child_index == 5) { // parent
+        sleep(3);
+        if (kill(kpid, SIGKILL) == -1) {
+            perror("kill error");
+            exit(1);
+        }
+        for (int i = 0; i < 5; ++ i) {
+            printf("-- parent : wait %d child\n", wait(NULL));
+        }
+    } else {
+        int sec = 0;
+        while (1) {
+            if (sec == 6) {
+                break;
+            }
+            printf("-%d- %dth child : %d\n", ++ sec, child_index + 1, getpid());
+            sleep(1);
+        }
+    }
+    return 0;
+}
+```
+
+### 软件条件产生信号
+#### alarm函数产生信号
+设置一个定时器，指定时间后，内核会向当前进程发送14)SIGALRM信号，默认动作为终止进程。（系统函数）
+
+函数原型：  
+```c
+#include <unistd.h>
+
+unsigned int alarm(unsigned int seconds);
+```
+- 返回值：返回上一次设置的定时器还剩下的秒数，如果为0，则表示之前设置的定时器已经到期，或之前没设置定时器；
+  - 无错误情况。
+- `seconds`：设置定时器的秒数；
+- 使用`alarm(0)`可以取消定时器；
+- 每一个进程都有且只有唯一一个定时器。
+
+测试：  
+```c
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(int argc, char** argv) {
+    alarm(5);
+    int sec = 0;
+    while (1) {
+        printf("sec : %d\n", ++ sec);
+        sleep(1);
+        if (sec == 3) {
+            alarm(10);
+            sec = 10;
+        }
+    }
+    return 0;
+}
+```
+测试表明，如果上一个alarm还没结束就调用下一个alarm，会重置定时器。
+
+#### setitimer函数产生信号 / getitimer
+设定和获取内置定时器。（系统函数）
+
+可以替代`alarm`，精度为微秒级us，可以实现周期定时（需要捕捉信号）。
+
+函数原型：  
+```c
+#include <sys/time.h>
+
+int getitimer(int which, struct itimerval *curr_value);
+int setitimer(int which, const struct itimerval *new_value,
+                struct itimerval *old_value);
+
+struct itimerval {
+    struct timeval it_interval; /* Interval for periodic timer 两次定时任务的间隔 */
+    struct timeval it_value;    /* Time until next expiration 定时时长*/
+};
+struct timeval {
+    time_t      tv_sec;         /* seconds 秒*/
+    suseconds_t tv_usec;        /* microseconds 微秒*/
+};
+```
+- 返回值：
+  - 成功：返回`0`；
+  - 失败：返回`-1`。
+- `which`：指定定时方式，
+  - `ITIMER_REAL`，自然定时，14)SIGLARM，计算自然时间；
+  - `ITIMER_VIRTUAL`，虚拟空间定时（用户空间），26)SIGVTALRM，只计算进程占用CPU的时间；
+  - `ITIMER_PROF`，运行时定时（用户+内核），27)SIGPROF，计算占用CPU及执行系统调用的时间。
+- `new_value`：定时的参数（周期定时时长，第一次定时时长，第一次定时后，每过一个周期发送一次定时信号）（两个参数都是0，清零）；
+- `old_value`：上次定时剩余的时间。
+
+测试：  
+```c
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/time.h>
+#include <signal.h>
+
+void myfunc(int signo) {
+    printf("alarm\n");
+}
+
+int main(int argc, char** argv) {
+    struct itimerval it, oldit;
+
+    signal(SIGALRM, myfunc);
+
+    // 定时时长 2s0us
+    it.it_value.tv_sec = 2;
+    it.it_value.tv_usec = 0;
+    // 定时间隔 5s0us
+    it.it_interval.tv_sec = 5;
+    it.it_interval.tv_usec = 0;
+
+    if (setitimer(ITIMER_REAL, &it, &oldit) == -1) {
+        perror("setitimer error");
+        exit(1);
+    }
+
+    int sec = 0;
+    while (1) {
+        printf("-%3d-\n", ++ sec);
+        sleep(1);
+    }
+
+    return 0;
+}
+```
+测试结果：  
+```console
+xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_sigal$ ./setitimer 
+-  1-
+-  2-
+alarm
+-  3-
+-  4-
+-  5-
+-  6-
+-  7-
+alarm
+-  8-
+-  9-
+- 10-
+- 11-
+- 12-
+alarm
+```
+
+## 信号集操作函数
