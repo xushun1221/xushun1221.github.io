@@ -647,7 +647,7 @@ void catch_child(int signo) {
 
 void catch_child(int signo) {
     int wpid, wstatus;
-    while ((wpid = waitpid(-1, &wstatus, WNOHANG)) > 0) {
+    while ((wpid = waitpid(-1, &wstatus, WNOHANG)) > 0) { // 只要有机会进入该回调函数 终止的子进程就会被全部回收
         printf("--catch child : %d : ", wpid);
         if (WIFEXITED(wstatus)) { // 正常退出 退出代码
             printf("exit %d\n", WEXITSTATUS(wstatus));
