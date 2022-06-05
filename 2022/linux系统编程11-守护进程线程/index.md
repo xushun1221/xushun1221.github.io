@@ -688,3 +688,123 @@ xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_thread$
 |pthread_join()|wait() waitpid()|
 |pthread_cancel()|kill()|
 |pthread_detach()|*|
+
+## 线程属性
+在创建线程时，可以选择设置线程的属性，由`pthread_attr_t`定义：  
+```c
+// 这个是早期版本的Linux线程属性结构体
+typedef struct {
+    int               detachstate;   // 线程的分离状态
+    int               schedpolicy;   // 线程调度策略
+    structsched_param schedparam;    // 线程的调度参数
+    int               inheritsched;  // 线程的继承性
+    int               scope;         // 线程的作用域
+    size_t            guardsize;     // 线程栈末尾的警戒缓冲区大小
+    int               stackaddr_set; // 线程的栈设置
+    void*             stackaddr;     // 线程栈的位置
+    size_t            stacksize;     // 线程栈的大小
+} pthread_attr_t;
+```
+
+Linux 下线程的属性是可以根据实际项目需要，进行设置，之前我们讨论的线程都是采用线程的默认属性，默认属性已经可以解决绝大多数开发时遇到的问题。如我们对程序的性能提出更高的要求那么需要设置线程属性，比如可以通过设置线程栈的大小来降低内存的使用，增加最大线程个数，等等。
+
+### 线程属性初始化
+属性值不能直接设置，须使用相关函数进行操作，初始化的函数为 `pthread_attr_init`，这个函数必须在`pthread_create` 函数之前调用。之后须用 `pthread_attr_destroy` 函数来释放资源。
+
+函数原型：  
+```c
+#include <pthread.h>
+
+int pthread_attr_init(pthread_attr_t *attr);
+int pthread_attr_destroy(pthread_attr_t *attr);
+```
+- 返回值：
+  - 成功，`0`；
+  - 失败，返回错误号。
+
+### 设置线程分离属性
+设置分离态的函数：  
+```c
+#include <pthread.h>
+
+int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate);
+int pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate);
+```
+- 返回值：
+  - 成功，`0`；
+  - 失败，返回错误号。
+- `detachstate`：
+  - `PTHREAD_CREATE_DETACHED`：分离态；
+  - `PTHREAD_CREATE_JOINABLE`：非分离态。（默认）
+
+测试：  
+```c
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <pthread.h>
+
+void* tfunc(void* arg) {
+    printf("thread : pid = %d, tid = %lu\n", getpid(), pthread_self());
+    return NULL;
+}
+
+int main(int argc, char** argv) {
+    int ret;
+    pthread_t tid;
+    pthread_attr_t attr;
+    // 初始化一个 线程属性结构体
+    ret = pthread_attr_init(&attr); 
+    if (ret != 0) {
+        fprintf(stderr, "pthread_attr_init error : %s\n", strerror(ret));
+        exit(1);
+    }
+    // 设置为分离属性
+    ret = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+    if (ret != 0) {
+        fprintf(stderr, "pthread_attr_setdetachstate error : %s\n", strerror(ret));
+        exit(1);
+    }
+    // 创建分离属性的线程
+    ret = pthread_create(&tid, &attr, tfunc, NULL);
+    if (ret != 0) {
+        fprintf(stderr, "pthread_create error : %s\n", strerror(ret));
+        exit(1);
+    }
+    // 销毁线程属性结构体
+    ret = pthread_attr_destroy(&attr); 
+    if (ret != 0) {
+        fprintf(stderr, "pthread_attr_destroy error : %s\n", strerror(ret));
+        exit(1);
+    }
+    // 如果回收失败 说明确实为分离态
+    ret = pthread_join(tid, NULL);
+    if (ret != 0) {
+        fprintf(stderr, "pthread_join error : %s\n", strerror(ret));
+        exit(1);
+    } 
+
+    printf("main thread : pid = %d, tid = %lu\n", getpid(), pthread_self());
+    return 0;
+}
+```
+
+测试结果：  
+```console
+xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_thread$ ./attr_detach 
+pthread_join error : Invalid argument
+xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_thread$ 
+```
+
+## 使用线程的注意事项
+1. 主线程退出其他线程不退出，主线程应调用 `pthread_exit`
+2. 避免僵尸线程
+   - `pthread_join`，回收
+   - `pthread_detach`，分离
+   - `pthread_create` 指定分离属性
+   - 被 join 线程可能在 join 函数返回前就释放完自己的所有内存资源，所以不应当返回被回收线程栈中的值;
+3. `malloc` 和 `mmap` 申请的内存可以被其他线程释放（共享堆）
+4. 应避免在多线程模型中调用 `fork` 除非，马上 `exec`，子进程中只有调用 `fork` 的线程存在，其他线程在子进程中均 `pthread_exit`
+5. 信号的复杂语义很难和多线程共存，应避免在多线程引入信号机制
