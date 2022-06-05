@@ -1,6 +1,6 @@
-<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【Linux系统编程】11 - 守护进程、线程 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/vscode%E7%94%A8%E6%88%B7%E4%BB%A3%E7%A0%81%E7%89%87%E6%AE%B5-%E8%87%AA%E5%8A%A8%E7%94%9F%E6%88%90%E4%BB%A3%E7%A0%81%E6%A1%86%E6%9E%B6/><link rel=canonical href=https://xushun1221.github.io/2022/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B11-%E5%AE%88%E6%8A%A4%E8%BF%9B%E7%A8%8B%E7%BA%BF%E7%A8%8B/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【Linux系统编程】11 - 守护进程、线程"><meta name=twitter:description content="进程组和会话 进程组 - 概念和特性 进程组，也称之为作业。BSD 于 1980 年前后向 Unix 中增加的一个新特性。代表一个或多个进程的集合。每个进程都属于一个进程"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【Linux系统编程】11 - 守护进程、线程","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B11-%E5%AE%88%E6%8A%A4%E8%BF%9B%E7%A8%8B%E7%BA%BF%E7%A8%8B\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"Linux","wordcount":3342,"url":"https:\/\/xushun1221.github.io\/2022\/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B11-%E5%AE%88%E6%8A%A4%E8%BF%9B%E7%A8%8B%E7%BA%BF%E7%A8%8B\/","datePublished":"2022-06-04T00:00:00\x2b00:00","dateModified":"2022-06-04T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【Linux系统编程】11 - 守护进程、线程</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-06-04>2022-06-04</time>&nbsp;
-<i class="fas fa-pencil-alt fa-fw"></i>about 3342 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#进程组和会话>进程组和会话</a><ul><li><a href=#进程组---概念和特性>进程组 - 概念和特性</a></li><li><a href=#会话>会话</a></li><li><a href=#getsid>getsid</a></li><li><a href=#setsid>setsid</a></li></ul></li><li><a href=#守护进程>守护进程</a><ul><li><a href=#创建守护进程模型>创建守护进程模型</a></li><li><a href=#练习---创建守护进程>练习 - 创建守护进程</a></li></ul></li><li><a href=#线程>线程</a><ul><li><a href=#线程的相关概念>线程的相关概念</a></li><li><a href=#linux线程的实现原理>Linux线程的实现原理</a></li><li><a href=#线程共享的资源>线程共享的资源</a></li><li><a href=#线程非共享的资源>线程非共享的资源</a></li><li><a href=#线程的优缺点>线程的优、缺点</a></li></ul></li><li><a href=#线程控制原语>线程控制原语</a><ul><li><a href=#pthread_self>pthread_self</a></li><li><a href=#pthread_create>pthread_create</a></li><li><a href=#练习1---创建一个线程>练习1 - 创建一个线程</a></li><li><a href=#练习2---循环创建多个子线程>练习2 - 循环创建多个子线程</a></li><li><a href=#pthread_exit>pthread_exit</a></li><li><a href=#pthread_join>pthread_join</a></li><li><a href=#pthread_detach>pthread_detach</a></li><li><a href=#pthread_cancel>pthread_cancel</a></li></ul></li><li><a href=#线程的属性>线程的属性</a></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
-<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#进程组和会话>进程组和会话</a><ul><li><a href=#进程组---概念和特性>进程组 - 概念和特性</a></li><li><a href=#会话>会话</a></li><li><a href=#getsid>getsid</a></li><li><a href=#setsid>setsid</a></li></ul></li><li><a href=#守护进程>守护进程</a><ul><li><a href=#创建守护进程模型>创建守护进程模型</a></li><li><a href=#练习---创建守护进程>练习 - 创建守护进程</a></li></ul></li><li><a href=#线程>线程</a><ul><li><a href=#线程的相关概念>线程的相关概念</a></li><li><a href=#linux线程的实现原理>Linux线程的实现原理</a></li><li><a href=#线程共享的资源>线程共享的资源</a></li><li><a href=#线程非共享的资源>线程非共享的资源</a></li><li><a href=#线程的优缺点>线程的优、缺点</a></li></ul></li><li><a href=#线程控制原语>线程控制原语</a><ul><li><a href=#pthread_self>pthread_self</a></li><li><a href=#pthread_create>pthread_create</a></li><li><a href=#练习1---创建一个线程>练习1 - 创建一个线程</a></li><li><a href=#练习2---循环创建多个子线程>练习2 - 循环创建多个子线程</a></li><li><a href=#pthread_exit>pthread_exit</a></li><li><a href=#pthread_join>pthread_join</a></li><li><a href=#pthread_detach>pthread_detach</a></li><li><a href=#pthread_cancel>pthread_cancel</a></li></ul></li><li><a href=#线程的属性>线程的属性</a></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=进程组和会话></a><h2>进程组和会话</h2><a class=post-dummy-target id=进程组---概念和特性></a><h3>进程组 - 概念和特性</h3><p><strong>进程组</strong>，也称之为<strong>作业</strong>。BSD 于 1980 年前后向 Unix 中增加的一个新特性。代表一个或多个进程的集合。每个进程都属于一个进程组。在 <code>waitpid</code> 函数和 <code>kill</code> 函数的参数中都曾使用到。操作系统设计的进程组的概念，是为了简化对多个进程的管理。</p><ul><li>当父进程，创建子进程的时候，默认子进程与父进程属于同一进程组。进程组 ID==第一个进程 ID(组长进程)。所以，组长进程标识：其进程组 ID==其进程 ID</li><li>可以使用 kill -SIGKILL -进程组 ID(负的)来将整个进程组内的进程全部杀死。</li><li>组长进程可以创建一个进程组，创建该进程组中的进程，然后终止。只要进程组中有一个进程存在，进程组就存在，与组长进程是否终止无关。</li><li>进程组生存期：进程组创建到最后一个进程离开(终止或转移到另一个进程组)。</li><li>一个进程可以为自己或子进程设置进程组 ID</li></ul><a class=post-dummy-target id=会话></a><h3>会话</h3><p><strong>会话</strong>，是多个进程组的集合。</p><p>创建会话的注意事项：</p><ol><li><strong>创建会话的进程不能是进程组组长</strong>，该进程变成新会话首进程（session header）</li><li>该进程成为一个新进程组的组长进程</li><li>需要root权限（ubuntu不需要）</li><li>新会话丢弃原有的控制终端，该会话<strong>没有控制终端</strong></li><li>该调用进程是组长进程，则出错返回</li><li>建立新会话时，先调用fork，父进程终止，子进程调用<code>setsid()</code></li></ol><a class=post-dummy-target id=getsid></a><h3>getsid</h3><p>获取进程所属会话id。（系统函数）</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【Linux系统编程】11 - 守护进程、线程 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/vscode%E7%94%A8%E6%88%B7%E4%BB%A3%E7%A0%81%E7%89%87%E6%AE%B5-%E8%87%AA%E5%8A%A8%E7%94%9F%E6%88%90%E4%BB%A3%E7%A0%81%E6%A1%86%E6%9E%B6/><link rel=canonical href=https://xushun1221.github.io/2022/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B11-%E5%AE%88%E6%8A%A4%E8%BF%9B%E7%A8%8B%E7%BA%BF%E7%A8%8B/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【Linux系统编程】11 - 守护进程、线程"><meta name=twitter:description content="进程组和会话 进程组 - 概念和特性 进程组，也称之为作业。BSD 于 1980 年前后向 Unix 中增加的一个新特性。代表一个或多个进程的集合。每个进程都属于一个进程"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【Linux系统编程】11 - 守护进程、线程","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B11-%E5%AE%88%E6%8A%A4%E8%BF%9B%E7%A8%8B%E7%BA%BF%E7%A8%8B\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"Linux","wordcount":6668,"url":"https:\/\/xushun1221.github.io\/2022\/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B11-%E5%AE%88%E6%8A%A4%E8%BF%9B%E7%A8%8B%E7%BA%BF%E7%A8%8B\/","datePublished":"2022-06-04T00:00:00\x2b00:00","dateModified":"2022-06-04T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【Linux系统编程】11 - 守护进程、线程</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-06-04>2022-06-04</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 6668 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#进程组和会话>进程组和会话</a><ul><li><a href=#进程组---概念和特性>进程组 - 概念和特性</a></li><li><a href=#会话>会话</a></li><li><a href=#getsid>getsid</a></li><li><a href=#setsid>setsid</a></li></ul></li><li><a href=#守护进程>守护进程</a><ul><li><a href=#创建守护进程模型>创建守护进程模型</a></li><li><a href=#练习---创建守护进程>练习 - 创建守护进程</a></li></ul></li><li><a href=#线程>线程</a><ul><li><a href=#线程的相关概念>线程的相关概念</a></li><li><a href=#linux线程的实现原理>Linux线程的实现原理</a></li><li><a href=#线程共享的资源>线程共享的资源</a></li><li><a href=#线程非共享的资源>线程非共享的资源</a></li><li><a href=#线程的优缺点>线程的优、缺点</a></li></ul></li><li><a href=#线程控制原语>线程控制原语</a><ul><li><a href=#错误信息输出>错误信息输出</a></li><li><a href=#pthread_self>pthread_self</a></li><li><a href=#pthread_create>pthread_create</a></li><li><a href=#练习1---创建一个线程>练习1 - 创建一个线程</a></li><li><a href=#练习2---循环创建多个子线程>练习2 - 循环创建多个子线程</a></li><li><a href=#pthread_exit>pthread_exit</a></li><li><a href=#pthread_exit-exit-return-三者的区别>pthread_exit, exit, return 三者的区别</a><ul><li><a href=#测试>测试</a></li><li><a href=#主线程退出问题>主线程退出问题</a></li></ul></li><li><a href=#pthread_join>pthread_join</a></li><li><a href=#练习1---回收一个线程并获取退出状态>练习1 - 回收一个线程并获取退出状态</a></li><li><a href=#练习2---循环创建多个子线程并回收>练习2 - 循环创建多个子线程并回收</a></li><li><a href=#pthread_detach>pthread_detach</a></li><li><a href=#pthread_cancel>pthread_cancel</a></li><li><a href=#pthread_cancel如何终止线程>pthread_cancel如何终止线程</a><ul><li><a href=#测试1>测试1</a></li><li><a href=#测试2>测试2</a></li><li><a href=#测试3>测试3</a></li><li><a href=#结论>结论</a></li></ul></li><li><a href=#终止线程的方式>终止线程的方式</a></li><li><a href=#控制原语对比>控制原语对比</a></li></ul></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#进程组和会话>进程组和会话</a><ul><li><a href=#进程组---概念和特性>进程组 - 概念和特性</a></li><li><a href=#会话>会话</a></li><li><a href=#getsid>getsid</a></li><li><a href=#setsid>setsid</a></li></ul></li><li><a href=#守护进程>守护进程</a><ul><li><a href=#创建守护进程模型>创建守护进程模型</a></li><li><a href=#练习---创建守护进程>练习 - 创建守护进程</a></li></ul></li><li><a href=#线程>线程</a><ul><li><a href=#线程的相关概念>线程的相关概念</a></li><li><a href=#linux线程的实现原理>Linux线程的实现原理</a></li><li><a href=#线程共享的资源>线程共享的资源</a></li><li><a href=#线程非共享的资源>线程非共享的资源</a></li><li><a href=#线程的优缺点>线程的优、缺点</a></li></ul></li><li><a href=#线程控制原语>线程控制原语</a><ul><li><a href=#错误信息输出>错误信息输出</a></li><li><a href=#pthread_self>pthread_self</a></li><li><a href=#pthread_create>pthread_create</a></li><li><a href=#练习1---创建一个线程>练习1 - 创建一个线程</a></li><li><a href=#练习2---循环创建多个子线程>练习2 - 循环创建多个子线程</a></li><li><a href=#pthread_exit>pthread_exit</a></li><li><a href=#pthread_exit-exit-return-三者的区别>pthread_exit, exit, return 三者的区别</a><ul><li><a href=#测试>测试</a></li><li><a href=#主线程退出问题>主线程退出问题</a></li></ul></li><li><a href=#pthread_join>pthread_join</a></li><li><a href=#练习1---回收一个线程并获取退出状态>练习1 - 回收一个线程并获取退出状态</a></li><li><a href=#练习2---循环创建多个子线程并回收>练习2 - 循环创建多个子线程并回收</a></li><li><a href=#pthread_detach>pthread_detach</a></li><li><a href=#pthread_cancel>pthread_cancel</a></li><li><a href=#pthread_cancel如何终止线程>pthread_cancel如何终止线程</a><ul><li><a href=#测试1>测试1</a></li><li><a href=#测试2>测试2</a></li><li><a href=#测试3>测试3</a></li><li><a href=#结论>结论</a></li></ul></li><li><a href=#终止线程的方式>终止线程的方式</a></li><li><a href=#控制原语对比>控制原语对比</a></li></ul></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=进程组和会话></a><h2>进程组和会话</h2><a class=post-dummy-target id=进程组---概念和特性></a><h3>进程组 - 概念和特性</h3><p><strong>进程组</strong>，也称之为<strong>作业</strong>。BSD 于 1980 年前后向 Unix 中增加的一个新特性。代表一个或多个进程的集合。每个进程都属于一个进程组。在 <code>waitpid</code> 函数和 <code>kill</code> 函数的参数中都曾使用到。操作系统设计的进程组的概念，是为了简化对多个进程的管理。</p><ul><li>当父进程，创建子进程的时候，默认子进程与父进程属于同一进程组。进程组 ID==第一个进程 ID(组长进程)。所以，组长进程标识：其进程组 ID==其进程 ID</li><li>可以使用 kill -SIGKILL -进程组 ID(负的)来将整个进程组内的进程全部杀死。</li><li>组长进程可以创建一个进程组，创建该进程组中的进程，然后终止。只要进程组中有一个进程存在，进程组就存在，与组长进程是否终止无关。</li><li>进程组生存期：进程组创建到最后一个进程离开(终止或转移到另一个进程组)。</li><li>一个进程可以为自己或子进程设置进程组 ID</li></ul><a class=post-dummy-target id=会话></a><h3>会话</h3><p><strong>会话</strong>，是多个进程组的集合。</p><p>创建会话的注意事项：</p><ol><li><strong>创建会话的进程不能是进程组组长</strong>，该进程变成新会话首进程（session header）</li><li>该进程成为一个新进程组的组长进程</li><li>需要root权限（ubuntu不需要）</li><li>新会话丢弃原有的控制终端，该会话<strong>没有控制终端</strong></li><li>该调用进程是组长进程，则出错返回</li><li>建立新会话时，先调用fork，父进程终止，子进程调用<code>setsid()</code></li></ol><a class=post-dummy-target id=getsid></a><h3>getsid</h3><p>获取进程所属会话id。（系统函数）</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2
 </span><span class=lnt>3
 </span><span class=lnt>4
@@ -92,7 +92,17 @@
 </span><span class=c1></span>    <span class=k>while</span> <span class=p>(</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span> <span class=p>}</span>
     <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
 <span class=p>}</span>
-</code></pre></td></tr></table></div></div><p>编译运行，该守护进程成功创建，它没有终端进行控制，用户的登录和注销也不会对它产生影响，必须使用<code>kill</code>命令来终止它。</p><a class=post-dummy-target id=线程></a><h2>线程</h2><a class=post-dummy-target id=线程的相关概念></a><h3>线程的相关概念</h3><p><strong>线程</strong>，也可以称为<strong>LWP</strong>（Light Weight Process）轻量级的进程，在Linux下，它的本质仍然是进程。</p><ul><li>进程，有独立的地址空间，拥有PCB</li><li>线程，有独立的PCB，但是没有独立的地址空间（共享的）</li><li>区别，在于是否共享地址空间</li><li>进程可以变成线程</li><li>线程可以看作寄存器和栈的集合</li><li>线程是<strong>最小的执行单位</strong>，CPU执行时，不是以进程为单位，而是以线程为单位</li><li>进程是<strong>最小的资源分配单位</strong>，进程也可以看作是只有一个线程的进程</li></ul><p>当进程中只有它自己没有其他线程时，我们只会提进程的概念，如果创建了线程，才会提线程的概念。</p><p><code>ps -Lf pid</code>，可以查看线程号（LWP）。</p><ul><li>线程号（LWP），是给CPU用于区分线程，进行执行调度用的；</li><li>线程ID，是在进程内部用来区分不同线程身份的。</li></ul><a class=post-dummy-target id=linux线程的实现原理></a><h3>Linux线程的实现原理</h3><p>类 Unix 系统中，早期是没有<strong>线程</strong>概念的，80 年代才引入，借助进程机制实现出了线程的概念。因此在这类系统中，进程和线程关系密切。</p><p>从内核里看，进程和线程是一样的，都有自己的PCB，但是线程PCB中指向内存资源的三级页表是相同的。</p><p>对于进程来说，相同的地址（同一个虚拟地址）在不同的进程中，反复使用而不冲突，原因是它们虽然虚拟地址相同，但是页目录、页表、物理页面都各不相同。即相同的虚拟地址，映射到不同的物理页面内存单元，最终访问不同的物理页面。</p><p>但是线程不同，两个线程具有各自独立的PCB，但是共享一个页目录（意味着它们的虚拟地址到物理地址的映射相同），所以两个PCB共享一个地址空间。</p><p>实际上，无论是创建进程的<code>fork()</code>，还是创建线程的<code>pthread_create()</code>，底层的实现都是调用同一个内核函数<code>clone()</code>。</p><p>如果复制对方的地址空间，那么就产生一个进程，如果共享对方的地址空间，就产生一个线程。</p><p>因此，Linux系统内核是不区分进程和线程的，只在用户层面上进行区分。所以，线程的所有操作函数<code>pthread_*</code>都是库函数，而非系统调用。</p><a class=post-dummy-target id=线程共享的资源></a><h3>线程共享的资源</h3><ol><li>文件描述符表</li><li>每种信号的处理方式</li><li>当前工作目录</li><li>用户ID和组ID</li><li>内存地址空间（.text/.data/heap/共享库）</li></ol><p>牢记：线程默认共享数据段、代码段等地址空间，常用的是<strong>全局变量</strong>。而进程不共享全局变量，只能借助 mmap 共享映射区。</p><a class=post-dummy-target id=线程非共享的资源></a><h3>线程非共享的资源</h3><ol><li>线程ID（和线程号不同）</li><li>处理器现场（寄存器）和栈指针（内核栈）</li><li>独立的栈空间（用户空间栈）</li><li><code>errno</code>变量</li><li>信号屏蔽字</li><li>调度优先级</li></ol><a class=post-dummy-target id=线程的优缺点></a><h3>线程的优、缺点</h3><p>优点：</p><ol><li>提高程序并发性</li><li>开销小</li><li>数据通信、共享方便</li></ol><p>缺点：</p><ol><li>库函数，不稳定</li><li>调试编写困难、gdb不支持</li><li>对信号支持不好</li></ol><p>线程的优点比较突出，缺点并不是硬伤，Linux下由于实现方法导致进程、线程的差别不是很大。</p><a class=post-dummy-target id=线程控制原语></a><h2>线程控制原语</h2><p>编译时，需要加上<code>-pthread</code>参数。</p><a class=post-dummy-target id=pthread_self></a><h3>pthread_self</h3><p>获得自己的线程ID。</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</code></pre></td></tr></table></div></div><p>编译运行，该守护进程成功创建，它没有终端进行控制，用户的登录和注销也不会对它产生影响，必须使用<code>kill</code>命令来终止它。</p><a class=post-dummy-target id=线程></a><h2>线程</h2><a class=post-dummy-target id=线程的相关概念></a><h3>线程的相关概念</h3><p><strong>线程</strong>，也可以称为<strong>LWP</strong>（Light Weight Process）轻量级的进程，在Linux下，它的本质仍然是进程。</p><ul><li>进程，有独立的地址空间，拥有PCB</li><li>线程，有独立的PCB，但是没有独立的地址空间（共享的）</li><li>区别，在于是否共享地址空间</li><li>进程可以变成线程</li><li>线程可以看作寄存器和栈的集合</li><li>线程是<strong>最小的执行单位</strong>，CPU执行时，不是以进程为单位，而是以线程为单位</li><li>进程是<strong>最小的资源分配单位</strong>，进程也可以看作是只有一个线程的进程</li></ul><p>当进程中只有它自己没有其他线程时，我们只会提进程的概念，如果创建了线程，才会提线程的概念。</p><p><code>ps -Lf pid</code>，可以查看线程号（LWP）。</p><ul><li>线程号（LWP），是给CPU用于区分线程，进行执行调度用的；</li><li>线程ID，是在进程内部用来区分不同线程身份的。</li></ul><a class=post-dummy-target id=linux线程的实现原理></a><h3>Linux线程的实现原理</h3><p>类 Unix 系统中，早期是没有<strong>线程</strong>概念的，80 年代才引入，借助进程机制实现出了线程的概念。因此在这类系统中，进程和线程关系密切。</p><p>从内核里看，进程和线程是一样的，都有自己的PCB，但是线程PCB中指向内存资源的三级页表是相同的。</p><p>对于进程来说，相同的地址（同一个虚拟地址）在不同的进程中，反复使用而不冲突，原因是它们虽然虚拟地址相同，但是页目录、页表、物理页面都各不相同。即相同的虚拟地址，映射到不同的物理页面内存单元，最终访问不同的物理页面。</p><p>但是线程不同，两个线程具有各自独立的PCB，但是共享一个页目录（意味着它们的虚拟地址到物理地址的映射相同），所以两个PCB共享一个地址空间。</p><p>实际上，无论是创建进程的<code>fork()</code>，还是创建线程的<code>pthread_create()</code>，底层的实现都是调用同一个内核函数<code>clone()</code>。</p><p>如果复制对方的地址空间，那么就产生一个进程，如果共享对方的地址空间，就产生一个线程。</p><p>因此，Linux系统内核是不区分进程和线程的，只在用户层面上进行区分。所以，线程的所有操作函数<code>pthread_*</code>都是库函数，而非系统调用。</p><a class=post-dummy-target id=线程共享的资源></a><h3>线程共享的资源</h3><ol><li>文件描述符表</li><li>每种信号的处理方式</li><li>当前工作目录</li><li>用户ID和组ID</li><li>内存地址空间（.text/.data/heap/共享库）</li></ol><p>牢记：线程默认共享数据段、代码段等地址空间，常用的是<strong>全局变量</strong>。而进程不共享全局变量，只能借助 mmap 共享映射区。</p><a class=post-dummy-target id=线程非共享的资源></a><h3>线程非共享的资源</h3><ol><li>线程ID（和线程号不同）</li><li>处理器现场（寄存器）和栈指针（内核栈）</li><li>独立的栈空间（用户空间栈）</li><li><code>errno</code>变量</li><li>信号屏蔽字</li><li>调度优先级</li></ol><a class=post-dummy-target id=线程的优缺点></a><h3>线程的优、缺点</h3><p>优点：</p><ol><li>提高程序并发性</li><li>开销小</li><li>数据通信、共享方便</li></ol><p>缺点：</p><ol><li>库函数，不稳定</li><li>调试编写困难、gdb不支持</li><li>对信号支持不好</li></ol><p>线程的优点比较突出，缺点并不是硬伤，Linux下由于实现方法导致进程、线程的差别不是很大。</p><a class=post-dummy-target id=线程控制原语></a><h2>线程控制原语</h2><p>编译时，需要加上<code>-pthread</code>参数。</p><a class=post-dummy-target id=错误信息输出></a><h3>错误信息输出</h3><p>之前，我们大多使用<code>perror</code>来输出错误信息，这是因为，这些函数会自动设置<code>errno</code>，但是<code>pthread_*</code>线程控制函数，并不会设置<code>errno</code>，而是直接返回错误号，错误信息的正确输出方式是：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=kt>int</span> <span class=n>ret</span><span class=p>;</span>
+<span class=k>if</span> <span class=p>(</span><span class=p>(</span><span class=n>ret</span> <span class=o>=</span> <span class=n>pthread_</span><span class=o>*</span><span class=p>(</span><span class=p>.</span><span class=p>.</span><span class=p>.</span><span class=p>)</span><span class=p>)</span> <span class=o>!</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>fprintf</span><span class=p>(</span><span class=n>stderr</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>pthread_* error : %s</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>strerror</span><span class=p>(</span><span class=n>ret</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>后面写的一些代码可能没有使用这样的正确输出方式，请注意！</p><a class=post-dummy-target id=pthread_self></a><h3>pthread_self</h3><p>获得自己的线程ID。</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2
 </span><span class=lnt>3
 </span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;pthread.h&gt;</span><span class=cp>
@@ -212,7 +222,467 @@
     <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>--main thread : pid = %d, tid = %lu</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>getpid</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>pthread_self</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
     <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
 <span class=p>}</span>
-</code></pre></td></tr></table></div></div><p>注意，代码中有两个注释，如果采用注释的方法来转递参数，会出现错误，不会按照预想的结果输出。原因是，如果将主线程中的<code>i</code>的地址传给子线程，当子线程被创建完成并能够根据地址去读取主线程里的<code>i</code>的时候，主线程的<code>i</code>已经改变了，这就导致子线程读取了错误的<code>i</code>。所以要使用值传递（如果传递的变量变，那传地址亦可）。</p><a class=post-dummy-target id=pthread_exit></a><h3>pthread_exit</h3><a class=post-dummy-target id=pthread_join></a><h3>pthread_join</h3><a class=post-dummy-target id=pthread_detach></a><h3>pthread_detach</h3><a class=post-dummy-target id=pthread_cancel></a><h3>pthread_cancel</h3><a class=post-dummy-target id=线程的属性></a><h2>线程的属性</h2></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+</code></pre></td></tr></table></div></div><p>注意，代码中有两个注释，如果采用注释的方法来转递参数，会出现错误，不会按照预想的结果输出。原因是，如果将主线程中的<code>i</code>的地址传给子线程，当子线程被创建完成并能够根据地址去读取主线程里的<code>i</code>的时候，主线程的<code>i</code>已经改变了，这就导致子线程读取了错误的<code>i</code>。所以要使用值传递（如果传递的变量变，那传地址亦可）。</p><a class=post-dummy-target id=pthread_exit></a><h3>pthread_exit</h3><p>结束当前<strong>线程</strong>。</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;pthread.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=kt>void</span> <span class=nf>pthread_exit</span><span class=p>(</span><span class=kt>void</span> <span class=o>*</span><span class=n>retval</span><span class=p>)</span><span class=p>;</span>
+</code></pre></td></tr></table></div></div><ul><li>返回值：不返回任何东西；</li><li><code>retval</code>：表示线程退出状态，通常传<code>NULL</code>。</li></ul><a class=post-dummy-target id=pthread_exit-exit-return-三者的区别></a><h3>pthread_exit, exit, return 三者的区别</h3><p>先说结论：</p><ol><li><code>pthread_exit</code>：退出当前的线程；</li><li><code>exit</code>：退出当前的进程；</li><li><code>return</code>：返回到调用者那里去。</li></ol><p>所以，在多线程环境中，不要使用<code>exit</code>来退出，要使用<code>pthread_exit</code>来退出当前线程，在任何线程里的<code>exit</code>都会导致整个进程退出。在其他子线程工作没有结束时，主线程不可以使用<code>return</code>或<code>exit</code>来退出。</p><p>还有，<code>pthread_exit</code> 或者 <code>return</code> 返回的指针所指向的内存单元必须是全局的或者是用 <code>malloc</code> 分配的，不能在线程函数的栈上分配，因为当其它线程得到这个返回指针时线程函数已经退出了。</p><a class=post-dummy-target id=测试></a><h4>测试</h4><p>我们使用循环创建子线程的代码，进行测试，创建五个子线程，并在子线程内打印，忽略第三个子线程的打印行为。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=kt>void</span> <span class=nf>func</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>pthread_exit</span><span class=p>(</span><span class=nb>NULL</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=kt>void</span><span class=o>*</span> <span class=nf>tfunc</span><span class=p>(</span><span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=p>(</span><span class=kt>int</span><span class=p>)</span><span class=n>arg</span><span class=p>;</span>
+    <span class=n>sleep</span><span class=p>(</span><span class=n>i</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>i</span> <span class=o>=</span><span class=o>=</span> <span class=mi>2</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// 第三个子线程
+</span><span class=c1></span>        <span class=c1>// exit(0); // 1
+</span><span class=c1></span>        <span class=c1>// return NULL;  // 2
+</span><span class=c1></span>        <span class=c1>// pthread_exit(NULL); // 3
+</span><span class=c1></span>        <span class=c1>// func(); // 3 这样也可以退出线程
+</span><span class=c1></span>    <span class=p>}</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>--child thread : %dth, pid = %d, tid = %lu</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>i</span> <span class=o>+</span> <span class=mi>1</span><span class=p>,</span> <span class=n>getpid</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>pthread_self</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=nb>NULL</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>测试1 exit 结果：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-fallback data-lang=fallback>xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_thread$ ./more_1 
+--child thread : 1th, pid = 4315, tid = 140270440953600
+--child thread : 2th, pid = 4315, tid = 140270432560896
+xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_thread$ 
+</code></pre></td></tr></table></div></div><p>很明显，当第二个线程调用<code>exit(0)</code>时，整个进程被关闭了。</p><p>测试2 return 结果：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-fallback data-lang=fallback>xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_thread$ ./more_2
+--child thread : 1th, pid = 4515, tid = 140135603021568
+--child thread : 2th, pid = 4515, tid = 140135594628864
+--child thread : 4th, pid = 4515, tid = 140135577843456
+--child thread : 5th, pid = 4515, tid = 140135569450752
+--main thread : pid = 4515, tid = 140135603025728
+xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_thread$ 
+</code></pre></td></tr></table></div></div><p>可以正确输出，只有第三个线程退出了。</p><p>测试3结果：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-fallback data-lang=fallback>xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_thread$ ./more_2
+--child thread : 1th, pid = 4673, tid = 139833360074496
+--child thread : 2th, pid = 4673, tid = 139833351681792
+--child thread : 4th, pid = 4673, tid = 139833334896384
+--child thread : 5th, pid = 4673, tid = 139833326503680
+--main thread : pid = 4673, tid = 139833360078656
+xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_thread$ 
+</code></pre></td></tr></table></div></div><p>可以正常输出，调用<code>pthread_exit</code>函数后退出当前线程，在该线程中调用的其他函数中执行了这个函数也可以退出该线程。</p><a class=post-dummy-target id=主线程退出问题></a><h4>主线程退出问题</h4><p>回到之前的一个问题，在上面的代码里面，我们的主线程在<code>return 0</code>之前<code>sleep</code>一段时间来等待，其他子线程的打印行为，因为主线程<code>return 0</code>之后，该进程就会被销毁（main函数返回到启动例程），其他子线程无法继续执行。现在，我们可以用<code>pthread_exit((void*)0); // pthread_exit(NULL)</code>来代替<code>return 0</code>，只退出主线程而不退出整个进程。</p><a class=post-dummy-target id=pthread_join></a><h3>pthread_join</h3><p>阻塞等待线程退出，获取线程退出状态。</p><p>它的作用和进程中的<code>waitpid wait</code>差不多。</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;pthread.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=kt>int</span> <span class=nf>pthread_join</span><span class=p>(</span><span class=n>pthread_t</span> <span class=kr>thread</span><span class=p>,</span> <span class=kt>void</span> <span class=o>*</span><span class=o>*</span><span class=n>retval</span><span class=p>)</span><span class=p>;</span>
+</code></pre></td></tr></table></div></div><ul><li>返回值：<ul><li>成功，返回<code>0</code>；</li><li>失败，返回一个错误代码。</li></ul></li><li><code>thread</code>：进程ID；</li><li><code>retval</code>：指向线程返回状态的指针。（线程返回状态是<code>void*</code>类型的，指向它的指针就是<code>void**</code>类型，进程的返回值是<code>int</code>，所以<code>wait waitpid</code>获得的返回参数是<code>int*</code>）</li></ul><a class=post-dummy-target id=练习1---回收一个线程并获取退出状态></a><h3>练习1 - 回收一个线程并获取退出状态</h3><p>代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;errno.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;pthread.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=k>typedef</span> <span class=k>struct</span> <span class=p>{</span>
+    <span class=kt>char</span> <span class=n>name</span><span class=p>[</span><span class=mi>256</span><span class=p>]</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>age</span><span class=p>;</span>
+<span class=p>}</span> <span class=n>people</span><span class=p>;</span>
+
+<span class=kt>void</span><span class=o>*</span> <span class=nf>tfunc</span><span class=p>(</span><span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>people</span><span class=o>*</span> <span class=n>p</span> <span class=o>=</span> <span class=n>malloc</span><span class=p>(</span><span class=k>sizeof</span><span class=p>(</span><span class=n>people</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>strcpy</span><span class=p>(</span><span class=n>p</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>name</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>xushun</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>p</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>age</span> <span class=o>=</span> <span class=mi>23</span><span class=p>;</span>
+    <span class=n>pthread_exit</span><span class=p>(</span><span class=p>(</span><span class=kt>void</span><span class=o>*</span><span class=p>)</span><span class=n>p</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=kt>int</span> <span class=n>argc</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span><span class=o>*</span> <span class=n>argv</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>pthread_t</span> <span class=n>tid</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>ret</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=p>(</span><span class=n>ret</span> <span class=o>=</span> <span class=n>pthread_create</span><span class=p>(</span><span class=o>&amp;</span><span class=n>tid</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>,</span> <span class=n>tfunc</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>)</span><span class=p>)</span> <span class=o>!</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>pthread_create error : %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>ret</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>people</span><span class=o>*</span> <span class=n>retp</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=p>(</span><span class=n>ret</span> <span class=o>=</span> <span class=n>pthread_join</span><span class=p>(</span><span class=n>tid</span><span class=p>,</span> <span class=p>(</span><span class=kt>void</span><span class=o>*</span><span class=o>*</span><span class=p>)</span><span class=o>&amp;</span><span class=n>retp</span><span class=p>)</span><span class=p>)</span> <span class=o>!</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>pthread_join error : %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>ret</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>people : name = </span><span class=se>\&#34;</span><span class=s>%s</span><span class=se>\&#34;</span><span class=s>, age = %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>retp</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>name</span><span class=p>,</span> <span class=n>retp</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>age</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>pthread_exit</span><span class=p>(</span><span class=nb>NULL</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=练习2---循环创建多个子线程并回收></a><h3>练习2 - 循环创建多个子线程并回收</h3><p>代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;errno.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;pthread.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=kt>void</span><span class=o>*</span> <span class=nf>tfunc</span><span class=p>(</span><span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=p>(</span><span class=kt>int</span><span class=p>)</span><span class=n>arg</span><span class=p>;</span>
+    <span class=n>sleep</span><span class=p>(</span><span class=n>i</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>--child thread : %dth, pid = %d, tid = %lu</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>i</span> <span class=o>+</span> <span class=mi>1</span><span class=p>,</span> <span class=n>getpid</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>pthread_self</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>pthread_exit</span><span class=p>(</span><span class=nb>NULL</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=kt>int</span> <span class=n>argc</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span><span class=o>*</span> <span class=n>argv</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>pthread_t</span> <span class=n>tid</span><span class=p>[</span><span class=mi>5</span><span class=p>]</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>ret</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=mi>5</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>if</span> <span class=p>(</span><span class=p>(</span><span class=n>ret</span> <span class=o>=</span> <span class=n>pthread_create</span><span class=p>(</span><span class=n>tid</span> <span class=o>+</span> <span class=n>i</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>,</span> <span class=n>tfunc</span><span class=p>,</span> <span class=p>(</span><span class=kt>void</span><span class=o>*</span><span class=p>)</span><span class=n>i</span><span class=p>)</span><span class=p>)</span> <span class=o>!</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>pthread_create error : %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>ret</span><span class=p>)</span><span class=p>;</span>
+            <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>--main thread : pid = %d, tid = %lu</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>getpid</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>pthread_self</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=mi>5</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>if</span> <span class=p>(</span><span class=p>(</span><span class=n>ret</span> <span class=o>=</span> <span class=n>pthread_join</span><span class=p>(</span><span class=n>tid</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>)</span><span class=p>)</span> <span class=o>!</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>pthread_join error : %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>ret</span><span class=p>)</span><span class=p>;</span>
+            <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>--main thread : join tid = %lu</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>tid</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>pthread_exit</span><span class=p>(</span><span class=nb>NULL</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=pthread_detach></a><h3>pthread_detach</h3><p>设置线程分离。</p><p>线程分离状态，指定该状态，线程就主动与主线程断开关系。线程结束后，其状态不由其他线程进行回收，而是自己主动释放（自己清理掉PCB的残留资源，不会产生僵尸线程）。多用于网络、多线程服务器。</p><p>也可以使用<code>pthread_create</code>的参数2，来设置线程分离状态。</p><p>在一般情况下，线程终止后，其终止状态会一直保留到其他线程调用<code>pthread_join</code>来获取它的状态为止。如果设置了分离状态，线程结束后，就立即回收它占用的所有资源，而不保留终止状态。</p><p>注意，不能对一个已经处于detach状态的线程调用<code>pthread_join</code>，这样的调用将返回<code>EINVAL</code>错误。就是说，如果对一个线程调用了<code>pthread_detach</code>就不能再调用<code>pthread_join</code>。</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;pthread.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=kt>int</span> <span class=nf>pthread_detach</span><span class=p>(</span><span class=n>pthread_t</span> <span class=kr>thread</span><span class=p>)</span><span class=p>;</span>
+</code></pre></td></tr></table></div></div><ul><li>返回值：<ul><li>成功：返回<code>0</code>；</li><li>失败，返回错误号。</li></ul></li><li><code>thread</code>：待分离的线程ID。</li></ul><a class=post-dummy-target id=pthread_cancel></a><h3>pthread_cancel</h3><p>向线程发送取消请求。（杀死线程）</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;pthread.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=kt>int</span> <span class=nf>pthread_cancel</span><span class=p>(</span><span class=n>pthread_t</span> <span class=kr>thread</span><span class=p>)</span><span class=p>;</span>
+</code></pre></td></tr></table></div></div><ul><li>返回值：<ul><li>成功：返回<code>0</code>；</li><li>失败，返回错误号。</li></ul></li><li><code>thread</code>：要杀死的线程ID。</li></ul><p>测试：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;errno.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;pthread.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=kt>void</span><span class=o>*</span> <span class=nf>tfunc</span><span class=p>(</span><span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>while</span> <span class=p>(</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>--child thread : pid = %d, tid = %lu</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>getpid</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>pthread_self</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>sleep</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>pthread_exit</span><span class=p>(</span><span class=nb>NULL</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=kt>int</span> <span class=n>argc</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span><span class=o>*</span> <span class=n>argv</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>ret</span><span class=p>;</span>
+    <span class=n>pthread_t</span> <span class=n>tid</span><span class=p>;</span>
+    <span class=n>ret</span> <span class=o>=</span> <span class=n>pthread_create</span><span class=p>(</span><span class=o>&amp;</span><span class=n>tid</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>,</span> <span class=n>tfunc</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>ret</span> <span class=o>!</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>fprintf</span><span class=p>(</span><span class=n>stderr</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>pthread_create error : %s</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>strerror</span><span class=p>(</span><span class=n>ret</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>sleep</span><span class=p>(</span><span class=mi>3</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>--main thread : pid = %d, tid = %lu, cancel thread tid(%lu)</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>getpid</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>pthread_self</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>tid</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>ret</span> <span class=o>=</span> <span class=n>pthread_cancel</span><span class=p>(</span><span class=n>tid</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>ret</span> <span class=o>!</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>fprintf</span><span class=p>(</span><span class=n>stderr</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>pthread_cancel error : %s</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>strerror</span><span class=p>(</span><span class=n>ret</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>while</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=pthread_cancel如何终止线程></a><h3>pthread_cancel如何终止线程</h3><a class=post-dummy-target id=测试1></a><h4>测试1</h4><p>看一段测试代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;errno.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;pthread.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=kt>void</span><span class=o>*</span> <span class=nf>tfunc_1</span><span class=p>(</span><span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>thread 1 : returning</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=p>(</span><span class=kt>void</span><span class=o>*</span><span class=p>)</span><span class=mi>1</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>void</span><span class=o>*</span> <span class=nf>tfunc_2</span><span class=p>(</span><span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>thread 2 : returning</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>pthread_exit</span><span class=p>(</span><span class=p>(</span><span class=kt>void</span><span class=o>*</span><span class=p>)</span><span class=mi>2</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>void</span><span class=o>*</span> <span class=nf>tfunc_3</span><span class=p>(</span><span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>while</span> <span class=p>(</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>thread 3 : going to die in 5 secs ...</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>sleep</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span> <span class=p>(</span><span class=kt>void</span><span class=o>*</span><span class=p>)</span><span class=mi>3</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=kt>int</span> <span class=n>argc</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span><span class=o>*</span> <span class=n>argv</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>ret</span><span class=p>;</span>
+    <span class=n>pthread_t</span> <span class=n>tid</span><span class=p>;</span>
+    <span class=kt>void</span><span class=o>*</span> <span class=n>tret</span> <span class=o>=</span> <span class=nb>NULL</span><span class=p>;</span>
+    <span class=c1>// thread 1
+</span><span class=c1></span>    <span class=n>pthread_create</span><span class=p>(</span><span class=o>&amp;</span><span class=n>tid</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>,</span> <span class=n>tfunc_1</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>pthread_join</span><span class=p>(</span><span class=n>tid</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>tret</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>thread 1 exit code = %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=p>(</span><span class=kt>int</span><span class=p>)</span><span class=n>tret</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// thread 2
+</span><span class=c1></span>    <span class=n>pthread_create</span><span class=p>(</span><span class=o>&amp;</span><span class=n>tid</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>,</span> <span class=n>tfunc_2</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>pthread_join</span><span class=p>(</span><span class=n>tid</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>tret</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>thread 2 exit code = %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=p>(</span><span class=kt>int</span><span class=p>)</span><span class=n>tret</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// thread 3
+</span><span class=c1></span>    <span class=n>pthread_create</span><span class=p>(</span><span class=o>&amp;</span><span class=n>tid</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>,</span> <span class=n>tfunc_3</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>sleep</span><span class=p>(</span><span class=mi>5</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>pthread_cancel</span><span class=p>(</span><span class=n>tid</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>pthread_join</span><span class=p>(</span><span class=n>tid</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>tret</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>thread 3 exit code = %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=p>(</span><span class=kt>int</span><span class=p>)</span><span class=n>tret</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>测试结果：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-fallback data-lang=fallback>xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_thread$ ./testcancel 
+thread 1 : returning
+thread 1 exit code = 1
+thread 2 : returning
+thread 2 exit code = 2
+thread 3 : going to die in 5 secs ...
+thread 3 : going to die in 5 secs ...
+thread 3 : going to die in 5 secs ...
+thread 3 : going to die in 5 secs ...
+thread 3 : going to die in 5 secs ...
+thread 3 exit code = -1
+xushun@xushun-virtual-machine:~/LinuxSysPrograming/test_thread$ 
+</code></pre></td></tr></table></div></div><p>可以看到，如果线程是异常退出的话，那么它的退出状态码为<code>-1</code>。</p><a class=post-dummy-target id=测试2></a><h4>测试2</h4><p>修改一点代码，将<code>tfunc_3</code>中打印和睡眠的代码注释掉：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=kt>void</span><span class=o>*</span> <span class=nf>tfunc_3</span><span class=p>(</span><span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>while</span> <span class=p>(</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=c1>//printf(&#34;thread 3 : going to die in 5 secs ...\n&#34;);
+</span><span class=c1></span>        <span class=c1>//sleep(1);
+</span><span class=c1></span>    <span class=p>}</span>
+    <span class=k>return</span> <span class=p>(</span><span class=kt>void</span><span class=o>*</span><span class=p>)</span><span class=mi>3</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>测试结果：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=n>xushun</span><span class=err>@</span><span class=n>xushun</span><span class=o>-</span><span class=n>virtual</span><span class=o>-</span><span class=nl>machine</span><span class=p>:</span><span class=o>~</span><span class=o>/</span><span class=n>LinuxSysPrograming</span><span class=o>/</span><span class=n>test_thread</span><span class=err>$</span> <span class=p>.</span><span class=o>/</span><span class=n>testcancel</span> 
+<span class=kr>thread</span> <span class=mi>1</span> <span class=o>:</span> <span class=n>returning</span>
+<span class=kr>thread</span> <span class=mi>1</span> <span class=n>exit</span> <span class=n>code</span> <span class=o>=</span> <span class=mi>1</span>
+<span class=kr>thread</span> <span class=mi>2</span> <span class=o>:</span> <span class=n>returning</span>
+<span class=kr>thread</span> <span class=mi>2</span> <span class=n>exit</span> <span class=n>code</span> <span class=o>=</span> <span class=mi>2</span>
+
+</code></pre></td></tr></table></div></div><p>可以看到，thread 3 线程一直运行，并没有被<code>pthread_cancel</code>掉，主线程阻塞在<code>pthread_join</code>处，显然<code>pthread_cancel</code>没有能将线程杀死。</p><a class=post-dummy-target id=测试3></a><h4>测试3</h4><p>再修改一些代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=kt>void</span><span class=o>*</span> <span class=nf>tfunc_3</span><span class=p>(</span><span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>while</span> <span class=p>(</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=c1>//printf(&#34;thread 3 : going to die in 5 secs ...\n&#34;);
+</span><span class=c1></span>        <span class=c1>//sleep(1);
+</span><span class=c1></span>        <span class=n>pthread_testcancel</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span> <span class=p>(</span><span class=kt>void</span><span class=o>*</span><span class=p>)</span><span class=mi>3</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>测试结果：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=n>xushun</span><span class=err>@</span><span class=n>xushun</span><span class=o>-</span><span class=n>virtual</span><span class=o>-</span><span class=nl>machine</span><span class=p>:</span><span class=o>~</span><span class=o>/</span><span class=n>LinuxSysPrograming</span><span class=o>/</span><span class=n>test_thread</span><span class=err>$</span> <span class=p>.</span><span class=o>/</span><span class=n>testcancel</span> 
+<span class=kr>thread</span> <span class=mi>1</span> <span class=o>:</span> <span class=n>returning</span>
+<span class=kr>thread</span> <span class=mi>1</span> <span class=n>exit</span> <span class=n>code</span> <span class=o>=</span> <span class=mi>1</span>
+<span class=kr>thread</span> <span class=mi>2</span> <span class=o>:</span> <span class=n>returning</span>
+<span class=kr>thread</span> <span class=mi>2</span> <span class=n>exit</span> <span class=n>code</span> <span class=o>=</span> <span class=mi>2</span>
+<span class=kr>thread</span> <span class=mi>3</span> <span class=n>exit</span> <span class=n>code</span> <span class=o>=</span> <span class=o>-</span><span class=mi>1</span>
+<span class=n>xushun</span><span class=err>@</span><span class=n>xushun</span><span class=o>-</span><span class=n>virtual</span><span class=o>-</span><span class=nl>machine</span><span class=p>:</span><span class=o>~</span><span class=o>/</span><span class=n>LinuxSysPrograming</span><span class=o>/</span><span class=n>test_thread</span><span class=err>$</span> 
+</code></pre></td></tr></table></div></div><p>可以看到，添加了一条<code>pthread_testcancel</code>后，子线程就可以被正常<code>pthread_cancel</code></p><a class=post-dummy-target id=结论></a><h4>结论</h4><p>线程的取消（<code>pthread_cancel</code>）并不是实时的，而是有一定的延迟，需要等待线程到达某个取消点（检查点）才会被终止。</p><p>取消点（检查点），是线程检查是否被取消，并按请求进行动作的一个位置。这些位置，通常是，一些系统调用如<code>create, open, pause, close, read, write...</code>，执行命令<code>man 7 pthreads</code>可以查看具备这些取消点的系统调用列表，也可参阅APUE.12.7取消选项小节。</p><p>可以粗略地认为，一个系统调用（进入内核）就是一个取消点。如果线程执行中没有取消点，可以通过调用<code>pthread_testcancel</code>来自定一个取消点。</p><p>被取消的线程，退出值定义在Linux的pthread库中。常数<code>PTHREAD_CANCELED</code>的值是<code>-1</code>。可在头文件<code>pthread.h</code>中找到它的定义：<code>#define PTHREAD_CANCELED ((void *) -1)</code>。因此当我们对一个已经被取消的线程使用 <code>pthread_join</code>回收时，得到的返回值为<code>-1</code>。</p><a class=post-dummy-target id=终止线程的方式></a><h3>终止线程的方式</h3><p>终止某个线程而不是整个进程，有三种方法：</p><ol><li>从线程主函数<code>return</code>；（这种方法对主线程不适用，在主线程中<code>return</code>相当于<code>exit</code>）</li><li>一个线程可以调用<code>pthread_cancel</code>来终止同一个进程中的另一个线程；</li><li>线程可以<code>pthread_exit</code>终止自己。</li></ol><a class=post-dummy-target id=控制原语对比></a><h3>控制原语对比</h3><table><thead><tr><th>线程控制原语</th><th>进程控制原语</th></tr></thead><tbody><tr><td>pthread_create()</td><td>fork()</td></tr><tr><td>pthread_self()</td><td>getpid()</td></tr><tr><td>pthread_exit()</td><td>exit()</td></tr><tr><td>pthread_join()</td><td>wait() waitpid()</td></tr><tr><td>pthread_cancel()</td><td>kill()</td></tr><tr><td>pthread_detach()</td><td>*</td></tr></tbody></table></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
 <span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
 <span>2022-06-04</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
 <span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2flinux%25E7%25B3%25BB%25E7%25BB%259F%25E7%25BC%2596%25E7%25A8%258B11-%25E5%25AE%2588%25E6%258A%25A4%25E8%25BF%259B%25E7%25A8%258B%25E7%25BA%25BF%25E7%25A8%258B%2f&text=%e3%80%90Linux%e7%b3%bb%e7%bb%9f%e7%bc%96%e7%a8%8b%e3%80%9111%20-%20%e5%ae%88%e6%8a%a4%e8%bf%9b%e7%a8%8b%e3%80%81%e7%ba%bf%e7%a8%8b&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2flinux%25E7%25B3%25BB%25E7%25BB%259F%25E7%25BC%2596%25E7%25A8%258B11-%25E5%25AE%2588%25E6%258A%25A4%25E8%25BF%259B%25E7%25A8%258B%25E7%25BA%25BF%25E7%25A8%258B%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2flinux%25E7%25B3%25BB%25E7%25BB%259F%25E7%25BC%2596%25E7%25A8%258B11-%25E5%25AE%2588%25E6%258A%25A4%25E8%25BF%259B%25E7%25A8%258B%25E7%25BA%25BF%25E7%25A8%258B%2f&title=%e3%80%90Linux%e7%b3%bb%e7%bb%9f%e7%bc%96%e7%a8%8b%e3%80%9111%20-%20%e5%ae%88%e6%8a%a4%e8%bf%9b%e7%a8%8b%e3%80%81%e7%ba%bf%e7%a8%8b" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/linux/><i class="fas fa-tag fa-fw"></i>&nbsp;Linux</a>&nbsp;</span></section><section><span><a href=javascript:window.history.back();>Back</a></span>&nbsp;|&nbsp;<span><a href=https://xushun1221.github.io>Home</a></span></section></div><div class=post-nav><a href=https://xushun1221.github.io/2022/vscode%E7%94%A8%E6%88%B7%E4%BB%A3%E7%A0%81%E7%89%87%E6%AE%B5-%E8%87%AA%E5%8A%A8%E7%94%9F%E6%88%90%E4%BB%A3%E7%A0%81%E6%A1%86%E6%9E%B6/ class=prev rel=prev title="【VSCode】用户代码片段 - 自动生成代码框架"><i class="fas fa-angle-left fa-fw"></i>【VSCode】用户代码片段 - 自动生成代码框架</a></div><div class=post-comment></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2022</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=https://xushun1221.github.io/about/ target=_blank>xushun</a> | </span>Powered by <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> & <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer">LoveIt</a></div></div></footer></div><a href=# class=dynamic-to-top id=dynamic-to-top data-scroll><span>&nbsp;</span>
