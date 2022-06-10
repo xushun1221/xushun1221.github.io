@@ -1,6 +1,6 @@
-<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【Linux网络编程】01 - Socket编程 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B12-%E7%BA%BF%E7%A8%8B%E5%90%8C%E6%AD%A5/><link rel=canonical href=https://xushun1221.github.io/2022/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B01-socket%E7%BC%96%E7%A8%8B/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【Linux网络编程】01 - Socket编程"><meta name=twitter:description content="网络套接字 socket Socket本身有插座的意思，在Linux环境下，用于表示进程间网络通信的特殊文件类型。本质为内核借助缓冲区形成的伪文件。 既然是"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【Linux网络编程】01 - Socket编程","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B01-socket%E7%BC%96%E7%A8%8B\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"Linux, network","wordcount":4134,"url":"https:\/\/xushun1221.github.io\/2022\/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B01-socket%E7%BC%96%E7%A8%8B\/","datePublished":"2022-06-08T00:00:00\x2b00:00","dateModified":"2022-06-08T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【Linux网络编程】01 - Socket编程</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-06-08>2022-06-08</time>&nbsp;
-<i class="fas fa-pencil-alt fa-fw"></i>about 4134 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#网络套接字-socket>网络套接字 socket</a></li><li><a href=#网络字节序>网络字节序</a><ul><li><a href=#网络字节序和主机字节序的转换>网络字节序和主机字节序的转换</a></li></ul></li><li><a href=#ip地址转换>IP地址转换</a></li><li><a href=#sockaddr数据结构>sockaddr数据结构</a><ul><li><a href=#sockaddr_in>sockaddr_in</a></li></ul></li><li><a href=#网络套接字函数>网络套接字函数</a><ul><li><a href=#socket模型流程图>socket模型流程图</a></li><li><a href=#socket函数>socket函数</a></li><li><a href=#bind>bind</a></li><li><a href=#listen>listen</a></li><li><a href=#accept>accept</a></li><li><a href=#connect>connect</a></li></ul></li><li><a href=#socket编程示例>socket编程示例</a><ul><li><a href=#服务器实现>服务器实现</a></li><li><a href=#客户端>客户端</a></li></ul></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
-<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#网络套接字-socket>网络套接字 socket</a></li><li><a href=#网络字节序>网络字节序</a><ul><li><a href=#网络字节序和主机字节序的转换>网络字节序和主机字节序的转换</a></li></ul></li><li><a href=#ip地址转换>IP地址转换</a></li><li><a href=#sockaddr数据结构>sockaddr数据结构</a><ul><li><a href=#sockaddr_in>sockaddr_in</a></li></ul></li><li><a href=#网络套接字函数>网络套接字函数</a><ul><li><a href=#socket模型流程图>socket模型流程图</a></li><li><a href=#socket函数>socket函数</a></li><li><a href=#bind>bind</a></li><li><a href=#listen>listen</a></li><li><a href=#accept>accept</a></li><li><a href=#connect>connect</a></li></ul></li><li><a href=#socket编程示例>socket编程示例</a><ul><li><a href=#服务器实现>服务器实现</a></li><li><a href=#客户端>客户端</a></li></ul></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=网络套接字-socket></a><h2>网络套接字 socket</h2><p>Socket本身有插座的意思，在Linux环境下，用于表示<strong>进程间网络通信</strong>的特殊文件类型。本质为内核借助缓冲区形成的伪文件。</p><p>既然是文件，那么理所当然的，我们可以使用<strong>文件描述符引用套接字</strong>。与管道类似的，Linux系统将其封装成文件的目的是为了统一接口，使得读写套接字和读写文件的操作一致。区别是管道主要应用于本地进程间通信，而套接字多应用于网络进程间数据的传递。</p><p>在TCP/IP协议中，<strong>IP地址+TCP或UDP端口号</strong>唯一标识网络通讯中的一个进程。<strong>IP地址+端口号</strong>就对应一个socket。欲建立连接的两个进程各自有一个socket来标识，那么这两个socket组成的socket pair就唯一标识一个连接。因此可以用Socket来描述网络连接的一对一关系。</p><ul><li>在网络通信中，套接字一定是成对出现的。</li><li>一个文件描述符指向一个套接字socket（套接字内部由内核借助两个缓冲区实现），一端的发送缓冲区对应对端的接收缓冲区。我们使用同一个文件描述符索发送缓冲区和接收缓冲区。</li></ul><a class=post-dummy-target id=网络字节序></a><h2>网络字节序</h2><p>计算机内存中的<strong>多字节数据</strong>，相对于内存地址来说，有两种存储方式：</p><ul><li>小端法：用于计算机内存，数据的最低有效位对应低地址，数据的最高有效位对应高地址；</li><li>大端法：用于网络数据流，数据的最低有效位对应高地址，数据的最高有效位对应低地址。</li></ul><p>读数据的顺序通常是从内存的低地址到高地址，本地和网络的字节序不同会造成错误。</p><p>例如，主机A有这样一个四字节数据<code>0x12ef34ab</code>，它在内存中的起始地址是<code>0x01</code>，使用小端法存储：</p><table><thead><tr><th>地址</th><th>数据</th></tr></thead><tbody><tr><td>0x04</td><td>0x12</td></tr><tr><td>0x03</td><td>0xef</td></tr><tr><td>0x02</td><td>0x34</td></tr><tr><td>0x01</td><td>0xab</td></tr></tbody></table><p>主机A将该四字节数据通过网络发送给主机B，使用大端字节序发送，发送的字节流为<code>0x12 0xef 0x34 0xab</code>，因为主机B使用的也是小段法，如果直接将该字节流装入内存（装入顺序从低地址到高地址），会得到<code>0xab34ef12</code>，和原始数据不同，需要进行转换。</p><p>收到的大端字节序的字节流：</p><table><thead><tr><th>地址</th><th>数据</th></tr></thead><tbody><tr><td>0x04</td><td>0xab</td></tr><tr><td>0x03</td><td>0x34</td></tr><tr><td>0x02</td><td>0xef</td></tr><tr><td>0x01</td><td>0x12</td></tr></tbody></table><p>转换为小端字节序，才可以得到原始数据<code>0x12ef34ab</code>：</p><table><thead><tr><th>地址</th><th>数据</th></tr></thead><tbody><tr><td>0x04</td><td>0x12</td></tr><tr><td>0x03</td><td>0xef</td></tr><tr><td>0x02</td><td>0x34</td></tr><tr><td>0x01</td><td>0xab</td></tr></tbody></table><a class=post-dummy-target id=网络字节序和主机字节序的转换></a><h3>网络字节序和主机字节序的转换</h3><p>为了让相同的C程序在小端计算机和大端计算机中都可以正常运行，应该使用下面的库函数进行网络字节序和主机字节序的转换，以保证程序的可移植性。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【Linux网络编程】01 - Socket编程 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B12-%E7%BA%BF%E7%A8%8B%E5%90%8C%E6%AD%A5/><link rel=next href=https://xushun1221.github.io/2022/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B02/><link rel=canonical href=https://xushun1221.github.io/2022/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B01-socket%E7%BC%96%E7%A8%8B/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【Linux网络编程】01 - Socket编程"><meta name=twitter:description content="网络套接字 socket Socket本身有插座的意思，在Linux环境下，用于表示进程间网络通信的特殊文件类型。本质为内核借助缓冲区形成的伪文件。 既然是"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【Linux网络编程】01 - Socket编程","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B01-socket%E7%BC%96%E7%A8%8B\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"Linux, network","wordcount":5123,"url":"https:\/\/xushun1221.github.io\/2022\/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B01-socket%E7%BC%96%E7%A8%8B\/","datePublished":"2022-06-08T00:00:00\x2b00:00","dateModified":"2022-06-08T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【Linux网络编程】01 - Socket编程</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-06-08>2022-06-08</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 5123 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#网络套接字-socket>网络套接字 socket</a></li><li><a href=#网络字节序>网络字节序</a><ul><li><a href=#网络字节序和主机字节序的转换>网络字节序和主机字节序的转换</a></li></ul></li><li><a href=#ip地址转换>IP地址转换</a></li><li><a href=#sockaddr数据结构>sockaddr数据结构</a><ul><li><a href=#sockaddr_in>sockaddr_in</a></li></ul></li><li><a href=#网络套接字函数>网络套接字函数</a><ul><li><a href=#socket模型流程图>socket模型流程图</a></li><li><a href=#socket函数>socket函数</a></li><li><a href=#bind>bind</a></li><li><a href=#listen>listen</a></li><li><a href=#accept>accept</a></li><li><a href=#connect>connect</a></li></ul></li><li><a href=#socket编程示例>socket编程示例</a><ul><li><a href=#服务器实现>服务器实现</a></li><li><a href=#客户端>客户端</a></li></ul></li><li><a href=#错误处理封装>错误处理封装</a></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#网络套接字-socket>网络套接字 socket</a></li><li><a href=#网络字节序>网络字节序</a><ul><li><a href=#网络字节序和主机字节序的转换>网络字节序和主机字节序的转换</a></li></ul></li><li><a href=#ip地址转换>IP地址转换</a></li><li><a href=#sockaddr数据结构>sockaddr数据结构</a><ul><li><a href=#sockaddr_in>sockaddr_in</a></li></ul></li><li><a href=#网络套接字函数>网络套接字函数</a><ul><li><a href=#socket模型流程图>socket模型流程图</a></li><li><a href=#socket函数>socket函数</a></li><li><a href=#bind>bind</a></li><li><a href=#listen>listen</a></li><li><a href=#accept>accept</a></li><li><a href=#connect>connect</a></li></ul></li><li><a href=#socket编程示例>socket编程示例</a><ul><li><a href=#服务器实现>服务器实现</a></li><li><a href=#客户端>客户端</a></li></ul></li><li><a href=#错误处理封装>错误处理封装</a></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=网络套接字-socket></a><h2>网络套接字 socket</h2><p>Socket本身有插座的意思，在Linux环境下，用于表示<strong>进程间网络通信</strong>的特殊文件类型。本质为内核借助缓冲区形成的伪文件。</p><p>既然是文件，那么理所当然的，我们可以使用<strong>文件描述符引用套接字</strong>。与管道类似的，Linux系统将其封装成文件的目的是为了统一接口，使得读写套接字和读写文件的操作一致。区别是管道主要应用于本地进程间通信，而套接字多应用于网络进程间数据的传递。</p><p>在TCP/IP协议中，<strong>IP地址+TCP或UDP端口号</strong>唯一标识网络通讯中的一个进程。<strong>IP地址+端口号</strong>就对应一个socket。欲建立连接的两个进程各自有一个socket来标识，那么这两个socket组成的socket pair就唯一标识一个连接。因此可以用Socket来描述网络连接的一对一关系。</p><ul><li>在网络通信中，套接字一定是成对出现的。</li><li>一个文件描述符指向一个套接字socket（套接字内部由内核借助两个缓冲区实现），一端的发送缓冲区对应对端的接收缓冲区。我们使用同一个文件描述符索发送缓冲区和接收缓冲区。</li></ul><a class=post-dummy-target id=网络字节序></a><h2>网络字节序</h2><p>计算机内存中的<strong>多字节数据</strong>，相对于内存地址来说，有两种存储方式：</p><ul><li>小端法：用于计算机内存，数据的最低有效位对应低地址，数据的最高有效位对应高地址；</li><li>大端法：用于网络数据流，数据的最低有效位对应高地址，数据的最高有效位对应低地址。</li></ul><p>读数据的顺序通常是从内存的低地址到高地址，本地和网络的字节序不同会造成错误。</p><p>例如，主机A有这样一个四字节数据<code>0x12ef34ab</code>，它在内存中的起始地址是<code>0x01</code>，使用小端法存储：</p><table><thead><tr><th>地址</th><th>数据</th></tr></thead><tbody><tr><td>0x04</td><td>0x12</td></tr><tr><td>0x03</td><td>0xef</td></tr><tr><td>0x02</td><td>0x34</td></tr><tr><td>0x01</td><td>0xab</td></tr></tbody></table><p>主机A将该四字节数据通过网络发送给主机B，使用大端字节序发送，发送的字节流为<code>0x12 0xef 0x34 0xab</code>，因为主机B使用的也是小段法，如果直接将该字节流装入内存（装入顺序从低地址到高地址），会得到<code>0xab34ef12</code>，和原始数据不同，需要进行转换。</p><p>收到的大端字节序的字节流：</p><table><thead><tr><th>地址</th><th>数据</th></tr></thead><tbody><tr><td>0x04</td><td>0xab</td></tr><tr><td>0x03</td><td>0x34</td></tr><tr><td>0x02</td><td>0xef</td></tr><tr><td>0x01</td><td>0x12</td></tr></tbody></table><p>转换为小端字节序，才可以得到原始数据<code>0x12ef34ab</code>：</p><table><thead><tr><th>地址</th><th>数据</th></tr></thead><tbody><tr><td>0x04</td><td>0x12</td></tr><tr><td>0x03</td><td>0xef</td></tr><tr><td>0x02</td><td>0x34</td></tr><tr><td>0x01</td><td>0xab</td></tr></tbody></table><a class=post-dummy-target id=网络字节序和主机字节序的转换></a><h3>网络字节序和主机字节序的转换</h3><p>为了让相同的C程序在小端计算机和大端计算机中都可以正常运行，应该使用下面的库函数进行网络字节序和主机字节序的转换，以保证程序的可移植性。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2
 </span><span class=lnt>3
 </span><span class=lnt>4
@@ -292,9 +292,396 @@ HELLO
     <span class=n>close</span><span class=p>(</span><span class=n>client_fd</span><span class=p>)</span><span class=p>;</span>
     <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
 <span class=p>}</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=错误处理封装></a><h2>错误处理封装</h2><p>上面的例子不仅功能简单，而且简单到几乎没有什么错误处理，我们知道，系统调用不能保证每次都成功，必须进行出错处理，这样一方面可以保证程序逻辑正常，另一方面可以迅速得到故障信息。</p><p>为使错误处理的代码不影响主程序的可读性，我们把与socket相关的一些系统函数加上错误处理代码包装成新的函数，做成一个模块。</p><p><code>wrap.h</code>：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>ifndef __WRAP_H_</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>define __WRAP_H_</span><span class=cp>
+</span><span class=cp></span>
+<span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;errno.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/socket.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;arpa/inet.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=kt>void</span> <span class=nf>perr_exit</span><span class=p>(</span><span class=k>const</span> <span class=kt>char</span><span class=o>*</span> <span class=n>s</span><span class=p>)</span><span class=p>;</span>
+<span class=kt>int</span> <span class=nf>Accept</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=k>struct</span> <span class=n>sockaddr</span><span class=o>*</span> <span class=n>sa</span><span class=p>,</span> <span class=n>socklen_t</span><span class=o>*</span> <span class=n>salen</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 和accept相比只有一个字母变大写 可以在vim中跳转manpages
+</span><span class=c1></span><span class=kt>int</span> <span class=nf>Bind</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=k>const</span> <span class=k>struct</span> <span class=n>sockaddr</span><span class=o>*</span> <span class=n>sa</span><span class=p>,</span> <span class=n>socklen_t</span> <span class=n>salen</span><span class=p>)</span><span class=p>;</span>
+<span class=kt>int</span> <span class=nf>Connect</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=k>const</span> <span class=k>struct</span> <span class=n>sockaddr</span><span class=o>*</span> <span class=n>sa</span><span class=p>,</span> <span class=n>socklen_t</span> <span class=n>salen</span><span class=p>)</span><span class=p>;</span>
+<span class=kt>int</span> <span class=nf>Listen</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=kt>int</span> <span class=n>backlog</span><span class=p>)</span><span class=p>;</span>
+<span class=kt>int</span> <span class=nf>Socket</span><span class=p>(</span><span class=kt>int</span> <span class=n>family</span><span class=p>,</span> <span class=kt>int</span> <span class=n>type</span><span class=p>,</span> <span class=kt>int</span> <span class=n>protocol</span><span class=p>)</span><span class=p>;</span>
+<span class=n>ssize_t</span> <span class=nf>Read</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>buf</span><span class=p>,</span> <span class=n>size_t</span> <span class=n>nbytes</span><span class=p>)</span><span class=p>;</span>
+<span class=n>ssize_t</span> <span class=nf>Write</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=k>const</span> <span class=kt>void</span><span class=o>*</span> <span class=n>buf</span><span class=p>,</span> <span class=n>size_t</span> <span class=n>nbytes</span><span class=p>)</span><span class=p>;</span>
+<span class=kt>int</span> <span class=nf>Close</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>)</span><span class=p>;</span>
+<span class=n>ssize_t</span> <span class=nf>Readn</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>buf</span><span class=p>,</span> <span class=n>size_t</span> <span class=n>n</span><span class=p>)</span><span class=p>;</span>
+<span class=n>ssize_t</span> <span class=nf>Writen</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=k>const</span> <span class=kt>void</span><span class=o>*</span> <span class=n>buf</span><span class=p>,</span> <span class=n>size_t</span> <span class=n>n</span><span class=p>)</span><span class=p>;</span>
+<span class=n>ssize_t</span> <span class=nf>my_read</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span> <span class=n>ptr</span><span class=p>)</span><span class=p>;</span>
+<span class=n>ssize_t</span> <span class=nf>Readline</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>buf</span><span class=p>,</span> <span class=n>size_t</span> <span class=n>maxlen</span><span class=p>)</span><span class=p>;</span>
+
+<span class=cp>#</span><span class=cp>endif</span><span class=cp>
+</span></code></pre></td></tr></table></div></div><p><code>wrap.c</code>：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>  1
+</span><span class=lnt>  2
+</span><span class=lnt>  3
+</span><span class=lnt>  4
+</span><span class=lnt>  5
+</span><span class=lnt>  6
+</span><span class=lnt>  7
+</span><span class=lnt>  8
+</span><span class=lnt>  9
+</span><span class=lnt> 10
+</span><span class=lnt> 11
+</span><span class=lnt> 12
+</span><span class=lnt> 13
+</span><span class=lnt> 14
+</span><span class=lnt> 15
+</span><span class=lnt> 16
+</span><span class=lnt> 17
+</span><span class=lnt> 18
+</span><span class=lnt> 19
+</span><span class=lnt> 20
+</span><span class=lnt> 21
+</span><span class=lnt> 22
+</span><span class=lnt> 23
+</span><span class=lnt> 24
+</span><span class=lnt> 25
+</span><span class=lnt> 26
+</span><span class=lnt> 27
+</span><span class=lnt> 28
+</span><span class=lnt> 29
+</span><span class=lnt> 30
+</span><span class=lnt> 31
+</span><span class=lnt> 32
+</span><span class=lnt> 33
+</span><span class=lnt> 34
+</span><span class=lnt> 35
+</span><span class=lnt> 36
+</span><span class=lnt> 37
+</span><span class=lnt> 38
+</span><span class=lnt> 39
+</span><span class=lnt> 40
+</span><span class=lnt> 41
+</span><span class=lnt> 42
+</span><span class=lnt> 43
+</span><span class=lnt> 44
+</span><span class=lnt> 45
+</span><span class=lnt> 46
+</span><span class=lnt> 47
+</span><span class=lnt> 48
+</span><span class=lnt> 49
+</span><span class=lnt> 50
+</span><span class=lnt> 51
+</span><span class=lnt> 52
+</span><span class=lnt> 53
+</span><span class=lnt> 54
+</span><span class=lnt> 55
+</span><span class=lnt> 56
+</span><span class=lnt> 57
+</span><span class=lnt> 58
+</span><span class=lnt> 59
+</span><span class=lnt> 60
+</span><span class=lnt> 61
+</span><span class=lnt> 62
+</span><span class=lnt> 63
+</span><span class=lnt> 64
+</span><span class=lnt> 65
+</span><span class=lnt> 66
+</span><span class=lnt> 67
+</span><span class=lnt> 68
+</span><span class=lnt> 69
+</span><span class=lnt> 70
+</span><span class=lnt> 71
+</span><span class=lnt> 72
+</span><span class=lnt> 73
+</span><span class=lnt> 74
+</span><span class=lnt> 75
+</span><span class=lnt> 76
+</span><span class=lnt> 77
+</span><span class=lnt> 78
+</span><span class=lnt> 79
+</span><span class=lnt> 80
+</span><span class=lnt> 81
+</span><span class=lnt> 82
+</span><span class=lnt> 83
+</span><span class=lnt> 84
+</span><span class=lnt> 85
+</span><span class=lnt> 86
+</span><span class=lnt> 87
+</span><span class=lnt> 88
+</span><span class=lnt> 89
+</span><span class=lnt> 90
+</span><span class=lnt> 91
+</span><span class=lnt> 92
+</span><span class=lnt> 93
+</span><span class=lnt> 94
+</span><span class=lnt> 95
+</span><span class=lnt> 96
+</span><span class=lnt> 97
+</span><span class=lnt> 98
+</span><span class=lnt> 99
+</span><span class=lnt>100
+</span><span class=lnt>101
+</span><span class=lnt>102
+</span><span class=lnt>103
+</span><span class=lnt>104
+</span><span class=lnt>105
+</span><span class=lnt>106
+</span><span class=lnt>107
+</span><span class=lnt>108
+</span><span class=lnt>109
+</span><span class=lnt>110
+</span><span class=lnt>111
+</span><span class=lnt>112
+</span><span class=lnt>113
+</span><span class=lnt>114
+</span><span class=lnt>115
+</span><span class=lnt>116
+</span><span class=lnt>117
+</span><span class=lnt>118
+</span><span class=lnt>119
+</span><span class=lnt>120
+</span><span class=lnt>121
+</span><span class=lnt>122
+</span><span class=lnt>123
+</span><span class=lnt>124
+</span><span class=lnt>125
+</span><span class=lnt>126
+</span><span class=lnt>127
+</span><span class=lnt>128
+</span><span class=lnt>129
+</span><span class=lnt>130
+</span><span class=lnt>131
+</span><span class=lnt>132
+</span><span class=lnt>133
+</span><span class=lnt>134
+</span><span class=lnt>135
+</span><span class=lnt>136
+</span><span class=lnt>137
+</span><span class=lnt>138
+</span><span class=lnt>139
+</span><span class=lnt>140
+</span><span class=lnt>141
+</span><span class=lnt>142
+</span><span class=lnt>143
+</span><span class=lnt>144
+</span><span class=lnt>145
+</span><span class=lnt>146
+</span><span class=lnt>147
+</span><span class=lnt>148
+</span><span class=lnt>149
+</span><span class=lnt>150
+</span><span class=lnt>151
+</span><span class=lnt>152
+</span><span class=lnt>153
+</span><span class=lnt>154
+</span><span class=lnt>155
+</span><span class=lnt>156
+</span><span class=lnt>157
+</span><span class=lnt>158
+</span><span class=lnt>159
+</span><span class=lnt>160
+</span><span class=lnt>161
+</span><span class=lnt>162
+</span><span class=lnt>163
+</span><span class=lnt>164
+</span><span class=lnt>165
+</span><span class=lnt>166
+</span><span class=lnt>167
+</span><span class=lnt>168
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;wrap.h&#34;</span><span class=cp>
+</span><span class=cp></span>
+<span class=kt>void</span> <span class=nf>perr_exit</span><span class=p>(</span><span class=k>const</span> <span class=kt>char</span> <span class=o>*</span><span class=n>s</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>perror</span><span class=p>(</span><span class=n>s</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>exit</span><span class=p>(</span><span class=o>-</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>int</span> <span class=nf>Accept</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=k>struct</span> <span class=n>sockaddr</span><span class=o>*</span> <span class=n>sa</span><span class=p>,</span> <span class=n>socklen_t</span><span class=o>*</span> <span class=n>salen</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>ret</span><span class=p>;</span>
+<span class=nl>again</span><span class=p>:</span>
+    <span class=k>if</span> <span class=p>(</span><span class=p>(</span><span class=n>ret</span> <span class=o>=</span> <span class=n>accept</span><span class=p>(</span><span class=n>fd</span><span class=p>,</span> <span class=n>sa</span><span class=p>,</span> <span class=n>salen</span><span class=p>)</span><span class=p>)</span> <span class=o>&lt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>if</span> <span class=p>(</span><span class=p>(</span><span class=n>errno</span> <span class=o>=</span><span class=o>=</span> <span class=n>ECONNABORTED</span><span class=p>)</span> <span class=o>|</span><span class=o>|</span> <span class=p>(</span><span class=n>errno</span> <span class=o>=</span><span class=o>=</span> <span class=n>EINTR</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// accept 被终止
+</span><span class=c1></span>            <span class=k>goto</span> <span class=n>again</span><span class=p>;</span>
+        <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+            <span class=n>perr_exit</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>accept error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=k>return</span> <span class=n>ret</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>int</span> <span class=nf>Bind</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=k>const</span> <span class=k>struct</span> <span class=n>sockaddr</span><span class=o>*</span> <span class=n>sa</span><span class=p>,</span> <span class=n>socklen_t</span> <span class=n>salen</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>ret</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=p>(</span><span class=n>ret</span> <span class=o>=</span> <span class=n>bind</span><span class=p>(</span><span class=n>fd</span><span class=p>,</span> <span class=n>sa</span><span class=p>,</span> <span class=n>salen</span><span class=p>)</span><span class=p>)</span> <span class=o>&lt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>perr_exit</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>bind error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span> <span class=n>ret</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>int</span> <span class=nf>Connect</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=k>const</span> <span class=k>struct</span> <span class=n>sockaddr</span><span class=o>*</span> <span class=n>sa</span><span class=p>,</span> <span class=n>socklen_t</span> <span class=n>salen</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>ret</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=p>(</span><span class=n>ret</span> <span class=o>=</span> <span class=n>connect</span><span class=p>(</span><span class=n>fd</span><span class=p>,</span> <span class=n>sa</span><span class=p>,</span> <span class=n>salen</span><span class=p>)</span><span class=p>)</span> <span class=o>&lt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>perr_exit</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>connect error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span> <span class=n>ret</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>int</span> <span class=nf>Listen</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=kt>int</span> <span class=n>backlog</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>ret</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=p>(</span><span class=n>ret</span> <span class=o>=</span> <span class=n>listen</span><span class=p>(</span><span class=n>fd</span><span class=p>,</span> <span class=n>backlog</span><span class=p>)</span><span class=p>)</span> <span class=o>&lt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>perr_exit</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>listen error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span> <span class=n>ret</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>int</span> <span class=nf>Socket</span><span class=p>(</span><span class=kt>int</span> <span class=n>family</span><span class=p>,</span> <span class=kt>int</span> <span class=n>type</span><span class=p>,</span> <span class=kt>int</span> <span class=n>protocol</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>ret</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=p>(</span><span class=n>ret</span> <span class=o>=</span> <span class=n>socket</span><span class=p>(</span><span class=n>family</span><span class=p>,</span> <span class=n>type</span><span class=p>,</span> <span class=n>protocol</span><span class=p>)</span><span class=p>)</span> <span class=o>&lt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>perr_exit</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>socket error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span> <span class=n>ret</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=n>ssize_t</span> <span class=nf>Read</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>buf</span><span class=p>,</span> <span class=n>size_t</span> <span class=n>nbytes</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>ssize_t</span> <span class=n>ret</span><span class=p>;</span>
+<span class=nl>again</span><span class=p>:</span>
+    <span class=k>if</span> <span class=p>(</span><span class=p>(</span><span class=n>ret</span> <span class=o>=</span> <span class=n>read</span><span class=p>(</span><span class=n>fd</span><span class=p>,</span> <span class=n>buf</span><span class=p>,</span> <span class=n>nbytes</span><span class=p>)</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>errno</span> <span class=o>=</span><span class=o>=</span> <span class=n>EINTR</span><span class=p>)</span> <span class=p>{</span>
+            <span class=k>goto</span> <span class=n>again</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=k>return</span> <span class=n>ret</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=n>ssize_t</span> <span class=nf>Write</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=k>const</span> <span class=kt>void</span><span class=o>*</span> <span class=n>buf</span><span class=p>,</span> <span class=n>size_t</span> <span class=n>nbytes</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>ssize_t</span> <span class=n>ret</span><span class=p>;</span>
+<span class=nl>again</span><span class=p>:</span>
+    <span class=k>if</span> <span class=p>(</span><span class=p>(</span><span class=n>ret</span> <span class=o>=</span> <span class=n>write</span><span class=p>(</span><span class=n>fd</span><span class=p>,</span> <span class=n>buf</span><span class=p>,</span> <span class=n>nbytes</span><span class=p>)</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>errno</span> <span class=o>=</span><span class=o>=</span> <span class=n>EINTR</span><span class=p>)</span> <span class=p>{</span>
+            <span class=k>goto</span> <span class=n>again</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=k>return</span> <span class=n>ret</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>int</span> <span class=nf>Close</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>ret</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=p>(</span><span class=n>ret</span> <span class=o>=</span> <span class=n>close</span><span class=p>(</span><span class=n>fd</span><span class=p>)</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>perr_exit</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>close error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span> <span class=n>ret</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=n>ssize_t</span> <span class=nf>Readn</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>buf</span><span class=p>,</span> <span class=n>size_t</span> <span class=n>n</span><span class=p>)</span> <span class=p>{</span>
+	<span class=n>size_t</span> <span class=n>nleft</span><span class=p>;</span>
+	<span class=n>ssize_t</span> <span class=n>nread</span><span class=p>;</span>
+	<span class=kt>char</span> <span class=o>*</span><span class=n>ptr</span><span class=p>;</span>
+
+	<span class=n>ptr</span> <span class=o>=</span> <span class=n>buf</span><span class=p>;</span>
+	<span class=n>nleft</span> <span class=o>=</span> <span class=n>n</span><span class=p>;</span>
+
+	<span class=k>while</span> <span class=p>(</span><span class=n>nleft</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+		<span class=k>if</span> <span class=p>(</span> <span class=p>(</span><span class=n>nread</span> <span class=o>=</span> <span class=n>read</span><span class=p>(</span><span class=n>fd</span><span class=p>,</span> <span class=n>ptr</span><span class=p>,</span> <span class=n>nleft</span><span class=p>)</span><span class=p>)</span> <span class=o>&lt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+			<span class=k>if</span> <span class=p>(</span><span class=n>errno</span> <span class=o>=</span><span class=o>=</span> <span class=n>EINTR</span><span class=p>)</span>
+				<span class=n>nread</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+			<span class=k>else</span>
+				<span class=k>return</span> <span class=o>-</span><span class=mi>1</span><span class=p>;</span>
+		<span class=p>}</span> <span class=k>else</span> <span class=k>if</span> <span class=p>(</span><span class=n>nread</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span>
+			<span class=k>break</span><span class=p>;</span>
+		<span class=n>nleft</span> <span class=o>-</span><span class=o>=</span> <span class=n>nread</span><span class=p>;</span>
+		<span class=n>ptr</span> <span class=o>+</span><span class=o>=</span> <span class=n>nread</span><span class=p>;</span>
+	<span class=p>}</span>
+	<span class=k>return</span> <span class=n>n</span> <span class=o>-</span> <span class=n>nleft</span><span class=p>;</span>
+
+<span class=p>}</span>
+
+<span class=n>ssize_t</span> <span class=nf>Writen</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=k>const</span> <span class=kt>void</span><span class=o>*</span> <span class=n>buf</span><span class=p>,</span> <span class=n>size_t</span> <span class=n>n</span><span class=p>)</span> <span class=p>{</span>
+	<span class=n>size_t</span> <span class=n>nleft</span><span class=p>;</span>
+	<span class=n>ssize_t</span> <span class=n>nwritten</span><span class=p>;</span>
+	<span class=k>const</span> <span class=kt>char</span> <span class=o>*</span><span class=n>ptr</span><span class=p>;</span>
+
+	<span class=n>ptr</span> <span class=o>=</span> <span class=n>buf</span><span class=p>;</span>
+	<span class=n>nleft</span> <span class=o>=</span> <span class=n>n</span><span class=p>;</span>
+
+	<span class=k>while</span> <span class=p>(</span><span class=n>nleft</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+		<span class=k>if</span> <span class=p>(</span> <span class=p>(</span><span class=n>nwritten</span> <span class=o>=</span> <span class=n>write</span><span class=p>(</span><span class=n>fd</span><span class=p>,</span> <span class=n>ptr</span><span class=p>,</span> <span class=n>nleft</span><span class=p>)</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+			<span class=k>if</span> <span class=p>(</span><span class=n>nwritten</span> <span class=o>&lt;</span> <span class=mi>0</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>errno</span> <span class=o>=</span><span class=o>=</span> <span class=n>EINTR</span><span class=p>)</span>
+				<span class=n>nwritten</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+			<span class=k>else</span>
+				<span class=k>return</span> <span class=o>-</span><span class=mi>1</span><span class=p>;</span>
+		<span class=p>}</span>
+		<span class=n>nleft</span> <span class=o>-</span><span class=o>=</span> <span class=n>nwritten</span><span class=p>;</span>
+		<span class=n>ptr</span> <span class=o>+</span><span class=o>=</span> <span class=n>nwritten</span><span class=p>;</span>
+	<span class=p>}</span>
+	<span class=k>return</span> <span class=n>n</span><span class=p>;</span>
+
+<span class=p>}</span>
+
+<span class=n>ssize_t</span> <span class=nf>my_read</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span> <span class=n>ptr</span><span class=p>)</span> <span class=p>{</span>
+	<span class=k>static</span> <span class=kt>int</span> <span class=n>read_cnt</span><span class=p>;</span>
+	<span class=k>static</span> <span class=kt>char</span> <span class=o>*</span><span class=n>read_ptr</span><span class=p>;</span>
+	<span class=k>static</span> <span class=kt>char</span> <span class=n>read_buf</span><span class=p>[</span><span class=mi>100</span><span class=p>]</span><span class=p>;</span>
+
+	<span class=k>if</span> <span class=p>(</span><span class=n>read_cnt</span> <span class=o>&lt;</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+<span class=nl>again</span><span class=p>:</span>
+		<span class=k>if</span> <span class=p>(</span><span class=p>(</span><span class=n>read_cnt</span> <span class=o>=</span> <span class=n>read</span><span class=p>(</span><span class=n>fd</span><span class=p>,</span> <span class=n>read_buf</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>read_buf</span><span class=p>)</span><span class=p>)</span><span class=p>)</span> <span class=o>&lt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+			<span class=k>if</span> <span class=p>(</span><span class=n>errno</span> <span class=o>=</span><span class=o>=</span> <span class=n>EINTR</span><span class=p>)</span>
+				<span class=k>goto</span> <span class=n>again</span><span class=p>;</span>
+			<span class=k>return</span> <span class=o>-</span><span class=mi>1</span><span class=p>;</span>	
+		<span class=p>}</span> <span class=k>else</span> <span class=k>if</span> <span class=p>(</span><span class=n>read_cnt</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span>
+			<span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+		<span class=n>read_ptr</span> <span class=o>=</span> <span class=n>read_buf</span><span class=p>;</span>
+	<span class=p>}</span>
+	<span class=n>read_cnt</span><span class=o>-</span><span class=o>-</span><span class=p>;</span>
+	<span class=o>*</span><span class=n>ptr</span> <span class=o>=</span> <span class=o>*</span><span class=n>read_ptr</span><span class=o>+</span><span class=o>+</span><span class=p>;</span>
+	<span class=k>return</span> <span class=mi>1</span><span class=p>;</span>
+
+<span class=p>}</span>
+
+<span class=n>ssize_t</span> <span class=nf>Readline</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>buf</span><span class=p>,</span> <span class=n>size_t</span> <span class=n>maxlen</span><span class=p>)</span> <span class=p>{</span>
+	<span class=n>ssize_t</span> <span class=n>n</span><span class=p>,</span> <span class=n>rc</span><span class=p>;</span>
+	<span class=kt>char</span> <span class=n>c</span><span class=p>,</span> <span class=o>*</span><span class=n>ptr</span><span class=p>;</span>
+	<span class=n>ptr</span> <span class=o>=</span> <span class=n>buf</span><span class=p>;</span>
+
+	<span class=k>for</span> <span class=p>(</span><span class=n>n</span> <span class=o>=</span> <span class=mi>1</span><span class=p>;</span> <span class=n>n</span> <span class=o>&lt;</span> <span class=n>maxlen</span><span class=p>;</span> <span class=n>n</span><span class=o>+</span><span class=o>+</span><span class=p>)</span> <span class=p>{</span>
+		<span class=k>if</span> <span class=p>(</span> <span class=p>(</span><span class=n>rc</span> <span class=o>=</span> <span class=n>my_read</span><span class=p>(</span><span class=n>fd</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>c</span><span class=p>)</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+			<span class=o>*</span><span class=n>ptr</span><span class=o>+</span><span class=o>+</span> <span class=o>=</span> <span class=n>c</span><span class=p>;</span>
+			<span class=k>if</span> <span class=p>(</span><span class=n>c</span> <span class=o>=</span><span class=o>=</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>\n</span><span class=sc>&#39;</span><span class=p>)</span>
+				<span class=k>break</span><span class=p>;</span>
+		<span class=p>}</span> <span class=k>else</span> <span class=k>if</span> <span class=p>(</span><span class=n>rc</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+			<span class=o>*</span><span class=n>ptr</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+			<span class=k>return</span> <span class=n>n</span> <span class=o>-</span> <span class=mi>1</span><span class=p>;</span>
+		<span class=p>}</span> <span class=k>else</span>
+			<span class=k>return</span> <span class=o>-</span><span class=mi>1</span><span class=p>;</span>
+	<span class=p>}</span>
+	<span class=o>*</span><span class=n>ptr</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+	<span class=k>return</span> <span class=n>n</span><span class=p>;</span>
+<span class=p>}</span>
+
 </code></pre></td></tr></table></div></div></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
 <span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
 <span>2022-06-08</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
 <span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2flinux%25E7%25BD%2591%25E7%25BB%259C%25E7%25BC%2596%25E7%25A8%258B01-socket%25E7%25BC%2596%25E7%25A8%258B%2f&text=%e3%80%90Linux%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b%e3%80%9101%20-%20Socket%e7%bc%96%e7%a8%8b&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2flinux%25E7%25BD%2591%25E7%25BB%259C%25E7%25BC%2596%25E7%25A8%258B01-socket%25E7%25BC%2596%25E7%25A8%258B%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2flinux%25E7%25BD%2591%25E7%25BB%259C%25E7%25BC%2596%25E7%25A8%258B01-socket%25E7%25BC%2596%25E7%25A8%258B%2f&title=%e3%80%90Linux%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b%e3%80%9101%20-%20Socket%e7%bc%96%e7%a8%8b" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/linux/><i class="fas fa-tag fa-fw"></i>&nbsp;Linux</a>&nbsp;
-</span><span class=tag><a href=https://xushun1221.github.io/tags/network/><i class="fas fa-tag fa-fw"></i>&nbsp;network</a>&nbsp;</span></section><section><span><a href=javascript:window.history.back();>Back</a></span>&nbsp;|&nbsp;<span><a href=https://xushun1221.github.io>Home</a></span></section></div><div class=post-nav><a href=https://xushun1221.github.io/2022/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B12-%E7%BA%BF%E7%A8%8B%E5%90%8C%E6%AD%A5/ class=prev rel=prev title="【Linux系统编程】12 - 线程同步"><i class="fas fa-angle-left fa-fw"></i>【Linux系统编程】12 - 线程同步</a></div><div class=post-comment></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2022</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=https://xushun1221.github.io/about/ target=_blank>xushun</a> | </span>Powered by <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> & <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer">LoveIt</a></div></div></footer></div><a href=# class=dynamic-to-top id=dynamic-to-top data-scroll><span>&nbsp;</span>
+</span><span class=tag><a href=https://xushun1221.github.io/tags/network/><i class="fas fa-tag fa-fw"></i>&nbsp;network</a>&nbsp;</span></section><section><span><a href=javascript:window.history.back();>Back</a></span>&nbsp;|&nbsp;<span><a href=https://xushun1221.github.io>Home</a></span></section></div><div class=post-nav><a href=https://xushun1221.github.io/2022/linux%E7%B3%BB%E7%BB%9F%E7%BC%96%E7%A8%8B12-%E7%BA%BF%E7%A8%8B%E5%90%8C%E6%AD%A5/ class=prev rel=prev title="【Linux系统编程】12 - 线程同步"><i class="fas fa-angle-left fa-fw"></i>【Linux系统编程】12 - 线程同步</a>
+<a href=https://xushun1221.github.io/2022/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B02/ class=next rel=next title="【Linux网络编程】02 -">【Linux网络编程】02 -<i class="fas fa-angle-right fa-fw"></i></a></div><div class=post-comment></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2022</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=https://xushun1221.github.io/about/ target=_blank>xushun</a> | </span>Powered by <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> & <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer">LoveIt</a></div></div></footer></div><a href=# class=dynamic-to-top id=dynamic-to-top data-scroll><span>&nbsp;</span>
 </a><script src=/js/lib/jquery/jquery.slim.min.js></script><script src=/js/lib/lazysizes/lazysizes.min.js></script><script src=/js/lib/smooth-scroll/smooth-scroll.polyfills.min.js></script><script>window.scroll=new SmoothScroll('[data-scroll]',{speed:300,speedAsDuration:true});</script><link rel=stylesheet href=/css/lib/katex/katex.min.css><script src=/js/lib/katex/katex.min.js></script><script defer src=/js/lib/katex/auto-render.min.js></script><link rel=stylesheet href=/css/lib/katex/copy-tex.min.css><script defer src=/js/lib/katex/copy-tex.min.js></script><script defer src=/js/lib/katex/mhchem.min.js></script><script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true},{left:"$",right:"$",display:false},]});});</script><script src=/js/blog.min.js></script></body></html>
