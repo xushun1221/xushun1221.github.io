@@ -571,3 +571,52 @@ ssize_t Readline(int fd, void* buf, size_t maxlen) {
 }
 
 ```
+
+## 端口复用
+考虑这样的情况，我启动了server主线程监听客户端连接请求，子线程们和客户端们进行通信，此时，主动关闭server进程，（然后关闭客户端），如果想要立即重启server进行监听，会被系统拒绝，原因是server的TCP连接没有完全断开之前不允许重新监听（主动和客户端断开连接，需要等待2MSL时长来完全关闭TCP连接）。
+
+这是不合理的。因为，TCP连接没有完全断开，是因为`client_fd`（127.0.0.1:8888（本机测试的客户端））没有完全断开，而我们需要重新监听的是`listen_fd`（0.0.0.0:8888），虽然占用同一个端口，但是IP不同，`client_fd`对应的是与某个客户端通信的一个具体的IP，而listen_fd对应的是wildcard.address任意IP。
+
+解决这个问题的方法是，使用`setsockopt()`设置socket描述符的选项`SO_REUSEADDR`为1，表示允许创建端口号相同但是IP地址不同的多个socket描述符。
+
+函数原型：  
+```c
+#include <sys/types.h>          /* See NOTES */
+#include <sys/socket.h>
+
+int getsockopt(int sockfd, int level, int optname,
+                void *optval, socklen_t *optlen);
+int setsockopt(int sockfd, int level, int optname,
+                const void *optval, socklen_t optlen);
+```
+
+使用方法：  
+```c
+// socket();
+int opt = 1;
+setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, (void*)&opt, sizeof(opt))
+// bind();
+```
+这样设置后，如果主动关闭server（然后关闭客户端），server可以立即重新启动监听，但之前的`client_fd`仍然需要等待2MSL时长。
+
+## 半关闭 close / shutdown
+TCP通信中一端关闭通信，进入FIN-WAIT-2半关闭状态，可以通过`close(client_fd)`或`shutdown(sockfd, how)`来实现。
+
+shutdown函数原型：  
+```c
+ #include <sys/socket.h>
+
+int shutdown(int sockfd, int how);
+```
+- 返回值：
+  - 成功，返回`0`
+  - 失败，返回`-1`并设置`errno`
+- `sockfd`：要关闭的socket描述符；
+- `how`：如何关闭
+  - `SHUT_RD`，关闭读端
+  - `SHUT_WR`，关闭写端
+  - `SHUT_RDWR`，关闭读写
+
+`shutdown`和`close`的区别
+- `close`中止一个连接，只是减少描述符的引用计数，并不直接关闭连接，只有当描述符的引用计数为0时，才关闭；（其他进程不会被影响）
+- `shutdown`不考虑描述符的引用计数，直接关闭。（其他进程会被影响）
