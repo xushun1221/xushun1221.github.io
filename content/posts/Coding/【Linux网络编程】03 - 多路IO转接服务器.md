@@ -118,10 +118,7 @@ int main(int argc, char** argv) {
                     read_bytes = Read(fd, (void*)&buf, sizeof(buf));
                     if (read_bytes == 0) { // client关闭了
                         Close(fd);
-                        printf("client closed    -- ip : %s port : %d\n", 
-                            inet_ntop(AF_INET, &client_addr.sin_addr.s_addr, client_ip, sizeof(client_ip)),
-                            ntohs(client_addr.sin_port)
-                        );
+                        printf("client closed\n");
                         FD_CLR(fd, &all_rset); // 不需要再监听了
                     } else if (read_bytes > 0) { // 读到数据 处理
                         Write(STDOUT_FILENO, buf, read_bytes); // print
@@ -193,10 +190,7 @@ for (int i = 0; i <= max_idx; ++ i) { // 检测哪个fd监听到事件
             Close(fd);
             FD_CLR(fd, &all_rset);
             clients[i] = -1;
-            printf("client closed    -- ip : %s port : %d\n", 
-                inet_ntop(AF_INET, &client_addr.sin_addr.s_addr, client_ip, sizeof(client_ip)),
-                ntohs(client_addr.sin_port)
-            );
+            printf("client closed\n");
         } else if (read_bytes > 0) {
             Write(STDOUT_FILENO, buf, read_bytes); 
             for (int j = 0; j < read_bytes; ++ j) {
@@ -326,10 +320,7 @@ int main(int argc, char** argv) {
                     if (read_bytes == 0) { // 客户端关闭
                         Close(clients[i].fd);
                         clients[i].fd = -1; // 在poll中取消监听某个fd 直接在监听数组中设为-1即可
-                        printf("client closed    -- ip : %s port : %d\n", 
-                            inet_ntop(AF_INET, &client_addr.sin_addr.s_addr, client_ip, sizeof(client_ip)),
-                            ntohs(client_addr.sin_port)
-                        );
+                        printf("client closed\n");
                     } else if (read_bytes > 0) {
                         Write(STDOUT_FILENO, buf, read_bytes);
                         for (int j = 0; j < read_bytes; ++ j) {
@@ -424,7 +415,7 @@ struct epoll_event {
 - `op`：对该监听红黑树进行的操作
   - `EPOLL_CTL_ADD`：添加fd到监听红黑树
   - `EPOLL_CTL_MOD`：修改fd在监听红黑树上的监听事件
-  - `EPOLL_CTL_DEL`：将一个fd从监听红黑树上取下（取消监听）
+  - `EPOLL_CTL_DEL`：将一个fd从监听红黑树上取下（取消监听），如果要取消监听某个fd，必须在`epoll_ctl`之后关闭fd
 - `fd`：用于待监听的fd
 - `event`：（`struct epoll_event`类型）事件类型
   - `events`成员：`EPOLLIN/EPOLLOUT/EPOLLERR`对应读写异常
@@ -459,5 +450,101 @@ int epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout)
 
 ### epoll服务器实现
 ```c
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <pthread.h>
+#include <ctype.h>
+#include <sys/epoll.h>
+#include "wrap.h"
 
+#define SERV_PORT 8888
+#define MAX_BUFSIZE 1024
+#define MAX_CLIENTS 1024
+
+int main(int argc, char** argv) {
+    // listen socket
+    int listen_fd = Socket(AF_INET, SOCK_STREAM, 0);
+    int opt = 1;
+    setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    struct sockaddr_in serv_addr;
+    bzero(&serv_addr, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(SERV_PORT);
+    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    Bind(listen_fd, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
+    Listen(listen_fd, 128);
+    // client socket
+    struct sockaddr_in client_addr;
+    socklen_t client_addr_len = sizeof(client_addr);
+    int client_fd;
+    char client_ip[INET_ADDRSTRLEN];
+    // read buffer
+    char buf[MAX_BUFSIZE];
+    int read_bytes;
+
+    // create a RBTree for epoll
+    int epfd = epoll_create(128);
+    if (epfd == -1) {
+        perr_exit("epoll_create error");
+    }
+
+    // epoll_event
+    struct epoll_event clients_events[MAX_CLIENTS]; // returned events set from epoll_wait
+    struct epoll_event ep_fdevt; // set info for new fd
+    // add listen_fd to RBTree
+    ep_fdevt.events = EPOLLIN;
+    ep_fdevt.data.fd = listen_fd;
+    int ret = epoll_ctl(epfd, EPOLL_CTL_ADD, listen_fd, &ep_fdevt);
+    if (ret == -1) {
+        perr_exit("epoll_ctl error");
+    }
+
+    int ret_nready;
+    while (1) { // start listen
+        ret_nready = epoll_wait(epfd, clients_events, MAX_CLIENTS, -1); // epoll blocking
+        if (ret_nready < 0) {
+            perr_exit("epoll error");
+        } else if (ret_nready > 0) {
+            for (int i = 0; i < ret_nready; ++ i) { // clients_events has ret_nready elems
+                if (clients_events[i].data.fd == listen_fd) { // new client
+                    client_fd = Accept(listen_fd, (struct sockaddr*)&client_addr, &client_addr_len);
+                    printf("client connected -- ip : %s port : %d\n", 
+                        inet_ntop(AF_INET, &client_addr.sin_addr.s_addr, client_ip, sizeof(client_ip)),
+                        ntohs(client_addr.sin_port)
+                    );
+                    // add new client to RBTree
+                    ep_fdevt.data.fd = client_fd;
+                    ep_fdevt.events = EPOLLIN;
+                    ret = epoll_ctl(epfd, EPOLL_CTL_ADD, client_fd, &ep_fdevt);
+                    if (ret == -1) {
+                        perr_exit("epoll_ctl error");
+                    }
+                } else { // client IO
+                    read_bytes = Read(clients_events[i].data.fd, buf, sizeof(buf));
+                    if (read_bytes == 0) { // client closed
+                        ret = epoll_ctl(epfd, EPOLL_CTL_DEL, clients_events[i].data.fd, NULL);
+                        if (ret == -1) {
+                            perr_exit("epoll_ctl error");
+                        }
+                        Close(clients_events[i].data.fd); // have to after epoll_ctl
+                        printf("client closed\n");
+                    } else if (read_bytes > 0) { // read data
+                        Write(STDOUT_FILENO, buf, read_bytes);
+                        for (int j = 0; j < read_bytes; ++ j) {
+                            buf[j] = toupper(buf[j]);
+                        }
+                        Write(clients_events[i].data.fd, buf, read_bytes);
+                    } else {
+                        // other error
+                    }
+                }
+            }
+        }
+    }
+    Close(listen_fd);
+    return 0;
+}
 ```
