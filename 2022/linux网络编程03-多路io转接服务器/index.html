@@ -1,5 +1,5 @@
-<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【Linux网络编程】03 - 多路IO转接服务器 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B02-%E5%A4%9A%E8%BF%9B%E7%A8%8B-%E5%A4%9A%E7%BA%BF%E7%A8%8B-%E5%B9%B6%E5%8F%91%E6%9C%8D%E5%8A%A1%E5%99%A8/><link rel=canonical href=https://xushun1221.github.io/2022/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B03-%E5%A4%9A%E8%B7%AFio%E8%BD%AC%E6%8E%A5%E6%9C%8D%E5%8A%A1%E5%99%A8/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【Linux网络编程】03 - 多路IO转接服务器"><meta name=twitter:description content="多路IO转接服务器 我们之前写的服务器程序的逻辑是，主线程循环调用accept()，进行阻塞监听客户端的连接，当有连接到来时，主线程获得acc"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【Linux网络编程】03 - 多路IO转接服务器","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B03-%E5%A4%9A%E8%B7%AFio%E8%BD%AC%E6%8E%A5%E6%9C%8D%E5%8A%A1%E5%99%A8\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"Linux, network","wordcount":4713,"url":"https:\/\/xushun1221.github.io\/2022\/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B03-%E5%A4%9A%E8%B7%AFio%E8%BD%AC%E6%8E%A5%E6%9C%8D%E5%8A%A1%E5%99%A8\/","datePublished":"2022-06-11T00:00:00\x2b00:00","dateModified":"2022-06-11T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【Linux网络编程】03 - 多路IO转接服务器</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-06-11>2022-06-11</time>&nbsp;
-<i class="fas fa-pencil-alt fa-fw"></i>about 4713 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#多路io转接服务器>多路IO转接服务器</a></li><li><a href=#select>select</a><ul><li><a href=#select方法的逻辑>select方法的逻辑</a></li><li><a href=#select函数>select函数</a></li><li><a href=#select服务器实现>select服务器实现</a></li><li><a href=#select的优缺点>select的优缺点</a></li><li><a href=#优化检测fd的逻辑>优化检测fd的逻辑</a></li></ul></li><li><a href=#poll>poll</a><ul><li><a href=#poll函数>poll函数</a></li><li><a href=#poll服务器实现>poll服务器实现</a></li><li><a href=#poll的优缺点>poll的优缺点</a></li></ul></li><li><a href=#拓展监听上限>拓展监听上限</a></li><li><a href=#epoll>epoll</a><ul><li><a href=#epoll相关函数>epoll相关函数</a><ul><li><a href=#epoll_create>epoll_create</a></li><li><a href=#epoll_ctl>epoll_ctl</a></li><li><a href=#epoll_wait>epoll_wait</a></li></ul></li><li><a href=#epoll服务器实现>epoll服务器实现</a></li></ul></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【Linux网络编程】03 - 多路IO转接服务器 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B02-%E5%A4%9A%E8%BF%9B%E7%A8%8B-%E5%A4%9A%E7%BA%BF%E7%A8%8B-%E5%B9%B6%E5%8F%91%E6%9C%8D%E5%8A%A1%E5%99%A8/><link rel=canonical href=https://xushun1221.github.io/2022/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B03-%E5%A4%9A%E8%B7%AFio%E8%BD%AC%E6%8E%A5%E6%9C%8D%E5%8A%A1%E5%99%A8/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【Linux网络编程】03 - 多路IO转接服务器"><meta name=twitter:description content="多路IO转接服务器 我们之前写的服务器程序的逻辑是，主线程循环调用accept()，进行阻塞监听客户端的连接，当有连接到来时，主线程获得acc"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【Linux网络编程】03 - 多路IO转接服务器","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B03-%E5%A4%9A%E8%B7%AFio%E8%BD%AC%E6%8E%A5%E6%9C%8D%E5%8A%A1%E5%99%A8\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"Linux, network","wordcount":5127,"url":"https:\/\/xushun1221.github.io\/2022\/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B03-%E5%A4%9A%E8%B7%AFio%E8%BD%AC%E6%8E%A5%E6%9C%8D%E5%8A%A1%E5%99%A8\/","datePublished":"2022-06-11T00:00:00\x2b00:00","dateModified":"2022-06-11T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【Linux网络编程】03 - 多路IO转接服务器</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-06-11>2022-06-11</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 5127 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#多路io转接服务器>多路IO转接服务器</a></li><li><a href=#select>select</a><ul><li><a href=#select方法的逻辑>select方法的逻辑</a></li><li><a href=#select函数>select函数</a></li><li><a href=#select服务器实现>select服务器实现</a></li><li><a href=#select的优缺点>select的优缺点</a></li><li><a href=#优化检测fd的逻辑>优化检测fd的逻辑</a></li></ul></li><li><a href=#poll>poll</a><ul><li><a href=#poll函数>poll函数</a></li><li><a href=#poll服务器实现>poll服务器实现</a></li><li><a href=#poll的优缺点>poll的优缺点</a></li></ul></li><li><a href=#拓展监听上限>拓展监听上限</a></li><li><a href=#epoll>epoll</a><ul><li><a href=#epoll相关函数>epoll相关函数</a><ul><li><a href=#epoll_create>epoll_create</a></li><li><a href=#epoll_ctl>epoll_ctl</a></li><li><a href=#epoll_wait>epoll_wait</a></li></ul></li><li><a href=#epoll服务器实现>epoll服务器实现</a></li></ul></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
 <span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#多路io转接服务器>多路IO转接服务器</a></li><li><a href=#select>select</a><ul><li><a href=#select方法的逻辑>select方法的逻辑</a></li><li><a href=#select函数>select函数</a></li><li><a href=#select服务器实现>select服务器实现</a></li><li><a href=#select的优缺点>select的优缺点</a></li><li><a href=#优化检测fd的逻辑>优化检测fd的逻辑</a></li></ul></li><li><a href=#poll>poll</a><ul><li><a href=#poll函数>poll函数</a></li><li><a href=#poll服务器实现>poll服务器实现</a></li><li><a href=#poll的优缺点>poll的优缺点</a></li></ul></li><li><a href=#拓展监听上限>拓展监听上限</a></li><li><a href=#epoll>epoll</a><ul><li><a href=#epoll相关函数>epoll相关函数</a><ul><li><a href=#epoll_create>epoll_create</a></li><li><a href=#epoll_ctl>epoll_ctl</a></li><li><a href=#epoll_wait>epoll_wait</a></li></ul></li><li><a href=#epoll服务器实现>epoll服务器实现</a></li></ul></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=多路io转接服务器></a><h2>多路IO转接服务器</h2><p>我们之前写的服务器程序的逻辑是，主线程循环调用<code>accept()</code>，进行阻塞监听客户端的连接，当有连接到来时，主线程获得<code>accept()</code>返回的<code>clinet_fd</code>，并创建一个子线程来处理这个连接，子线程循环调用<code>read()</code>，阻塞读取<code>clinet_fd</code>的内容并进行处理。</p><p>多路IO转接服务器与之不同，该类服务器的主旨思想是，不再由服务器程序自己监听客户端连接和套接字收到的数据，取而代之的是由内核接替服务器程序监听连接，必要时通知服务器程序处理，相当于server程序同时监听多个文件描述符。主要有select、poll、epoll三种方法。</p><a class=post-dummy-target id=select></a><h2>select</h2><a class=post-dummy-target id=select方法的逻辑></a><h3>select方法的逻辑</h3><p>server程序类似于老板的角色，而<code>select</code>过程类似于秘书的角色。server不再使用<code>accept</code>阻塞监听或非阻塞轮询，而是采取<strong>响应式</strong>的处理方法，server将listen_fs和client_fd都交给<code>select</code>，当有客户端要进行连接或有数据需要读取，<code>select</code>就会通知server进行处理，此时server才需要调用<code>accept read</code>等函数。（server还是要循环调用select）</p><a class=post-dummy-target id=select函数></a><h3>select函数</h3><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
 </span><span class=lnt> 2
 </span><span class=lnt> 3
@@ -114,9 +114,6 @@
 </span><span class=lnt>82
 </span><span class=lnt>83
 </span><span class=lnt>84
-</span><span class=lnt>85
-</span><span class=lnt>86
-</span><span class=lnt>87
 </span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
 </span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
 </span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
@@ -182,10 +179,7 @@
 </span><span class=c1></span>                    <span class=n>read_bytes</span> <span class=o>=</span> <span class=n>Read</span><span class=p>(</span><span class=n>fd</span><span class=p>,</span> <span class=p>(</span><span class=kt>void</span><span class=o>*</span><span class=p>)</span><span class=o>&amp;</span><span class=n>buf</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>buf</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
                     <span class=k>if</span> <span class=p>(</span><span class=n>read_bytes</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// client关闭了
 </span><span class=c1></span>                        <span class=n>Close</span><span class=p>(</span><span class=n>fd</span><span class=p>)</span><span class=p>;</span>
-                        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>client closed    -- ip : %s port : %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> 
-                            <span class=n>inet_ntop</span><span class=p>(</span><span class=n>AF_INET</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>client_addr</span><span class=p>.</span><span class=n>sin_addr</span><span class=p>.</span><span class=n>s_addr</span><span class=p>,</span> <span class=n>client_ip</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>client_ip</span><span class=p>)</span><span class=p>)</span><span class=p>,</span>
-                            <span class=n>ntohs</span><span class=p>(</span><span class=n>client_addr</span><span class=p>.</span><span class=n>sin_port</span><span class=p>)</span>
-                        <span class=p>)</span><span class=p>;</span>
+                        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>client closed</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
                         <span class=n>FD_CLR</span><span class=p>(</span><span class=n>fd</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>all_rset</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 不需要再监听了
 </span><span class=c1></span>                    <span class=p>}</span> <span class=k>else</span> <span class=k>if</span> <span class=p>(</span><span class=n>read_bytes</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// 读到数据 处理
 </span><span class=c1></span>                        <span class=n>Write</span><span class=p>(</span><span class=n>STDOUT_FILENO</span><span class=p>,</span> <span class=n>buf</span><span class=p>,</span> <span class=n>read_bytes</span><span class=p>)</span><span class=p>;</span> <span class=c1>// print
@@ -256,9 +250,6 @@
 </span><span class=lnt>49
 </span><span class=lnt>50
 </span><span class=lnt>51
-</span><span class=lnt>52
-</span><span class=lnt>53
-</span><span class=lnt>54
 </span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=c1>// -----------------
 </span><span class=c1></span><span class=kt>int</span> <span class=n>clients</span><span class=p>[</span><span class=n>FD_SETSIZE</span><span class=p>]</span><span class=p>;</span> <span class=c1>// 自定义数组clients 防止遍历1024个fd FD_SETSIZE 默认为1024
 </span><span class=c1></span><span class=kt>int</span> <span class=n>max_idx</span> <span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>;</span> <span class=c1>// clients 顶端元素的下标
@@ -296,10 +287,7 @@
             <span class=n>Close</span><span class=p>(</span><span class=n>fd</span><span class=p>)</span><span class=p>;</span>
             <span class=n>FD_CLR</span><span class=p>(</span><span class=n>fd</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>all_rset</span><span class=p>)</span><span class=p>;</span>
             <span class=n>clients</span><span class=p>[</span><span class=n>i</span><span class=p>]</span> <span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>;</span>
-            <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>client closed    -- ip : %s port : %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> 
-                <span class=n>inet_ntop</span><span class=p>(</span><span class=n>AF_INET</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>client_addr</span><span class=p>.</span><span class=n>sin_addr</span><span class=p>.</span><span class=n>s_addr</span><span class=p>,</span> <span class=n>client_ip</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>client_ip</span><span class=p>)</span><span class=p>)</span><span class=p>,</span>
-                <span class=n>ntohs</span><span class=p>(</span><span class=n>client_addr</span><span class=p>.</span><span class=n>sin_port</span><span class=p>)</span>
-            <span class=p>)</span><span class=p>;</span>
+            <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>client closed</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
         <span class=p>}</span> <span class=k>else</span> <span class=k>if</span> <span class=p>(</span><span class=n>read_bytes</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
             <span class=n>Write</span><span class=p>(</span><span class=n>STDOUT_FILENO</span><span class=p>,</span> <span class=n>buf</span><span class=p>,</span> <span class=n>read_bytes</span><span class=p>)</span><span class=p>;</span> 
             <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>j</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>j</span> <span class=o>&lt;</span> <span class=n>read_bytes</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>j</span><span class=p>)</span> <span class=p>{</span>
@@ -444,9 +432,6 @@
 </span><span class=lnt>111
 </span><span class=lnt>112
 </span><span class=lnt>113
-</span><span class=lnt>114
-</span><span class=lnt>115
-</span><span class=lnt>116
 </span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
 </span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
 </span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
@@ -531,10 +516,7 @@
                     <span class=k>if</span> <span class=p>(</span><span class=n>read_bytes</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// 客户端关闭
 </span><span class=c1></span>                        <span class=n>Close</span><span class=p>(</span><span class=n>clients</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>.</span><span class=n>fd</span><span class=p>)</span><span class=p>;</span>
                         <span class=n>clients</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>.</span><span class=n>fd</span> <span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>;</span> <span class=c1>// 在poll中取消监听某个fd 直接在监听数组中设为-1即可
-</span><span class=c1></span>                        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>client closed    -- ip : %s port : %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> 
-                            <span class=n>inet_ntop</span><span class=p>(</span><span class=n>AF_INET</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>client_addr</span><span class=p>.</span><span class=n>sin_addr</span><span class=p>.</span><span class=n>s_addr</span><span class=p>,</span> <span class=n>client_ip</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>client_ip</span><span class=p>)</span><span class=p>)</span><span class=p>,</span>
-                            <span class=n>ntohs</span><span class=p>(</span><span class=n>client_addr</span><span class=p>.</span><span class=n>sin_port</span><span class=p>)</span>
-                        <span class=p>)</span><span class=p>;</span>
+</span><span class=c1></span>                        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>client closed</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
                     <span class=p>}</span> <span class=k>else</span> <span class=k>if</span> <span class=p>(</span><span class=n>read_bytes</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
                         <span class=n>Write</span><span class=p>(</span><span class=n>STDOUT_FILENO</span><span class=p>,</span> <span class=n>buf</span><span class=p>,</span> <span class=n>read_bytes</span><span class=p>)</span><span class=p>;</span>
                         <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>j</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>j</span> <span class=o>&lt;</span> <span class=n>read_bytes</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>j</span><span class=p>)</span> <span class=p>{</span>
@@ -596,14 +578,206 @@
     <span class=n>uint32_t</span>     <span class=n>events</span><span class=p>;</span>      <span class=cm>/* Epoll events */</span>
     <span class=n>epoll_data_t</span> <span class=n>data</span><span class=p>;</span>        <span class=cm>/* User data variable */</span>
 <span class=p>}</span><span class=p>;</span>
-</code></pre></td></tr></table></div></div><ul><li><code>epfd</code>：监听红黑树的fd，<code>epoll_create</code>的返回值</li><li><code>op</code>：对该监听红黑树进行的操作<ul><li><code>EPOLL_CTL_ADD</code>：添加fd到监听红黑树</li><li><code>EPOLL_CTL_MOD</code>：修改fd在监听红黑树上的监听事件</li><li><code>EPOLL_CTL_DEL</code>：将一个fd从监听红黑树上取下（取消监听）</li></ul></li><li><code>fd</code>：用于待监听的fd</li><li><code>event</code>：（<code>struct epoll_event</code>类型）事件类型<ul><li><code>events</code>成员：<code>EPOLLIN/EPOLLOUT/EPOLLERR</code>对应读写异常</li><li><code>data</code>成员：（<code>epoll_data_t</code>联合体）<ul><li><code>fd</code>对应监听事件的fd</li><li><code>void* ptr</code></li><li><code>uint32_t u32</code></li><li><code>uint64_t u64</code></li></ul></li></ul></li><li>返回值：<ul><li>成功，返回<code>0</code></li><li>失败，返回<code>-1</code>，并设置<code>errno</code></li></ul></li></ul><a class=post-dummy-target id=epoll_wait></a><h4>epoll_wait</h4><p>阻塞等待epoll监听的IO事件。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</code></pre></td></tr></table></div></div><ul><li><code>epfd</code>：监听红黑树的fd，<code>epoll_create</code>的返回值</li><li><code>op</code>：对该监听红黑树进行的操作<ul><li><code>EPOLL_CTL_ADD</code>：添加fd到监听红黑树</li><li><code>EPOLL_CTL_MOD</code>：修改fd在监听红黑树上的监听事件</li><li><code>EPOLL_CTL_DEL</code>：将一个fd从监听红黑树上取下（取消监听），如果要取消监听某个fd，必须在<code>epoll_ctl</code>之后关闭fd</li></ul></li><li><code>fd</code>：用于待监听的fd</li><li><code>event</code>：（<code>struct epoll_event</code>类型）事件类型<ul><li><code>events</code>成员：<code>EPOLLIN/EPOLLOUT/EPOLLERR</code>对应读写异常</li><li><code>data</code>成员：（<code>epoll_data_t</code>联合体）<ul><li><code>fd</code>对应监听事件的fd</li><li><code>void* ptr</code></li><li><code>uint32_t u32</code></li><li><code>uint64_t u64</code></li></ul></li></ul></li><li>返回值：<ul><li>成功，返回<code>0</code></li><li>失败，返回<code>-1</code>，并设置<code>errno</code></li></ul></li></ul><a class=post-dummy-target id=epoll_wait></a><h4>epoll_wait</h4><p>阻塞等待epoll监听的IO事件。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2
 </span><span class=lnt>3
 </span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/epoll.h&gt;</span><span class=cp>
 </span><span class=cp></span>
 <span class=kt>int</span> <span class=nf>epoll_wait</span><span class=p>(</span><span class=kt>int</span> <span class=n>epfd</span><span class=p>,</span> <span class=k>struct</span> <span class=n>epoll_event</span> <span class=o>*</span><span class=n>events</span><span class=p>,</span> <span class=kt>int</span> <span class=n>maxevents</span><span class=p>,</span> <span class=kt>int</span> <span class=n>timeout</span><span class=p>)</span><span class=p>;</span>
-</code></pre></td></tr></table></div></div><ul><li><code>epfd</code>：监听红黑树的fd，<code>epoll_create</code>的返回值</li><li><code>events</code>：传出参数，是一个数组，保存的是发生监听事件的fd数组（<code>struct epoll_event</code>结构体数组）</li><li><code>maxevents</code>：<code>events</code>数组的总数，<code>events</code>数组是自己定义的；（一半1024）</li><li><code>timeout</code>：超时时长<ul><li><code>0</code>：非阻塞</li><li><code>-1</code>：阻塞</li><li><code>>0</code>：超时时长</li></ul></li><li>返回值：<ul><li><code>>0</code>：发生监听事件的fd的个数，用作循环处理的上限</li><li><code>0</code>：没有监听事件发生</li><li><code>-1</code>：出错，设置<code>errno</code></li></ul></li></ul><a class=post-dummy-target id=epoll服务器实现></a><h3>epoll服务器实现</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c>
+</code></pre></td></tr></table></div></div><ul><li><code>epfd</code>：监听红黑树的fd，<code>epoll_create</code>的返回值</li><li><code>events</code>：传出参数，是一个数组，保存的是发生监听事件的fd数组（<code>struct epoll_event</code>结构体数组）</li><li><code>maxevents</code>：<code>events</code>数组的总数，<code>events</code>数组是自己定义的；（一半1024）</li><li><code>timeout</code>：超时时长<ul><li><code>0</code>：非阻塞</li><li><code>-1</code>：阻塞</li><li><code>>0</code>：超时时长</li></ul></li><li>返回值：<ul><li><code>>0</code>：发生监听事件的fd的个数，用作循环处理的上限</li><li><code>0</code>：没有监听事件发生</li><li><code>-1</code>：出错，设置<code>errno</code></li></ul></li></ul><a class=post-dummy-target id=epoll服务器实现></a><h3>epoll服务器实现</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span><span class=lnt>59
+</span><span class=lnt>60
+</span><span class=lnt>61
+</span><span class=lnt>62
+</span><span class=lnt>63
+</span><span class=lnt>64
+</span><span class=lnt>65
+</span><span class=lnt>66
+</span><span class=lnt>67
+</span><span class=lnt>68
+</span><span class=lnt>69
+</span><span class=lnt>70
+</span><span class=lnt>71
+</span><span class=lnt>72
+</span><span class=lnt>73
+</span><span class=lnt>74
+</span><span class=lnt>75
+</span><span class=lnt>76
+</span><span class=lnt>77
+</span><span class=lnt>78
+</span><span class=lnt>79
+</span><span class=lnt>80
+</span><span class=lnt>81
+</span><span class=lnt>82
+</span><span class=lnt>83
+</span><span class=lnt>84
+</span><span class=lnt>85
+</span><span class=lnt>86
+</span><span class=lnt>87
+</span><span class=lnt>88
+</span><span class=lnt>89
+</span><span class=lnt>90
+</span><span class=lnt>91
+</span><span class=lnt>92
+</span><span class=lnt>93
+</span><span class=lnt>94
+</span><span class=lnt>95
+</span><span class=lnt>96
+</span><span class=lnt>97
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;errno.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;pthread.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;ctype.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/epoll.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;wrap.h&#34;</span><span class=cp>
+</span><span class=cp></span>
+<span class=cp>#</span><span class=cp>define SERV_PORT 8888</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>define MAX_BUFSIZE 1024</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>define MAX_CLIENTS 1024</span><span class=cp>
+</span><span class=cp></span>
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=kt>int</span> <span class=n>argc</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span><span class=o>*</span> <span class=n>argv</span><span class=p>)</span> <span class=p>{</span>
+    <span class=c1>// listen socket
+</span><span class=c1></span>    <span class=kt>int</span> <span class=n>listen_fd</span> <span class=o>=</span> <span class=n>Socket</span><span class=p>(</span><span class=n>AF_INET</span><span class=p>,</span> <span class=n>SOCK_STREAM</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>opt</span> <span class=o>=</span> <span class=mi>1</span><span class=p>;</span>
+    <span class=n>setsockopt</span><span class=p>(</span><span class=n>listen_fd</span><span class=p>,</span> <span class=n>SOL_SOCKET</span><span class=p>,</span> <span class=n>SO_REUSEADDR</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>opt</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>opt</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>struct</span> <span class=n>sockaddr_in</span> <span class=n>serv_addr</span><span class=p>;</span>
+    <span class=n>bzero</span><span class=p>(</span><span class=o>&amp;</span><span class=n>serv_addr</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>serv_addr</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>serv_addr</span><span class=p>.</span><span class=n>sin_family</span> <span class=o>=</span> <span class=n>AF_INET</span><span class=p>;</span>
+    <span class=n>serv_addr</span><span class=p>.</span><span class=n>sin_port</span> <span class=o>=</span> <span class=n>htons</span><span class=p>(</span><span class=n>SERV_PORT</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>serv_addr</span><span class=p>.</span><span class=n>sin_addr</span><span class=p>.</span><span class=n>s_addr</span> <span class=o>=</span> <span class=n>htonl</span><span class=p>(</span><span class=n>INADDR_ANY</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>Bind</span><span class=p>(</span><span class=n>listen_fd</span><span class=p>,</span> <span class=p>(</span><span class=k>struct</span> <span class=n>sockaddr</span><span class=o>*</span><span class=p>)</span><span class=o>&amp;</span><span class=n>serv_addr</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>serv_addr</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>Listen</span><span class=p>(</span><span class=n>listen_fd</span><span class=p>,</span> <span class=mi>128</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// client socket
+</span><span class=c1></span>    <span class=k>struct</span> <span class=n>sockaddr_in</span> <span class=n>client_addr</span><span class=p>;</span>
+    <span class=n>socklen_t</span> <span class=n>client_addr_len</span> <span class=o>=</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>client_addr</span><span class=p>)</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>client_fd</span><span class=p>;</span>
+    <span class=kt>char</span> <span class=n>client_ip</span><span class=p>[</span><span class=n>INET_ADDRSTRLEN</span><span class=p>]</span><span class=p>;</span>
+    <span class=c1>// read buffer
+</span><span class=c1></span>    <span class=kt>char</span> <span class=n>buf</span><span class=p>[</span><span class=n>MAX_BUFSIZE</span><span class=p>]</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>read_bytes</span><span class=p>;</span>
+
+    <span class=c1>// create a RBTree for epoll
+</span><span class=c1></span>    <span class=kt>int</span> <span class=n>epfd</span> <span class=o>=</span> <span class=n>epoll_create</span><span class=p>(</span><span class=mi>128</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>epfd</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>perr_exit</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>epoll_create error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+
+    <span class=c1>// epoll_event
+</span><span class=c1></span>    <span class=k>struct</span> <span class=n>epoll_event</span> <span class=n>clients_events</span><span class=p>[</span><span class=n>MAX_CLIENTS</span><span class=p>]</span><span class=p>;</span> <span class=c1>// returned events set from epoll_wait
+</span><span class=c1></span>    <span class=k>struct</span> <span class=n>epoll_event</span> <span class=n>ep_fdevt</span><span class=p>;</span> <span class=c1>// set info for new fd
+</span><span class=c1></span>    <span class=c1>// add listen_fd to RBTree
+</span><span class=c1></span>    <span class=n>ep_fdevt</span><span class=p>.</span><span class=n>events</span> <span class=o>=</span> <span class=n>EPOLLIN</span><span class=p>;</span>
+    <span class=n>ep_fdevt</span><span class=p>.</span><span class=n>data</span><span class=p>.</span><span class=n>fd</span> <span class=o>=</span> <span class=n>listen_fd</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>ret</span> <span class=o>=</span> <span class=n>epoll_ctl</span><span class=p>(</span><span class=n>epfd</span><span class=p>,</span> <span class=n>EPOLL_CTL_ADD</span><span class=p>,</span> <span class=n>listen_fd</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>ep_fdevt</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>ret</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>perr_exit</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>epoll_ctl error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+
+    <span class=kt>int</span> <span class=n>ret_nready</span><span class=p>;</span>
+    <span class=k>while</span> <span class=p>(</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// start listen
+</span><span class=c1></span>        <span class=n>ret_nready</span> <span class=o>=</span> <span class=n>epoll_wait</span><span class=p>(</span><span class=n>epfd</span><span class=p>,</span> <span class=n>clients_events</span><span class=p>,</span> <span class=n>MAX_CLIENTS</span><span class=p>,</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span> <span class=c1>// epoll blocking
+</span><span class=c1></span>        <span class=k>if</span> <span class=p>(</span><span class=n>ret_nready</span> <span class=o>&lt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>perr_exit</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>epoll error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span> <span class=k>else</span> <span class=k>if</span> <span class=p>(</span><span class=n>ret_nready</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+            <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>ret_nready</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// clients_events has ret_nready elems
+</span><span class=c1></span>                <span class=k>if</span> <span class=p>(</span><span class=n>clients_events</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>.</span><span class=n>data</span><span class=p>.</span><span class=n>fd</span> <span class=o>=</span><span class=o>=</span> <span class=n>listen_fd</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// new client
+</span><span class=c1></span>                    <span class=n>client_fd</span> <span class=o>=</span> <span class=n>Accept</span><span class=p>(</span><span class=n>listen_fd</span><span class=p>,</span> <span class=p>(</span><span class=k>struct</span> <span class=n>sockaddr</span><span class=o>*</span><span class=p>)</span><span class=o>&amp;</span><span class=n>client_addr</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>client_addr_len</span><span class=p>)</span><span class=p>;</span>
+                    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>client connected -- ip : %s port : %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> 
+                        <span class=n>inet_ntop</span><span class=p>(</span><span class=n>AF_INET</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>client_addr</span><span class=p>.</span><span class=n>sin_addr</span><span class=p>.</span><span class=n>s_addr</span><span class=p>,</span> <span class=n>client_ip</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>client_ip</span><span class=p>)</span><span class=p>)</span><span class=p>,</span>
+                        <span class=n>ntohs</span><span class=p>(</span><span class=n>client_addr</span><span class=p>.</span><span class=n>sin_port</span><span class=p>)</span>
+                    <span class=p>)</span><span class=p>;</span>
+                    <span class=c1>// add new client to RBTree
+</span><span class=c1></span>                    <span class=n>ep_fdevt</span><span class=p>.</span><span class=n>data</span><span class=p>.</span><span class=n>fd</span> <span class=o>=</span> <span class=n>client_fd</span><span class=p>;</span>
+                    <span class=n>ep_fdevt</span><span class=p>.</span><span class=n>events</span> <span class=o>=</span> <span class=n>EPOLLIN</span><span class=p>;</span>
+                    <span class=n>ret</span> <span class=o>=</span> <span class=n>epoll_ctl</span><span class=p>(</span><span class=n>epfd</span><span class=p>,</span> <span class=n>EPOLL_CTL_ADD</span><span class=p>,</span> <span class=n>client_fd</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>ep_fdevt</span><span class=p>)</span><span class=p>;</span>
+                    <span class=k>if</span> <span class=p>(</span><span class=n>ret</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+                        <span class=n>perr_exit</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>epoll_ctl error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+                    <span class=p>}</span>
+                <span class=p>}</span> <span class=k>else</span> <span class=p>{</span> <span class=c1>// client IO
+</span><span class=c1></span>                    <span class=n>read_bytes</span> <span class=o>=</span> <span class=n>Read</span><span class=p>(</span><span class=n>clients_events</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>.</span><span class=n>data</span><span class=p>.</span><span class=n>fd</span><span class=p>,</span> <span class=n>buf</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>buf</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+                    <span class=k>if</span> <span class=p>(</span><span class=n>read_bytes</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// client closed
+</span><span class=c1></span>                        <span class=n>ret</span> <span class=o>=</span> <span class=n>epoll_ctl</span><span class=p>(</span><span class=n>epfd</span><span class=p>,</span> <span class=n>EPOLL_CTL_DEL</span><span class=p>,</span> <span class=n>clients_events</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>.</span><span class=n>data</span><span class=p>.</span><span class=n>fd</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>)</span><span class=p>;</span>
+                        <span class=k>if</span> <span class=p>(</span><span class=n>ret</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+                            <span class=n>perr_exit</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>epoll_ctl error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+                        <span class=p>}</span>
+                        <span class=n>Close</span><span class=p>(</span><span class=n>clients_events</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>.</span><span class=n>data</span><span class=p>.</span><span class=n>fd</span><span class=p>)</span><span class=p>;</span> <span class=c1>// have to after epoll_ctl
+</span><span class=c1></span>                        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>client closed</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+                    <span class=p>}</span> <span class=k>else</span> <span class=k>if</span> <span class=p>(</span><span class=n>read_bytes</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// read data
+</span><span class=c1></span>                        <span class=n>Write</span><span class=p>(</span><span class=n>STDOUT_FILENO</span><span class=p>,</span> <span class=n>buf</span><span class=p>,</span> <span class=n>read_bytes</span><span class=p>)</span><span class=p>;</span>
+                        <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>j</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>j</span> <span class=o>&lt;</span> <span class=n>read_bytes</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>j</span><span class=p>)</span> <span class=p>{</span>
+                            <span class=n>buf</span><span class=p>[</span><span class=n>j</span><span class=p>]</span> <span class=o>=</span> <span class=n>toupper</span><span class=p>(</span><span class=n>buf</span><span class=p>[</span><span class=n>j</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+                        <span class=p>}</span>
+                        <span class=n>Write</span><span class=p>(</span><span class=n>clients_events</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>.</span><span class=n>data</span><span class=p>.</span><span class=n>fd</span><span class=p>,</span> <span class=n>buf</span><span class=p>,</span> <span class=n>read_bytes</span><span class=p>)</span><span class=p>;</span>
+                    <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+                        <span class=c1>// other error
+</span><span class=c1></span>                    <span class=p>}</span>
+                <span class=p>}</span>
+            <span class=p>}</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=n>Close</span><span class=p>(</span><span class=n>listen_fd</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
 </code></pre></td></tr></table></div></div></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
 <span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
 <span>2022-06-11</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
