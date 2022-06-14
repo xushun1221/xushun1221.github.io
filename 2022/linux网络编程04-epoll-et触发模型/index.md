@@ -179,8 +179,8 @@ int main(int argc, char** argv) {
 }
 ```
 
-### 基于网络socket的epoll-ET模型（non-blocking IO）
-上面的代码在对socket进行IO操作时，使用的是阻塞IO（blocking IO），在epoll-ET模型下，不能使用阻塞IO（原因后面再分析），下面把阻塞改为非阻塞。
+### 基于网络socket的epoll-ET模型（non-blocking IO + polling）
+上面的代码在对socket进行IO操作时，使用的是阻塞IO（blocking IO），在epoll-ET模型下，不能使用阻塞IO（原因后面再分析），下面把阻塞改为非阻塞（忙轮询）。
 
 改为非阻塞IO，并用循环来读取缓冲区中的数据，可以一次将缓冲区读空。
 
