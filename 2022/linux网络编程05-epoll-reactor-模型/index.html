@@ -1,6 +1,926 @@
-<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【Linux网络编程】05 - epoll - Reactor 模型 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B04-epoll-et%E8%A7%A6%E5%8F%91%E6%A8%A1%E5%9E%8B/><link rel=canonical href=https://xushun1221.github.io/2022/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B05-epoll-reactor-%E6%A8%A1%E5%9E%8B/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【Linux网络编程】05 - epoll - Reactor 模型"><meta name=twitter:description content="epoll - Reactor 反应堆模型"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【Linux网络编程】05 - epoll - Reactor 模型","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B05-epoll-reactor-%E6%A8%A1%E5%9E%8B\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"Linux, network","wordcount":8,"url":"https:\/\/xushun1221.github.io\/2022\/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B05-epoll-reactor-%E6%A8%A1%E5%9E%8B\/","datePublished":"2022-06-14T00:00:00\x2b00:00","dateModified":"2022-06-14T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【Linux网络编程】05 - epoll - Reactor 模型</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-06-14>2022-06-14</time>&nbsp;
-<i class="fas fa-pencil-alt fa-fw"></i>about 8 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#epoll---reactor-反应堆模型>epoll - Reactor 反应堆模型</a></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
-<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#epoll---reactor-反应堆模型>epoll - Reactor 反应堆模型</a></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=epoll---reactor-反应堆模型></a><h2>epoll - Reactor 反应堆模型</h2></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【Linux网络编程】05 - epoll - Reactor 模型 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B04-epoll-et%E8%A7%A6%E5%8F%91%E6%A8%A1%E5%9E%8B/><link rel=canonical href=https://xushun1221.github.io/2022/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B05-epoll-reactor-%E6%A8%A1%E5%9E%8B/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【Linux网络编程】05 - epoll - Reactor 模型"><meta name=twitter:description content="epoll - Reactor 反应堆模型 常规模型和Reactor模型的比较 常规模型（epoll - ET - 非阻塞IO轮询） select() bind() listen()初始化监听套接字listen"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【Linux网络编程】05 - epoll - Reactor 模型","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B05-epoll-reactor-%E6%A8%A1%E5%9E%8B\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"Linux, network","wordcount":3838,"url":"https:\/\/xushun1221.github.io\/2022\/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B05-epoll-reactor-%E6%A8%A1%E5%9E%8B\/","datePublished":"2022-06-14T00:00:00\x2b00:00","dateModified":"2022-06-14T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【Linux网络编程】05 - epoll - Reactor 模型</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-06-14>2022-06-14</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 3838 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#epoll---reactor-反应堆模型>epoll - Reactor 反应堆模型</a><ul><li><a href=#常规模型和reactor模型的比较>常规模型和Reactor模型的比较</a></li><li><a href=#示例---基于非阻塞io事件驱动的反应堆模型libevent的部分源码实现>示例 - 基于非阻塞IO事件驱动的反应堆模型（libevent的部分源码实现）</a></li><li><a href=#重写上述代码>重写上述代码</a></li></ul></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#epoll---reactor-反应堆模型>epoll - Reactor 反应堆模型</a><ul><li><a href=#常规模型和reactor模型的比较>常规模型和Reactor模型的比较</a></li><li><a href=#示例---基于非阻塞io事件驱动的反应堆模型libevent的部分源码实现>示例 - 基于非阻塞IO事件驱动的反应堆模型（libevent的部分源码实现）</a></li><li><a href=#重写上述代码>重写上述代码</a></li></ul></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=epoll---reactor-反应堆模型></a><h2>epoll - Reactor 反应堆模型</h2><a class=post-dummy-target id=常规模型和reactor模型的比较></a><h3>常规模型和Reactor模型的比较</h3><ul><li>常规模型（epoll - ET - 非阻塞IO轮询）<ol><li><code>select() bind() listen()</code>初始化监听套接字<code>listen_fd</code>（监听的套接字要以struct epoll_event的形式进行封装 保存fd和事件类型）</li><li><code>epfd = epoll_create()</code>创建监听红黑树</li><li><code>epoll_ctl(listen_fd)</code>将监听套接字添加到监听树上</li><li>主循环中调用<code>epoll_wait()</code>获取就绪事件</li><li><code>epoll_wait()</code>返回就绪的事件数组<code>events</code></li><li>遍历<code>events</code>，<ul><li>如果是<code>listen_fd</code>，调用<code>accept()</code>接收新客户端（设置非阻塞IO），并将其添加到监听树上</li><li>如果是<code>client_fd</code>，循环读取<code>client_fd</code>直到缓冲区为空，将读到的数据处理并写回<code>client_fd</code>，如果客户端断开连接了，就关闭连接，并从监听树上摘下该<code>client_fd</code></li></ul></li></ol></li><li>Reactor模型（epoll - ET - 非阻塞IO轮询 + 回调函数）<ol><li><code>epfd = epoll_create()</code>创建监听红黑树</li><li>自定义<code>struct myevent_s</code>结构体类型，用于描述监听的文件描述符信息（处理该fd对应事件的回调函数），该结构的指针存放于<code>struct epoll_event.data.ptr</code></li><li><code>struct myevent_s g_events[MAX_CLIENTS + 1]</code>数组用于存储监听的fd信息</li><li><code>select() bind() listen()</code>初始化监听套接字<code>listen_fd</code>，它位于<code>g_events[MAX_CLIENTS]</code>，<code>epoll_ctl</code>将其添加到监听树上</li><li>主循环中调用<code>epoll_wait()</code>获取就绪事件数组<code>events</code></li><li>遍历<code>events</code>，对每个就绪事件调用其指定的处理函数<ul><li>如果是<code>listen_fd</code>，接收新客户端，设置非阻塞IO，添加到监听树上</li><li>如果是<code>client_fd</code>，满足读事件，从fd读取数据，进行处理，存到该fd对应的<code>myevent_s</code>的buf中，（不能立即写回fd，因为有可能不满足写数据的条件），将fd从监听树上摘下，重新设置监听事件为写事件，再重新添加到监听树上（等待内核通知可写）</li><li>如果是<code>listen_fd</code>，满足写事件，向fd写数据，将fd从监听树上摘下，重新设置监听事件为读事件，再重新添加到监听树上</li></ul></li></ol></li></ul><a class=post-dummy-target id=示例---基于非阻塞io事件驱动的反应堆模型libevent的部分源码实现></a><h3>示例 - 基于非阻塞IO事件驱动的反应堆模型（libevent的部分源码实现）</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>  1
+</span><span class=lnt>  2
+</span><span class=lnt>  3
+</span><span class=lnt>  4
+</span><span class=lnt>  5
+</span><span class=lnt>  6
+</span><span class=lnt>  7
+</span><span class=lnt>  8
+</span><span class=lnt>  9
+</span><span class=lnt> 10
+</span><span class=lnt> 11
+</span><span class=lnt> 12
+</span><span class=lnt> 13
+</span><span class=lnt> 14
+</span><span class=lnt> 15
+</span><span class=lnt> 16
+</span><span class=lnt> 17
+</span><span class=lnt> 18
+</span><span class=lnt> 19
+</span><span class=lnt> 20
+</span><span class=lnt> 21
+</span><span class=lnt> 22
+</span><span class=lnt> 23
+</span><span class=lnt> 24
+</span><span class=lnt> 25
+</span><span class=lnt> 26
+</span><span class=lnt> 27
+</span><span class=lnt> 28
+</span><span class=lnt> 29
+</span><span class=lnt> 30
+</span><span class=lnt> 31
+</span><span class=lnt> 32
+</span><span class=lnt> 33
+</span><span class=lnt> 34
+</span><span class=lnt> 35
+</span><span class=lnt> 36
+</span><span class=lnt> 37
+</span><span class=lnt> 38
+</span><span class=lnt> 39
+</span><span class=lnt> 40
+</span><span class=lnt> 41
+</span><span class=lnt> 42
+</span><span class=lnt> 43
+</span><span class=lnt> 44
+</span><span class=lnt> 45
+</span><span class=lnt> 46
+</span><span class=lnt> 47
+</span><span class=lnt> 48
+</span><span class=lnt> 49
+</span><span class=lnt> 50
+</span><span class=lnt> 51
+</span><span class=lnt> 52
+</span><span class=lnt> 53
+</span><span class=lnt> 54
+</span><span class=lnt> 55
+</span><span class=lnt> 56
+</span><span class=lnt> 57
+</span><span class=lnt> 58
+</span><span class=lnt> 59
+</span><span class=lnt> 60
+</span><span class=lnt> 61
+</span><span class=lnt> 62
+</span><span class=lnt> 63
+</span><span class=lnt> 64
+</span><span class=lnt> 65
+</span><span class=lnt> 66
+</span><span class=lnt> 67
+</span><span class=lnt> 68
+</span><span class=lnt> 69
+</span><span class=lnt> 70
+</span><span class=lnt> 71
+</span><span class=lnt> 72
+</span><span class=lnt> 73
+</span><span class=lnt> 74
+</span><span class=lnt> 75
+</span><span class=lnt> 76
+</span><span class=lnt> 77
+</span><span class=lnt> 78
+</span><span class=lnt> 79
+</span><span class=lnt> 80
+</span><span class=lnt> 81
+</span><span class=lnt> 82
+</span><span class=lnt> 83
+</span><span class=lnt> 84
+</span><span class=lnt> 85
+</span><span class=lnt> 86
+</span><span class=lnt> 87
+</span><span class=lnt> 88
+</span><span class=lnt> 89
+</span><span class=lnt> 90
+</span><span class=lnt> 91
+</span><span class=lnt> 92
+</span><span class=lnt> 93
+</span><span class=lnt> 94
+</span><span class=lnt> 95
+</span><span class=lnt> 96
+</span><span class=lnt> 97
+</span><span class=lnt> 98
+</span><span class=lnt> 99
+</span><span class=lnt>100
+</span><span class=lnt>101
+</span><span class=lnt>102
+</span><span class=lnt>103
+</span><span class=lnt>104
+</span><span class=lnt>105
+</span><span class=lnt>106
+</span><span class=lnt>107
+</span><span class=lnt>108
+</span><span class=lnt>109
+</span><span class=lnt>110
+</span><span class=lnt>111
+</span><span class=lnt>112
+</span><span class=lnt>113
+</span><span class=lnt>114
+</span><span class=lnt>115
+</span><span class=lnt>116
+</span><span class=lnt>117
+</span><span class=lnt>118
+</span><span class=lnt>119
+</span><span class=lnt>120
+</span><span class=lnt>121
+</span><span class=lnt>122
+</span><span class=lnt>123
+</span><span class=lnt>124
+</span><span class=lnt>125
+</span><span class=lnt>126
+</span><span class=lnt>127
+</span><span class=lnt>128
+</span><span class=lnt>129
+</span><span class=lnt>130
+</span><span class=lnt>131
+</span><span class=lnt>132
+</span><span class=lnt>133
+</span><span class=lnt>134
+</span><span class=lnt>135
+</span><span class=lnt>136
+</span><span class=lnt>137
+</span><span class=lnt>138
+</span><span class=lnt>139
+</span><span class=lnt>140
+</span><span class=lnt>141
+</span><span class=lnt>142
+</span><span class=lnt>143
+</span><span class=lnt>144
+</span><span class=lnt>145
+</span><span class=lnt>146
+</span><span class=lnt>147
+</span><span class=lnt>148
+</span><span class=lnt>149
+</span><span class=lnt>150
+</span><span class=lnt>151
+</span><span class=lnt>152
+</span><span class=lnt>153
+</span><span class=lnt>154
+</span><span class=lnt>155
+</span><span class=lnt>156
+</span><span class=lnt>157
+</span><span class=lnt>158
+</span><span class=lnt>159
+</span><span class=lnt>160
+</span><span class=lnt>161
+</span><span class=lnt>162
+</span><span class=lnt>163
+</span><span class=lnt>164
+</span><span class=lnt>165
+</span><span class=lnt>166
+</span><span class=lnt>167
+</span><span class=lnt>168
+</span><span class=lnt>169
+</span><span class=lnt>170
+</span><span class=lnt>171
+</span><span class=lnt>172
+</span><span class=lnt>173
+</span><span class=lnt>174
+</span><span class=lnt>175
+</span><span class=lnt>176
+</span><span class=lnt>177
+</span><span class=lnt>178
+</span><span class=lnt>179
+</span><span class=lnt>180
+</span><span class=lnt>181
+</span><span class=lnt>182
+</span><span class=lnt>183
+</span><span class=lnt>184
+</span><span class=lnt>185
+</span><span class=lnt>186
+</span><span class=lnt>187
+</span><span class=lnt>188
+</span><span class=lnt>189
+</span><span class=lnt>190
+</span><span class=lnt>191
+</span><span class=lnt>192
+</span><span class=lnt>193
+</span><span class=lnt>194
+</span><span class=lnt>195
+</span><span class=lnt>196
+</span><span class=lnt>197
+</span><span class=lnt>198
+</span><span class=lnt>199
+</span><span class=lnt>200
+</span><span class=lnt>201
+</span><span class=lnt>202
+</span><span class=lnt>203
+</span><span class=lnt>204
+</span><span class=lnt>205
+</span><span class=lnt>206
+</span><span class=lnt>207
+</span><span class=lnt>208
+</span><span class=lnt>209
+</span><span class=lnt>210
+</span><span class=lnt>211
+</span><span class=lnt>212
+</span><span class=lnt>213
+</span><span class=lnt>214
+</span><span class=lnt>215
+</span><span class=lnt>216
+</span><span class=lnt>217
+</span><span class=lnt>218
+</span><span class=lnt>219
+</span><span class=lnt>220
+</span><span class=lnt>221
+</span><span class=lnt>222
+</span><span class=lnt>223
+</span><span class=lnt>224
+</span><span class=lnt>225
+</span><span class=lnt>226
+</span><span class=lnt>227
+</span><span class=lnt>228
+</span><span class=lnt>229
+</span><span class=lnt>230
+</span><span class=lnt>231
+</span><span class=lnt>232
+</span><span class=lnt>233
+</span><span class=lnt>234
+</span><span class=lnt>235
+</span><span class=lnt>236
+</span><span class=lnt>237
+</span><span class=lnt>238
+</span><span class=lnt>239
+</span><span class=lnt>240
+</span><span class=lnt>241
+</span><span class=lnt>242
+</span><span class=lnt>243
+</span><span class=lnt>244
+</span><span class=lnt>245
+</span><span class=lnt>246
+</span><span class=lnt>247
+</span><span class=lnt>248
+</span><span class=lnt>249
+</span><span class=lnt>250
+</span><span class=lnt>251
+</span><span class=lnt>252
+</span><span class=lnt>253
+</span><span class=lnt>254
+</span><span class=lnt>255
+</span><span class=lnt>256
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;errno.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;pthread.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/socket.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;arpa/inet.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/epoll.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;fcntl.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;time.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=cp>#</span><span class=cp>define MAX_EVENTS 1024     </span><span class=c1>// 监听数量上限
+</span><span class=c1></span><span class=cp>#</span><span class=cp>define MAX_BUFSIZE 4096    </span><span class=c1>// buf大小
+</span><span class=c1></span><span class=cp>#</span><span class=cp>define SERV_PORT 8888      </span><span class=c1>// 监听端口
+</span><span class=c1></span>
+<span class=kt>void</span> <span class=nf>recvdata</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=kt>int</span> <span class=n>events</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span><span class=p>;</span>
+<span class=kt>void</span> <span class=nf>senddata</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=kt>int</span> <span class=n>events</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span><span class=p>;</span>
+
+<span class=c1>// 描述监听文件描述符相关信息  epoll_event.data.ptr 指向该结构体
+</span><span class=c1></span><span class=k>struct</span> <span class=n>myevent_s</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>fd</span><span class=p>;</span>                 <span class=c1>// 要监听的文件描述符
+</span><span class=c1></span>    <span class=kt>int</span> <span class=n>events</span><span class=p>;</span>             <span class=c1>// 对应的监听事件 EPOLLIN EPOLLOUT
+</span><span class=c1></span>    <span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>;</span>              <span class=c1>// 泛型参数
+</span><span class=c1></span>    <span class=kt>void</span> <span class=p>(</span><span class=o>*</span><span class=n>call_back</span><span class=p>)</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=kt>int</span> <span class=n>events</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span><span class=p>;</span>
+                            <span class=c1>// 回调函数 由fd类型和监听事件决定回调函数的类型
+</span><span class=c1></span>    <span class=kt>int</span> <span class=n>status</span><span class=p>;</span>             <span class=c1>// 是否正在被监听 1-在监听树上 0-不在监听树上
+</span><span class=c1></span>    <span class=kt>char</span> <span class=n>buf</span><span class=p>[</span><span class=n>MAX_BUFSIZE</span><span class=p>]</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>len</span><span class=p>;</span>
+    <span class=kt>long</span> <span class=n>last_active</span><span class=p>;</span>       <span class=c1>// 记录上次活动时间 即加入监听树的时间
+</span><span class=c1></span><span class=p>}</span><span class=p>;</span>
+
+<span class=kt>int</span> <span class=n>g_epfd</span><span class=p>;</span> <span class=c1>// 全局监听树
+</span><span class=c1></span><span class=k>struct</span> <span class=n>myevent_s</span> <span class=n>g_events</span><span class=p>[</span><span class=n>MAX_EVENTS</span> <span class=o>+</span> <span class=mi>1</span><span class=p>]</span><span class=p>;</span> <span class=c1>// 全局fd描述信息数组 保存需要监听的fd和相关信息
+</span><span class=c1></span>
+<span class=c1>// 初始化struct myevent_s成员变量
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>eventset</span><span class=p>(</span><span class=k>struct</span> <span class=n>myevent_s</span><span class=o>*</span> <span class=n>ev</span><span class=p>,</span> <span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=kt>void</span> <span class=p>(</span><span class=o>*</span><span class=n>call_back</span><span class=p>)</span><span class=p>(</span><span class=kt>int</span><span class=p>,</span> <span class=kt>int</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span><span class=p>)</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>fd</span> <span class=o>=</span> <span class=n>fd</span><span class=p>;</span>
+    <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>call_back</span> <span class=o>=</span> <span class=n>call_back</span><span class=p>;</span>
+    <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>events</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+    <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>arg</span> <span class=o>=</span> <span class=n>arg</span><span class=p>;</span>
+    <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>status</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>call_back</span> <span class=o>!</span><span class=o>=</span> <span class=n>senddata</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>memset</span><span class=p>(</span><span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>buf</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>buf</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>len</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>last_active</span> <span class=o>=</span> <span class=n>time</span><span class=p>(</span><span class=nb>NULL</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 初始值为当前时间
+</span><span class=c1></span>    <span class=k>return</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=c1>// 向监听树中添加一个文件描述符
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>eventadd</span><span class=p>(</span><span class=kt>int</span> <span class=n>epfd</span><span class=p>,</span> <span class=kt>int</span> <span class=n>events</span><span class=p>,</span> <span class=k>struct</span> <span class=n>myevent_s</span><span class=o>*</span> <span class=n>ev</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>struct</span> <span class=n>epoll_event</span> <span class=n>epev</span> <span class=o>=</span> <span class=p>{</span><span class=mi>0</span><span class=p>,</span> <span class=p>{</span><span class=mi>0</span><span class=p>}</span><span class=p>}</span><span class=p>;</span> <span class=c1>// 初始化一个epoll_event (events = 0, data = {0})
+</span><span class=c1></span>    <span class=c1>// 给这个fd添加信息
+</span><span class=c1></span>    <span class=n>epev</span><span class=p>.</span><span class=n>data</span><span class=p>.</span><span class=n>ptr</span> <span class=o>=</span> <span class=n>ev</span><span class=p>;</span>
+    <span class=n>epev</span><span class=p>.</span><span class=n>events</span> <span class=o>=</span> <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>events</span> <span class=o>=</span> <span class=n>events</span><span class=p>;</span>
+
+    <span class=kt>int</span> <span class=n>op</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>status</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>op</span> <span class=o>=</span> <span class=n>EPOLL_CTL_ADD</span><span class=p>;</span>
+        <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>status</span> <span class=o>=</span> <span class=mi>1</span><span class=p>;</span> <span class=c1>// 修改监听状态
+</span><span class=c1></span>    <span class=p>}</span>
+
+    <span class=k>if</span> <span class=p>(</span><span class=n>epoll_ctl</span><span class=p>(</span><span class=n>epfd</span><span class=p>,</span> <span class=n>op</span><span class=p>,</span> <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>fd</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>epev</span><span class=p>)</span> <span class=o>&lt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>event add failed [fd = %d], events[%d]</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>fd</span><span class=p>,</span> <span class=n>events</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>event add OK [fd = %d], op = %d, events[%0X]</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>fd</span><span class=p>,</span> <span class=n>op</span><span class=p>,</span> <span class=n>events</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=c1>// 从监听树中删除一个文件描述符
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>eventdel</span><span class=p>(</span><span class=kt>int</span> <span class=n>epfd</span><span class=p>,</span> <span class=k>struct</span> <span class=n>myevent_s</span><span class=o>*</span> <span class=n>ev</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>struct</span> <span class=n>epoll_event</span> <span class=n>epv</span> <span class=o>=</span> <span class=p>{</span><span class=mi>0</span><span class=p>,</span> <span class=p>{</span><span class=mi>0</span><span class=p>}</span><span class=p>}</span><span class=p>;</span>
+
+    <span class=k>if</span> <span class=p>(</span><span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>status</span> <span class=o>!</span><span class=o>=</span> <span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>return</span><span class=p>;</span>
+    <span class=p>}</span>
+    
+    <span class=c1>// epv.data.ptr = ev;
+</span><span class=c1></span>    <span class=n>epv</span><span class=p>.</span><span class=n>data</span><span class=p>.</span><span class=n>ptr</span> <span class=o>=</span> <span class=nb>NULL</span><span class=p>;</span>
+    <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>status</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=c1>// 修改状态
+</span><span class=c1></span>    <span class=n>epoll_ctl</span><span class=p>(</span><span class=n>epfd</span><span class=p>,</span> <span class=n>EPOLL_CTL_DEL</span><span class=p>,</span> <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>fd</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>epv</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 从监听树上将ev -&gt; fd 摘下
+</span><span class=c1></span>
+    <span class=k>return</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>void</span> <span class=nf>recvdata</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=kt>int</span> <span class=n>events</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>struct</span> <span class=n>myevent_s</span> <span class=o>*</span><span class=n>ev</span> <span class=o>=</span> <span class=p>(</span><span class=k>struct</span> <span class=n>myevent_s</span><span class=o>*</span><span class=p>)</span><span class=n>arg</span><span class=p>;</span> <span class=c1>// arg参数是fd的描述信息myevent_s
+</span><span class=c1></span>    
+    <span class=kt>int</span> <span class=n>len</span><span class=p>;</span>
+    <span class=n>len</span> <span class=o>=</span> <span class=n>recv</span><span class=p>(</span><span class=n>fd</span><span class=p>,</span> <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>buf</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>buf</span><span class=p>)</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 读文件描述符 数据存入myevent_s 成员buf中
+</span><span class=c1></span>
+    <span class=n>eventdel</span><span class=p>(</span><span class=n>g_epfd</span><span class=p>,</span> <span class=n>ev</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 该节点从监听树上摘下
+</span><span class=c1></span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>len</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>len</span> <span class=o>=</span> <span class=n>len</span><span class=p>;</span>
+        <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>buf</span><span class=p>[</span><span class=n>len</span><span class=p>]</span> <span class=o>=</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>\0</span><span class=sc>&#39;</span><span class=p>;</span> <span class=c1>// 添加字符串结束标记
+</span><span class=c1></span>        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>C[%d] : %s</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>fd</span><span class=p>,</span> <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>buf</span><span class=p>)</span><span class=p>;</span>
+
+        <span class=n>eventset</span><span class=p>(</span><span class=n>ev</span><span class=p>,</span> <span class=n>fd</span><span class=p>,</span> <span class=n>senddata</span><span class=p>,</span> <span class=n>ev</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 将该fd的回调函数设置为senddata
+</span><span class=c1></span>        <span class=n>eventadd</span><span class=p>(</span><span class=n>g_epfd</span><span class=p>,</span> <span class=n>EPOLLOUT</span><span class=p>,</span> <span class=n>ev</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 将fd加入监听树 监听写事件
+</span><span class=c1></span>    <span class=p>}</span> <span class=k>else</span> <span class=k>if</span> <span class=p>(</span><span class=n>len</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>close</span><span class=p>(</span><span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>fd</span><span class=p>)</span><span class=p>;</span>
+        <span class=c1>// ev - g_events 地址相减得到偏移元素位置
+</span><span class=c1></span>        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>[fd=%d] pos[%ld], closed</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>fd</span><span class=p>,</span> <span class=n>ev</span> <span class=o>-</span> <span class=n>g_events</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+        <span class=n>close</span><span class=p>(</span><span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>fd</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>recv[fd=%d] error[%d]:%s</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>fd</span><span class=p>,</span> <span class=n>errno</span><span class=p>,</span> <span class=n>strerror</span><span class=p>(</span><span class=n>errno</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>void</span> <span class=nf>senddata</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=kt>int</span> <span class=n>events</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>struct</span> <span class=n>myevent_s</span><span class=o>*</span> <span class=n>ev</span> <span class=o>=</span> <span class=p>(</span><span class=k>struct</span> <span class=n>myevent_s</span><span class=o>*</span><span class=p>)</span><span class=n>arg</span><span class=p>;</span>
+    
+    <span class=kt>int</span> <span class=n>len</span><span class=p>;</span>
+    <span class=n>len</span> <span class=o>=</span> <span class=n>send</span><span class=p>(</span><span class=n>fd</span><span class=p>,</span> <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>buf</span><span class=p>,</span> <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>len</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 直接将数据写回给客户端 未作处理 
+</span><span class=c1></span>
+    <span class=n>eventdel</span><span class=p>(</span><span class=n>g_epfd</span><span class=p>,</span> <span class=n>ev</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 从监听树中摘下fd
+</span><span class=c1></span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>len</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>send[fd = %d], [%d]%s</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>fd</span><span class=p>,</span> <span class=n>len</span><span class=p>,</span> <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>buf</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>eventset</span><span class=p>(</span><span class=n>ev</span><span class=p>,</span> <span class=n>fd</span><span class=p>,</span> <span class=n>recvdata</span><span class=p>,</span> <span class=n>ev</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 将该fd的回调函数改为 recvdata
+</span><span class=c1></span>        <span class=n>eventadd</span><span class=p>(</span><span class=n>g_epfd</span><span class=p>,</span> <span class=n>EPOLLIN</span><span class=p>,</span> <span class=n>ev</span><span class=p>)</span><span class=p>;</span>  <span class=c1>// 重新将其添加到监听树上 改为监听读事件
+</span><span class=c1></span>    <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+        <span class=n>close</span><span class=p>(</span><span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>fd</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 关闭连接
+</span><span class=c1></span>        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>send[fd = %d] error %s</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>fd</span><span class=p>,</span> <span class=n>strerror</span><span class=p>(</span><span class=n>errno</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=c1>// listen_fd的回调函数 与客户端建立连接
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>acceptconn</span><span class=p>(</span><span class=kt>int</span> <span class=n>lfd</span><span class=p>,</span> <span class=kt>int</span> <span class=n>events</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>struct</span> <span class=n>sockaddr_in</span> <span class=n>cin</span><span class=p>;</span>
+    <span class=n>socklen_t</span> <span class=n>len</span> <span class=o>=</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>cin</span><span class=p>)</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>cfd</span><span class=p>,</span> <span class=n>i</span><span class=p>;</span>
+
+    <span class=k>if</span> <span class=p>(</span><span class=p>(</span><span class=n>cfd</span> <span class=o>=</span> <span class=n>accept</span><span class=p>(</span><span class=n>lfd</span><span class=p>,</span> <span class=p>(</span><span class=k>struct</span> <span class=n>sockaddr</span><span class=o>*</span><span class=p>)</span><span class=o>&amp;</span><span class=n>cin</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>len</span><span class=p>)</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>errno</span> <span class=o>!</span><span class=o>=</span> <span class=n>EAGAIN</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>errno</span> <span class=o>!</span><span class=o>=</span> <span class=n>EINTR</span><span class=p>)</span> <span class=p>{</span>
+
+        <span class=p>}</span> 
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>%s : accept, %s</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>__func__</span><span class=p>,</span> <span class=n>strerror</span><span class=p>(</span><span class=n>errno</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>return</span><span class=p>;</span>
+    <span class=p>}</span>
+
+    <span class=k>do</span> <span class=p>{</span>
+        <span class=k>for</span> <span class=p>(</span><span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>MAX_EVENTS</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// 从全局g_events中找一个空闲元素
+</span><span class=c1></span>            <span class=k>if</span> <span class=p>(</span><span class=n>g_events</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>.</span><span class=n>status</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+                <span class=k>break</span><span class=p>;</span> <span class=c1>// 跳出for
+</span><span class=c1></span>            <span class=p>}</span>
+        <span class=p>}</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>i</span> <span class=o>=</span><span class=o>=</span> <span class=n>MAX_EVENTS</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>%s : max connect limit[%d]</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>__func__</span><span class=p>,</span> <span class=n>MAX_EVENTS</span><span class=p>)</span><span class=p>;</span>
+            <span class=k>break</span><span class=p>;</span> <span class=c1>// 跳出do_while
+</span><span class=c1></span>        <span class=p>}</span>
+
+        <span class=kt>int</span> <span class=n>flag</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+        <span class=k>if</span> <span class=p>(</span><span class=p>(</span><span class=n>flag</span> <span class=o>=</span> <span class=n>fcntl</span><span class=p>(</span><span class=n>cfd</span><span class=p>,</span> <span class=n>F_SETFL</span><span class=p>,</span> <span class=n>O_NONBLOCK</span><span class=p>)</span><span class=p>)</span> <span class=o>&lt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// cfd 设置为nonblocking
+</span><span class=c1></span>            <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>%s : fcntl nonblcoking failed, %s</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>__func__</span><span class=p>,</span> <span class=n>strerror</span><span class=p>(</span><span class=n>errno</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+            <span class=k>break</span><span class=p>;</span>
+        <span class=p>}</span>
+
+        <span class=c1>// 给cfd设置一个myevent_s结构体 回调函数设置为recvdata
+</span><span class=c1></span>        <span class=n>eventset</span><span class=p>(</span><span class=o>&amp;</span><span class=n>g_events</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>,</span> <span class=n>cfd</span><span class=p>,</span> <span class=n>recvdata</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>g_events</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>eventadd</span><span class=p>(</span><span class=n>g_epfd</span><span class=p>,</span> <span class=n>EPOLLIN</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>g_events</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>)</span><span class=p>;</span> <span class=c1>// cfd添加到监听树中 监听读事件
+</span><span class=c1></span>    <span class=p>}</span> <span class=k>while</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>new connect [%s:%d][time:%ld], pos[%d]</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span>
+        <span class=n>inet_ntoa</span><span class=p>(</span><span class=n>cin</span><span class=p>.</span><span class=n>sin_addr</span><span class=p>)</span><span class=p>,</span> <span class=n>ntohs</span><span class=p>(</span><span class=n>cin</span><span class=p>.</span><span class=n>sin_port</span><span class=p>)</span><span class=p>,</span> <span class=n>g_events</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>.</span><span class=n>last_active</span><span class=p>,</span> <span class=n>i</span>
+    <span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=c1>// 初始化listen_fd
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>initlistensocket</span><span class=p>(</span><span class=kt>int</span> <span class=n>epfd</span><span class=p>,</span> <span class=kt>short</span> <span class=n>port</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>struct</span> <span class=n>sockaddr_in</span> <span class=n>sin</span><span class=p>;</span>
+
+    <span class=kt>int</span> <span class=n>lfd</span> <span class=o>=</span> <span class=n>socket</span><span class=p>(</span><span class=n>AF_INET</span><span class=p>,</span> <span class=n>SOCK_STREAM</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>fcntl</span><span class=p>(</span><span class=n>lfd</span><span class=p>,</span> <span class=n>F_SETFL</span><span class=p>,</span> <span class=n>O_NONBLOCK</span><span class=p>)</span><span class=p>;</span> <span class=c1>// listen_fd 设为非阻塞
+</span><span class=c1></span>
+    <span class=n>memset</span><span class=p>(</span><span class=o>&amp;</span><span class=n>sin</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>sin</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>sin</span><span class=p>.</span><span class=n>sin_family</span> <span class=o>=</span> <span class=n>AF_INET</span><span class=p>;</span>
+    <span class=n>sin</span><span class=p>.</span><span class=n>sin_addr</span><span class=p>.</span><span class=n>s_addr</span> <span class=o>=</span> <span class=n>htonl</span><span class=p>(</span><span class=n>INADDR_ANY</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>sin</span><span class=p>.</span><span class=n>sin_port</span> <span class=o>=</span> <span class=n>htons</span><span class=p>(</span><span class=n>port</span><span class=p>)</span><span class=p>;</span>
+
+    <span class=n>bind</span><span class=p>(</span><span class=n>lfd</span><span class=p>,</span> <span class=p>(</span><span class=k>struct</span> <span class=n>sockaddr</span><span class=o>*</span><span class=p>)</span><span class=o>&amp;</span><span class=n>sin</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>sin</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>listen</span><span class=p>(</span><span class=n>lfd</span><span class=p>,</span> <span class=mi>20</span><span class=p>)</span><span class=p>;</span>
+
+    <span class=c1>// void eventset(struct myevent_s* ev, int fd, void (*call_back)(int, int, void*), void* arg);
+</span><span class=c1></span>    <span class=n>eventset</span><span class=p>(</span><span class=o>&amp;</span><span class=n>g_events</span><span class=p>[</span><span class=n>MAX_EVENTS</span><span class=p>]</span><span class=p>,</span> <span class=n>lfd</span><span class=p>,</span> <span class=n>acceptconn</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>g_events</span><span class=p>[</span><span class=n>MAX_EVENTS</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// void eventadd(int epfd, int events, struct myevent_s* ev);
+</span><span class=c1></span>    <span class=n>eventadd</span><span class=p>(</span><span class=n>epfd</span><span class=p>,</span> <span class=n>EPOLLIN</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>g_events</span><span class=p>[</span><span class=n>MAX_EVENTS</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+
+    <span class=k>return</span><span class=p>;</span>
+<span class=p>}</span>
+
+
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=kt>int</span> <span class=n>argc</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span><span class=o>*</span> <span class=n>argv</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>unsigned</span> <span class=kt>short</span> <span class=n>port</span> <span class=o>=</span> <span class=n>SERV_PORT</span><span class=p>;</span>
+    
+    <span class=n>g_epfd</span> <span class=o>=</span> <span class=n>epoll_create</span><span class=p>(</span><span class=n>MAX_EVENTS</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 创建全局监听树
+</span><span class=c1></span>    <span class=k>if</span> <span class=p>(</span><span class=n>g_epfd</span> <span class=o>&lt;</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>create epfd in %s err %s</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>__func__</span><span class=p>,</span> <span class=n>strerror</span><span class=p>(</span><span class=n>errno</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+
+    <span class=n>initlistensocket</span><span class=p>(</span><span class=n>g_epfd</span><span class=p>,</span> <span class=n>port</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 初始化监听socket
+</span><span class=c1></span>
+    <span class=k>struct</span> <span class=n>epoll_event</span> <span class=n>events</span><span class=p>[</span><span class=n>MAX_EVENTS</span> <span class=o>+</span> <span class=mi>1</span><span class=p>]</span><span class=p>;</span>  <span class=c1>// 保存已满足就绪事件的文件描述符数组
+</span><span class=c1></span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>server running : port[%d]</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>port</span><span class=p>)</span><span class=p>;</span>
+
+    <span class=kt>int</span> <span class=n>checkpos</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+    <span class=k>while</span> <span class=p>(</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=c1>// 超时验证 每次测试100个连接，不测试listen_fd 当客户端60秒内没有和服务器通信 则关闭此客户端连接
+</span><span class=c1></span>        <span class=kt>long</span> <span class=n>now</span> <span class=o>=</span> <span class=n>time</span><span class=p>(</span><span class=nb>NULL</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 当前时间
+</span><span class=c1></span>        <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=mi>100</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>,</span> <span class=o>+</span><span class=o>+</span> <span class=n>checkpos</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// 每次循环检测100个 使用checkpos控制检测对象
+</span><span class=c1></span>            <span class=k>if</span> <span class=p>(</span><span class=n>checkpos</span> <span class=o>=</span><span class=o>=</span> <span class=n>MAX_EVENTS</span><span class=p>)</span> <span class=p>{</span>
+                <span class=n>checkpos</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+            <span class=p>}</span>
+            <span class=k>if</span> <span class=p>(</span><span class=n>g_events</span><span class=p>[</span><span class=n>checkpos</span><span class=p>]</span><span class=p>.</span><span class=n>status</span> <span class=o>!</span><span class=o>=</span> <span class=mi>1</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// 不在监听树上
+</span><span class=c1></span>                <span class=k>continue</span><span class=p>;</span>
+            <span class=p>}</span>
+
+            <span class=kt>long</span> <span class=n>duration</span> <span class=o>=</span> <span class=n>now</span> <span class=o>-</span> <span class=n>g_events</span><span class=p>[</span><span class=n>checkpos</span><span class=p>]</span><span class=p>.</span><span class=n>last_active</span><span class=p>;</span> <span class=c1>// 距离上次活跃过去的时间
+</span><span class=c1></span>
+            <span class=k>if</span> <span class=p>(</span><span class=n>duration</span> <span class=o>&gt;</span><span class=o>=</span> <span class=mi>60</span><span class=p>)</span> <span class=p>{</span>
+                <span class=n>close</span><span class=p>(</span><span class=n>g_events</span><span class=p>[</span><span class=n>checkpos</span><span class=p>]</span><span class=p>.</span><span class=n>fd</span><span class=p>)</span><span class=p>;</span>   <span class=c1>// 关闭与该客户端的连接
+</span><span class=c1></span>                <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>fd[%d] timeout</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>g_events</span><span class=p>[</span><span class=n>checkpos</span><span class=p>]</span><span class=p>.</span><span class=n>fd</span><span class=p>)</span><span class=p>;</span>
+                <span class=n>eventdel</span><span class=p>(</span><span class=n>g_epfd</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>g_events</span><span class=p>[</span><span class=n>checkpos</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>  <span class=c1>// 将客户端从监听树上摘下
+</span><span class=c1></span>            <span class=p>}</span>
+        <span class=p>}</span>
+        <span class=c1>//
+</span><span class=c1></span> 
+        <span class=c1>// 监听树将就绪的事件的文件描述符添加至events数组中返回 1s内没有事件就绪 返回0
+</span><span class=c1></span>        <span class=kt>int</span> <span class=n>nfd</span> <span class=o>=</span> <span class=n>epoll_wait</span><span class=p>(</span><span class=n>g_epfd</span><span class=p>,</span> <span class=n>events</span><span class=p>,</span> <span class=n>MAX_EVENTS</span> <span class=o>+</span> <span class=mi>1</span><span class=p>,</span> <span class=mi>1000</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>nfd</span> <span class=o>&lt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>epoll_wait error, exit</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+            <span class=k>break</span><span class=p>;</span>
+        <span class=p>}</span>
+
+        <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>nfd</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+            <span class=c1>// 使用自定义的struct myevent_s类型指针 接收联合体data的void* ptr成员
+</span><span class=c1></span>            <span class=k>struct</span> <span class=n>myevent_s</span><span class=o>*</span> <span class=n>ev</span> <span class=o>=</span> <span class=p>(</span><span class=k>struct</span> <span class=n>myevent_s</span><span class=o>*</span><span class=p>)</span><span class=n>events</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>.</span><span class=n>data</span><span class=p>.</span><span class=n>ptr</span><span class=p>;</span>
+
+            <span class=k>if</span> <span class=p>(</span><span class=p>(</span><span class=n>events</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>.</span><span class=n>events</span> <span class=o>&amp;</span> <span class=n>EPOLLIN</span><span class=p>)</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=p>(</span><span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>events</span> <span class=o>&amp;</span> <span class=n>EPOLLIN</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// 读事件就绪
+</span><span class=c1></span>                <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>call_back</span><span class=p>(</span><span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>fd</span><span class=p>,</span> <span class=n>events</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>.</span><span class=n>events</span><span class=p>,</span> <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>arg</span><span class=p>)</span><span class=p>;</span>
+            <span class=p>}</span>
+            <span class=k>if</span> <span class=p>(</span><span class=p>(</span><span class=n>events</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>.</span><span class=n>events</span> <span class=o>&amp;</span> <span class=n>EPOLLOUT</span><span class=p>)</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=p>(</span><span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>events</span> <span class=o>&amp;</span> <span class=n>EPOLLOUT</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// 写事件就绪
+</span><span class=c1></span>                <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>call_back</span><span class=p>(</span><span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>fd</span><span class=p>,</span> <span class=n>events</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>.</span><span class=n>events</span><span class=p>,</span> <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>arg</span><span class=p>)</span><span class=p>;</span>
+            <span class=p>}</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=重写上述代码></a><h3>重写上述代码</h3><p>上面的代码可能是从libevent中截取的部分，有些代码对实现这个简单逻辑没有意义，下面更简洁的代码重写一遍。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>  1
+</span><span class=lnt>  2
+</span><span class=lnt>  3
+</span><span class=lnt>  4
+</span><span class=lnt>  5
+</span><span class=lnt>  6
+</span><span class=lnt>  7
+</span><span class=lnt>  8
+</span><span class=lnt>  9
+</span><span class=lnt> 10
+</span><span class=lnt> 11
+</span><span class=lnt> 12
+</span><span class=lnt> 13
+</span><span class=lnt> 14
+</span><span class=lnt> 15
+</span><span class=lnt> 16
+</span><span class=lnt> 17
+</span><span class=lnt> 18
+</span><span class=lnt> 19
+</span><span class=lnt> 20
+</span><span class=lnt> 21
+</span><span class=lnt> 22
+</span><span class=lnt> 23
+</span><span class=lnt> 24
+</span><span class=lnt> 25
+</span><span class=lnt> 26
+</span><span class=lnt> 27
+</span><span class=lnt> 28
+</span><span class=lnt> 29
+</span><span class=lnt> 30
+</span><span class=lnt> 31
+</span><span class=lnt> 32
+</span><span class=lnt> 33
+</span><span class=lnt> 34
+</span><span class=lnt> 35
+</span><span class=lnt> 36
+</span><span class=lnt> 37
+</span><span class=lnt> 38
+</span><span class=lnt> 39
+</span><span class=lnt> 40
+</span><span class=lnt> 41
+</span><span class=lnt> 42
+</span><span class=lnt> 43
+</span><span class=lnt> 44
+</span><span class=lnt> 45
+</span><span class=lnt> 46
+</span><span class=lnt> 47
+</span><span class=lnt> 48
+</span><span class=lnt> 49
+</span><span class=lnt> 50
+</span><span class=lnt> 51
+</span><span class=lnt> 52
+</span><span class=lnt> 53
+</span><span class=lnt> 54
+</span><span class=lnt> 55
+</span><span class=lnt> 56
+</span><span class=lnt> 57
+</span><span class=lnt> 58
+</span><span class=lnt> 59
+</span><span class=lnt> 60
+</span><span class=lnt> 61
+</span><span class=lnt> 62
+</span><span class=lnt> 63
+</span><span class=lnt> 64
+</span><span class=lnt> 65
+</span><span class=lnt> 66
+</span><span class=lnt> 67
+</span><span class=lnt> 68
+</span><span class=lnt> 69
+</span><span class=lnt> 70
+</span><span class=lnt> 71
+</span><span class=lnt> 72
+</span><span class=lnt> 73
+</span><span class=lnt> 74
+</span><span class=lnt> 75
+</span><span class=lnt> 76
+</span><span class=lnt> 77
+</span><span class=lnt> 78
+</span><span class=lnt> 79
+</span><span class=lnt> 80
+</span><span class=lnt> 81
+</span><span class=lnt> 82
+</span><span class=lnt> 83
+</span><span class=lnt> 84
+</span><span class=lnt> 85
+</span><span class=lnt> 86
+</span><span class=lnt> 87
+</span><span class=lnt> 88
+</span><span class=lnt> 89
+</span><span class=lnt> 90
+</span><span class=lnt> 91
+</span><span class=lnt> 92
+</span><span class=lnt> 93
+</span><span class=lnt> 94
+</span><span class=lnt> 95
+</span><span class=lnt> 96
+</span><span class=lnt> 97
+</span><span class=lnt> 98
+</span><span class=lnt> 99
+</span><span class=lnt>100
+</span><span class=lnt>101
+</span><span class=lnt>102
+</span><span class=lnt>103
+</span><span class=lnt>104
+</span><span class=lnt>105
+</span><span class=lnt>106
+</span><span class=lnt>107
+</span><span class=lnt>108
+</span><span class=lnt>109
+</span><span class=lnt>110
+</span><span class=lnt>111
+</span><span class=lnt>112
+</span><span class=lnt>113
+</span><span class=lnt>114
+</span><span class=lnt>115
+</span><span class=lnt>116
+</span><span class=lnt>117
+</span><span class=lnt>118
+</span><span class=lnt>119
+</span><span class=lnt>120
+</span><span class=lnt>121
+</span><span class=lnt>122
+</span><span class=lnt>123
+</span><span class=lnt>124
+</span><span class=lnt>125
+</span><span class=lnt>126
+</span><span class=lnt>127
+</span><span class=lnt>128
+</span><span class=lnt>129
+</span><span class=lnt>130
+</span><span class=lnt>131
+</span><span class=lnt>132
+</span><span class=lnt>133
+</span><span class=lnt>134
+</span><span class=lnt>135
+</span><span class=lnt>136
+</span><span class=lnt>137
+</span><span class=lnt>138
+</span><span class=lnt>139
+</span><span class=lnt>140
+</span><span class=lnt>141
+</span><span class=lnt>142
+</span><span class=lnt>143
+</span><span class=lnt>144
+</span><span class=lnt>145
+</span><span class=lnt>146
+</span><span class=lnt>147
+</span><span class=lnt>148
+</span><span class=lnt>149
+</span><span class=lnt>150
+</span><span class=lnt>151
+</span><span class=lnt>152
+</span><span class=lnt>153
+</span><span class=lnt>154
+</span><span class=lnt>155
+</span><span class=lnt>156
+</span><span class=lnt>157
+</span><span class=lnt>158
+</span><span class=lnt>159
+</span><span class=lnt>160
+</span><span class=lnt>161
+</span><span class=lnt>162
+</span><span class=lnt>163
+</span><span class=lnt>164
+</span><span class=lnt>165
+</span><span class=lnt>166
+</span><span class=lnt>167
+</span><span class=lnt>168
+</span><span class=lnt>169
+</span><span class=lnt>170
+</span><span class=lnt>171
+</span><span class=lnt>172
+</span><span class=lnt>173
+</span><span class=lnt>174
+</span><span class=lnt>175
+</span><span class=lnt>176
+</span><span class=lnt>177
+</span><span class=lnt>178
+</span><span class=lnt>179
+</span><span class=lnt>180
+</span><span class=lnt>181
+</span><span class=lnt>182
+</span><span class=lnt>183
+</span><span class=lnt>184
+</span><span class=lnt>185
+</span><span class=lnt>186
+</span><span class=lnt>187
+</span><span class=lnt>188
+</span><span class=lnt>189
+</span><span class=lnt>190
+</span><span class=lnt>191
+</span><span class=lnt>192
+</span><span class=lnt>193
+</span><span class=lnt>194
+</span><span class=lnt>195
+</span><span class=lnt>196
+</span><span class=lnt>197
+</span><span class=lnt>198
+</span><span class=lnt>199
+</span><span class=lnt>200
+</span><span class=lnt>201
+</span><span class=lnt>202
+</span><span class=lnt>203
+</span><span class=lnt>204
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cm>/*
+</span><span class=cm>@Filename : my_reactor.c
+</span><span class=cm>@Description : epoll - Reactor server 不怎么重要的错误检查就不写了
+</span><span class=cm>@Datatime : 2022/06/15 16:55:08
+</span><span class=cm>@Author : xushun
+</span><span class=cm>*/</span>
+<span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;errno.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/socket.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;arpa/inet.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/epoll.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;fcntl.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;time.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=cp>#</span><span class=cp>define MAX_EVENTS 1000</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>define MAX_BUFSIZE 4096</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>define SERV_PORT 8888</span><span class=cp>
+</span><span class=cp></span>
+<span class=k>struct</span> <span class=n>myevent_s</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>fd</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>events</span><span class=p>;</span>
+    <span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>;</span>
+    <span class=kt>void</span> <span class=p>(</span><span class=o>*</span><span class=n>call_back</span><span class=p>)</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=kt>int</span> <span class=n>events</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>status</span><span class=p>;</span>
+    <span class=kt>char</span> <span class=n>buf</span><span class=p>[</span><span class=n>MAX_BUFSIZE</span><span class=p>]</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>buf_len</span><span class=p>;</span>
+    <span class=kt>long</span> <span class=n>last_active</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+
+<span class=kt>int</span> <span class=n>g_epfd</span><span class=p>;</span>
+<span class=k>struct</span> <span class=n>myevent_s</span> <span class=n>g_events</span><span class=p>[</span><span class=n>MAX_EVENTS</span> <span class=o>+</span> <span class=mi>1</span><span class=p>]</span><span class=p>;</span>
+
+<span class=kt>void</span> <span class=nf>myeventset</span><span class=p>(</span><span class=k>struct</span> <span class=n>myevent_s</span><span class=o>*</span> <span class=n>ev</span><span class=p>,</span> <span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=kt>void</span> <span class=p>(</span><span class=o>*</span><span class=n>call_back</span><span class=p>)</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=kt>int</span> <span class=n>events</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>,</span> <span class=kt>int</span> <span class=n>keep_buf</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>fd</span> <span class=o>=</span> <span class=n>fd</span><span class=p>;</span>
+    <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>call_back</span> <span class=o>=</span> <span class=n>call_back</span><span class=p>;</span>
+    <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>events</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+    <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>arg</span> <span class=o>=</span> <span class=n>arg</span><span class=p>;</span>
+    <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>status</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+    <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>last_active</span> <span class=o>=</span> <span class=n>time</span><span class=p>(</span><span class=nb>NULL</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>keep_buf</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>memset</span><span class=p>(</span><span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>buf</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>buf</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>buf_len</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>void</span> <span class=nf>eventadd</span><span class=p>(</span><span class=kt>int</span> <span class=n>epfd</span><span class=p>,</span> <span class=kt>int</span> <span class=n>events</span><span class=p>,</span> <span class=k>struct</span> <span class=n>myevent_s</span><span class=o>*</span> <span class=n>ev</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>struct</span> <span class=n>epoll_event</span> <span class=n>epev</span><span class=p>;</span>
+    <span class=n>epev</span><span class=p>.</span><span class=n>data</span><span class=p>.</span><span class=n>ptr</span> <span class=o>=</span> <span class=n>ev</span><span class=p>;</span>
+    <span class=n>epev</span><span class=p>.</span><span class=n>events</span> <span class=o>=</span> <span class=n>events</span><span class=p>;</span>
+    <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>events</span> <span class=o>=</span> <span class=n>events</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>op</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>status</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>status</span> <span class=o>=</span> <span class=mi>1</span><span class=p>;</span>
+        <span class=n>op</span> <span class=o>=</span> <span class=n>EPOLL_CTL_ADD</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>epoll_ctl</span><span class=p>(</span><span class=n>epfd</span><span class=p>,</span> <span class=n>op</span><span class=p>,</span> <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>fd</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>epev</span><span class=p>)</span> <span class=o>&lt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>event add failed  [fd=%d], [op=%d], [event=%d]</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>fd</span><span class=p>,</span> <span class=n>op</span><span class=p>,</span> <span class=n>events</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>event add success [fd=%d], [op=%d], [event=%d]</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>fd</span><span class=p>,</span> <span class=n>op</span><span class=p>,</span> <span class=n>events</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>void</span> <span class=nf>eventdel</span><span class=p>(</span><span class=kt>int</span> <span class=n>epfd</span><span class=p>,</span> <span class=k>struct</span> <span class=n>myevent_s</span><span class=o>*</span> <span class=n>ev</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>op</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>status</span> <span class=o>=</span><span class=o>=</span> <span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>status</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+        <span class=n>op</span> <span class=o>=</span> <span class=n>EPOLL_CTL_DEL</span><span class=p>;</span>    
+    <span class=p>}</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>epoll_ctl</span><span class=p>(</span><span class=n>epfd</span><span class=p>,</span> <span class=n>op</span><span class=p>,</span> <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>fd</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>)</span> <span class=o>&lt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>event del failed  [fd=%d], [op=%d]</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>fd</span><span class=p>,</span> <span class=n>op</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>event del success [fd=%d], [op=%d]</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>fd</span><span class=p>,</span> <span class=n>op</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>void</span> <span class=nf>senddata</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=kt>int</span> <span class=n>events</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span><span class=p>;</span>
+<span class=kt>void</span> <span class=nf>recvdata</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=kt>int</span> <span class=n>events</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>struct</span> <span class=n>myevent_s</span><span class=o>*</span> <span class=n>ev</span> <span class=o>=</span> <span class=p>(</span><span class=k>struct</span> <span class=n>myevent_s</span><span class=o>*</span><span class=p>)</span><span class=n>arg</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>recv_bytes</span> <span class=o>=</span> <span class=n>recv</span><span class=p>(</span><span class=n>fd</span><span class=p>,</span> <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>buf</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>buf</span><span class=p>)</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>eventdel</span><span class=p>(</span><span class=n>g_epfd</span><span class=p>,</span> <span class=n>ev</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>recv_bytes</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>buf_len</span> <span class=o>=</span> <span class=n>recv_bytes</span><span class=p>;</span>
+        <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>buf</span><span class=p>[</span><span class=n>recv_bytes</span><span class=p>]</span> <span class=o>=</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>\0</span><span class=sc>&#39;</span><span class=p>;</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>recv[fd=%d], [%d]%s</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>fd</span><span class=p>,</span> <span class=n>recv_bytes</span><span class=p>,</span> <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>buf</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>myeventset</span><span class=p>(</span><span class=n>ev</span><span class=p>,</span> <span class=n>fd</span><span class=p>,</span> <span class=n>senddata</span><span class=p>,</span> <span class=n>ev</span><span class=p>,</span> <span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>eventadd</span><span class=p>(</span><span class=n>g_epfd</span><span class=p>,</span> <span class=n>EPOLLOUT</span><span class=p>,</span> <span class=n>ev</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span> <span class=k>else</span> <span class=k>if</span> <span class=p>(</span><span class=n>recv_bytes</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>[fd=%d], [pos=%d] closed</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>fd</span><span class=p>,</span> <span class=p>(</span><span class=kt>int</span><span class=p>)</span><span class=p>(</span><span class=n>ev</span> <span class=o>-</span> <span class=n>g_events</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>close</span><span class=p>(</span><span class=n>fd</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>recv[fd=%d] error %s</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>fd</span><span class=p>,</span> <span class=n>strerror</span><span class=p>(</span><span class=n>errno</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>void</span> <span class=nf>senddata</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=kt>int</span> <span class=n>events</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>struct</span> <span class=n>myevent_s</span><span class=o>*</span> <span class=n>ev</span> <span class=o>=</span> <span class=p>(</span><span class=k>struct</span> <span class=n>myevent_s</span><span class=o>*</span><span class=p>)</span><span class=n>arg</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>send_bytes</span> <span class=o>=</span> <span class=n>send</span><span class=p>(</span><span class=n>fd</span><span class=p>,</span> <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>buf</span><span class=p>,</span> <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>buf_len</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>eventdel</span><span class=p>(</span><span class=n>g_epfd</span><span class=p>,</span> <span class=n>ev</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>send_bytes</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>send[fd=%d], [%d]%s</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>fd</span><span class=p>,</span> <span class=n>send_bytes</span><span class=p>,</span> <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>buf</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>myeventset</span><span class=p>(</span><span class=n>ev</span><span class=p>,</span> <span class=n>fd</span><span class=p>,</span> <span class=n>recvdata</span><span class=p>,</span> <span class=n>ev</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>eventadd</span><span class=p>(</span><span class=n>g_epfd</span><span class=p>,</span> <span class=n>EPOLLIN</span><span class=p>,</span> <span class=n>ev</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>send[fd=%d] error %s</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>fd</span><span class=p>,</span> <span class=n>strerror</span><span class=p>(</span><span class=n>errno</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>close</span><span class=p>(</span><span class=n>fd</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=p>}</span>
+
+<span class=kt>void</span> <span class=nf>acceptconn</span><span class=p>(</span><span class=kt>int</span> <span class=n>listen_fd</span><span class=p>,</span> <span class=kt>int</span> <span class=n>events</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>struct</span> <span class=n>sockaddr_in</span> <span class=n>client_addr</span><span class=p>;</span>
+    <span class=n>socklen_t</span> <span class=n>client_addr_len</span> <span class=o>=</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>client_addr_len</span><span class=p>)</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>client_fd</span> <span class=o>=</span> <span class=n>accept</span><span class=p>(</span><span class=n>listen_fd</span><span class=p>,</span> <span class=p>(</span><span class=k>struct</span> <span class=n>sockaddr</span><span class=o>*</span><span class=p>)</span><span class=o>&amp;</span><span class=n>client_addr</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>client_addr_len</span><span class=p>)</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>i</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span><span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>MAX_EVENTS</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>g_events</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>.</span><span class=n>status</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+            <span class=k>break</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>i</span> <span class=o>=</span><span class=o>=</span> <span class=n>MAX_EVENTS</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>cannot accept more clients [fd=%d]</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>client_fd</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>return</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=kt>int</span> <span class=n>flag</span> <span class=o>=</span> <span class=n>fcntl</span><span class=p>(</span><span class=n>client_fd</span><span class=p>,</span> <span class=n>F_GETFL</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>flag</span> <span class=o>|</span><span class=o>=</span> <span class=n>O_NONBLOCK</span><span class=p>;</span>
+    <span class=n>fcntl</span><span class=p>(</span><span class=n>client_fd</span><span class=p>,</span> <span class=n>F_SETFL</span><span class=p>,</span> <span class=n>flag</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>myeventset</span><span class=p>(</span><span class=o>&amp;</span><span class=n>g_events</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>,</span> <span class=n>client_fd</span><span class=p>,</span> <span class=n>recvdata</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>g_events</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>eventadd</span><span class=p>(</span><span class=n>g_epfd</span><span class=p>,</span> <span class=n>EPOLLIN</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>g_events</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>new connect [%s:%d], [time=%ld], [pos=%d]</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span>
+        <span class=n>inet_ntoa</span><span class=p>(</span><span class=n>client_addr</span><span class=p>.</span><span class=n>sin_addr</span><span class=p>)</span><span class=p>,</span> <span class=n>ntohs</span><span class=p>(</span><span class=n>client_addr</span><span class=p>.</span><span class=n>sin_port</span><span class=p>)</span><span class=p>,</span> <span class=n>g_events</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>.</span><span class=n>last_active</span><span class=p>,</span> <span class=n>i</span>
+    <span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>void</span> <span class=nf>initlistensocket</span><span class=p>(</span><span class=kt>int</span> <span class=n>epfd</span><span class=p>,</span> <span class=kt>unsigned</span> <span class=kt>short</span> <span class=n>nport</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>listen_fd</span> <span class=o>=</span> <span class=n>socket</span><span class=p>(</span><span class=n>AF_INET</span><span class=p>,</span> <span class=n>SOCK_STREAM</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>opt</span> <span class=o>=</span> <span class=mi>1</span><span class=p>;</span>
+    <span class=n>setsockopt</span><span class=p>(</span><span class=n>listen_fd</span><span class=p>,</span> <span class=n>SOL_SOCKET</span><span class=p>,</span> <span class=n>SO_REUSEADDR</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>opt</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>opt</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>struct</span> <span class=n>sockaddr_in</span> <span class=n>serv_addr</span><span class=p>;</span>
+    <span class=n>memset</span><span class=p>(</span><span class=o>&amp;</span><span class=n>serv_addr</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>serv_addr</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>serv_addr</span><span class=p>.</span><span class=n>sin_family</span> <span class=o>=</span> <span class=n>AF_INET</span><span class=p>;</span>
+    <span class=n>serv_addr</span><span class=p>.</span><span class=n>sin_port</span> <span class=o>=</span> <span class=n>nport</span><span class=p>;</span>
+    <span class=n>serv_addr</span><span class=p>.</span><span class=n>sin_addr</span><span class=p>.</span><span class=n>s_addr</span> <span class=o>=</span> <span class=n>htonl</span><span class=p>(</span><span class=n>INADDR_ANY</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>bind</span><span class=p>(</span><span class=n>listen_fd</span><span class=p>,</span> <span class=p>(</span><span class=k>struct</span> <span class=n>sockaddr</span><span class=o>*</span><span class=p>)</span><span class=o>&amp;</span><span class=n>serv_addr</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>serv_addr</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>listen</span><span class=p>(</span><span class=n>listen_fd</span><span class=p>,</span> <span class=mi>20</span><span class=p>)</span><span class=p>;</span>
+
+    <span class=n>myeventset</span><span class=p>(</span><span class=o>&amp;</span><span class=n>g_events</span><span class=p>[</span><span class=n>MAX_EVENTS</span><span class=p>]</span><span class=p>,</span> <span class=n>listen_fd</span><span class=p>,</span> <span class=n>acceptconn</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>g_events</span><span class=p>[</span><span class=n>MAX_EVENTS</span><span class=p>]</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>eventadd</span><span class=p>(</span><span class=n>epfd</span><span class=p>,</span> <span class=n>EPOLLIN</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>g_events</span><span class=p>[</span><span class=n>MAX_EVENTS</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span><span class=p>;</span>
+<span class=p>}</span>
+
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=kt>int</span> <span class=n>argc</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span><span class=o>*</span> <span class=n>argv</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>unsigned</span> <span class=kt>short</span> <span class=n>nport</span> <span class=o>=</span> <span class=n>htons</span><span class=p>(</span><span class=n>SERV_PORT</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>argc</span> <span class=o>=</span><span class=o>=</span> <span class=mi>2</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>nport</span> <span class=o>=</span> <span class=n>htons</span><span class=p>(</span><span class=n>atoi</span><span class=p>(</span><span class=n>argv</span><span class=p>[</span><span class=mi>1</span><span class=p>]</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>g_epfd</span> <span class=o>=</span> <span class=n>epoll_create</span><span class=p>(</span><span class=n>MAX_EVENTS</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>initlistensocket</span><span class=p>(</span><span class=n>g_epfd</span><span class=p>,</span> <span class=n>nport</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>struct</span> <span class=n>epoll_event</span> <span class=n>events</span><span class=p>[</span><span class=n>MAX_EVENTS</span> <span class=o>+</span> <span class=mi>1</span><span class=p>]</span><span class=p>;</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>server running : [port=%d]</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>ntohs</span><span class=p>(</span><span class=n>nport</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+
+    <span class=kt>int</span> <span class=n>checkpos</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+    <span class=k>while</span> <span class=p>(</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=kt>long</span> <span class=n>now</span> <span class=o>=</span> <span class=n>time</span><span class=p>(</span><span class=nb>NULL</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=mi>100</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>,</span> <span class=o>+</span><span class=o>+</span> <span class=n>checkpos</span><span class=p>)</span> <span class=p>{</span>
+            <span class=k>if</span> <span class=p>(</span><span class=n>checkpos</span> <span class=o>=</span><span class=o>=</span> <span class=n>MAX_EVENTS</span><span class=p>)</span> <span class=p>{</span>
+                <span class=n>checkpos</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+            <span class=p>}</span>
+            <span class=k>if</span> <span class=p>(</span><span class=n>g_events</span><span class=p>[</span><span class=n>checkpos</span><span class=p>]</span><span class=p>.</span><span class=n>status</span> <span class=o>!</span><span class=o>=</span> <span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+                <span class=k>continue</span><span class=p>;</span>
+            <span class=p>}</span>
+            <span class=kt>long</span> <span class=n>duration</span> <span class=o>=</span> <span class=n>now</span> <span class=o>-</span> <span class=n>g_events</span><span class=p>[</span><span class=n>checkpos</span><span class=p>]</span><span class=p>.</span><span class=n>last_active</span><span class=p>;</span>
+            <span class=k>if</span> <span class=p>(</span><span class=n>duration</span> <span class=o>&gt;</span><span class=o>=</span> <span class=mi>60</span><span class=p>)</span> <span class=p>{</span>
+                <span class=n>eventdel</span><span class=p>(</span><span class=n>g_epfd</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>g_events</span><span class=p>[</span><span class=n>checkpos</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+                <span class=n>close</span><span class=p>(</span><span class=n>g_events</span><span class=p>[</span><span class=n>checkpos</span><span class=p>]</span><span class=p>.</span><span class=n>fd</span><span class=p>)</span><span class=p>;</span>
+                <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>[fd=%d] timeout</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>g_events</span><span class=p>[</span><span class=n>checkpos</span><span class=p>]</span><span class=p>.</span><span class=n>fd</span><span class=p>)</span><span class=p>;</span>
+            <span class=p>}</span>
+        <span class=p>}</span>
+
+        <span class=kt>int</span> <span class=n>nready</span> <span class=o>=</span> <span class=n>epoll_wait</span><span class=p>(</span><span class=n>g_epfd</span><span class=p>,</span> <span class=n>events</span><span class=p>,</span> <span class=n>MAX_EVENTS</span> <span class=o>+</span> <span class=mi>1</span><span class=p>,</span> <span class=mi>1000</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>nready</span> <span class=o>&lt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>epoll_wait error</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+            <span class=k>return</span> <span class=o>-</span><span class=mi>1</span><span class=p>;</span>
+        <span class=p>}</span>
+
+        <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>nready</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+            <span class=k>struct</span> <span class=n>myevent_s</span><span class=o>*</span> <span class=n>ev</span> <span class=o>=</span> <span class=p>(</span><span class=k>struct</span> <span class=n>myevent_s</span><span class=o>*</span><span class=p>)</span><span class=n>events</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>.</span><span class=n>data</span><span class=p>.</span><span class=n>ptr</span><span class=p>;</span>
+            <span class=k>if</span> <span class=p>(</span><span class=p>(</span><span class=n>events</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>.</span><span class=n>events</span> <span class=o>&amp;</span> <span class=n>EPOLLIN</span><span class=p>)</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=p>(</span><span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>events</span> <span class=o>&amp;</span> <span class=n>EPOLLIN</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+                <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>call_back</span><span class=p>(</span><span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>fd</span><span class=p>,</span> <span class=n>events</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>.</span><span class=n>events</span><span class=p>,</span> <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>arg</span><span class=p>)</span><span class=p>;</span>
+            <span class=p>}</span>
+            <span class=k>if</span> <span class=p>(</span><span class=p>(</span><span class=n>events</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>.</span><span class=n>events</span> <span class=o>&amp;</span> <span class=n>EPOLLOUT</span><span class=p>)</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=p>(</span><span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>events</span> <span class=o>&amp;</span> <span class=n>EPOLLOUT</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+                <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>call_back</span><span class=p>(</span><span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>fd</span><span class=p>,</span> <span class=n>events</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>.</span><span class=n>events</span><span class=p>,</span> <span class=n>ev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>arg</span><span class=p>)</span><span class=p>;</span>
+            <span class=p>}</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
 <span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
 <span>2022-06-14</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
 <span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2flinux%25E7%25BD%2591%25E7%25BB%259C%25E7%25BC%2596%25E7%25A8%258B05-epoll-reactor-%25E6%25A8%25A1%25E5%259E%258B%2f&text=%e3%80%90Linux%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b%e3%80%9105%20-%20epoll%20-%20Reactor%20%e6%a8%a1%e5%9e%8b&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2flinux%25E7%25BD%2591%25E7%25BB%259C%25E7%25BC%2596%25E7%25A8%258B05-epoll-reactor-%25E6%25A8%25A1%25E5%259E%258B%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2flinux%25E7%25BD%2591%25E7%25BB%259C%25E7%25BC%2596%25E7%25A8%258B05-epoll-reactor-%25E6%25A8%25A1%25E5%259E%258B%2f&title=%e3%80%90Linux%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b%e3%80%9105%20-%20epoll%20-%20Reactor%20%e6%a8%a1%e5%9e%8b" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/linux/><i class="fas fa-tag fa-fw"></i>&nbsp;Linux</a>&nbsp;
