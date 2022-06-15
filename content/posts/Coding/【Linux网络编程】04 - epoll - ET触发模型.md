@@ -233,9 +233,9 @@ int main(int argc, char** argv) {
     client_fd = Accept(listen_fd, (struct sockaddr*)&client_addr, &client_addr_len);
     printf("client connected\n");
     // ------------------------- // non-blocking
-    int flag = fcntl(listen_fd, F_GETFL);
+    int flag = fcntl(client_fd, F_GETFL);
     flag |= O_NONBLOCK;
-    fcntl(listen_fd, F_SETFL, flag);
+    fcntl(client_fd, F_SETFL, flag);
     // -------------------------
     event.data.fd = client_fd;
     event.events = EPOLLIN | EPOLLET;
