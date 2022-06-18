@@ -1,0 +1,705 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【Linux网络编程】06 - 线程池 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B05-epoll-reactor-%E6%A8%A1%E5%9E%8B/><link rel=next href=https://xushun1221.github.io/2022/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B07-udp-socket%E7%BC%96%E7%A8%8B/><link rel=canonical href=https://xushun1221.github.io/2022/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B06-%E7%BA%BF%E7%A8%8B%E6%B1%A0/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【Linux网络编程】06 - 线程池"><meta name=twitter:description content="线程池 为什么要使用线程池？ 回顾之前写的多线程服务器，主线程使用监听套接字循环accept客户端连接，一旦有新的客户端连接，就创建一个新的线程"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【Linux网络编程】06 - 线程池","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B06-%E7%BA%BF%E7%A8%8B%E6%B1%A0\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"Linux, network","wordcount":3169,"url":"https:\/\/xushun1221.github.io\/2022\/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B06-%E7%BA%BF%E7%A8%8B%E6%B1%A0\/","datePublished":"2022-06-17T00:00:00\x2b00:00","dateModified":"2022-06-17T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【Linux网络编程】06 - 线程池</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-06-17>2022-06-17</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 3169 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#线程池>线程池</a><ul><li><a href=#为什么要使用线程池>为什么要使用线程池？</a></li><li><a href=#线程池实现逻辑>线程池实现逻辑</a></li><li><a href=#实现>实现</a></li></ul></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#线程池>线程池</a><ul><li><a href=#为什么要使用线程池>为什么要使用线程池？</a></li><li><a href=#线程池实现逻辑>线程池实现逻辑</a></li><li><a href=#实现>实现</a></li></ul></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=线程池></a><h2>线程池</h2><a class=post-dummy-target id=为什么要使用线程池></a><h3>为什么要使用线程池？</h3><p>回顾之前写的多线程服务器，主线程使用监听套接字循环accept客户端连接，一旦有新的客户端连接，就创建一个新的线程去处理这个客户端发来的数据，当客户端关闭时，再销毁这个线程。使用这种方式提供服务，需要不断地创建销毁线程，且CPU需要再多个线程之间来回切换，系统资源消耗比较大。相比之下，多路IO转接服务器只需要一个线程（进程）就可以实现，开销较小，所以效率比较高。</p><p>由于创建和销毁线程的开销比较大，所以不在服务运行过程中一个个地创建销毁线程，而是在服务启动之前批量创建多个线程，并将它们统一管理，这就是<strong>线程池</strong>的概念。当server中有任务需要处理时，唤醒一个线程池中的线程对其进行处理，处理完成后不销毁线程，线程重新回到线程池中等待再次被唤醒。</p><p>之前写的多线程、多路IO转接等服务器主要实现的是，客户端如何和客户端建立连接接收请求，而线程池主要处理的是，服务器拿到客户请求后，该如何处理请求的部分。（可以将多路IO转接和线程池结合起来使用）</p><a class=post-dummy-target id=线程池实现逻辑></a><h3>线程池实现逻辑</h3><p><code>main</code></p><ol><li>创建线程池</li><li>向线程池中添加任务，借助回调函数处理</li><li>销毁线程池</li></ol><p><code>threadpool_create</code></p><ol><li>创建一个线程池结构体指针并分配内存</li><li>初始化线程池相关描述信息</li><li>为线程数组分配空间</li><li>为任务队列分配空间</li><li>初始化互斥锁和条件变量</li><li>启动最小数量的任务处理线程</li><li>启动线程池管理线程</li><li>如果某一步失败，回收所有分配的空间</li></ol><p><code>threadpool_destroy</code></p><ol><li>关闭线程池</li><li>销毁管理线程</li><li>通知所有空闲线程销毁</li><li>回收剩下的线程</li><li>销毁线程池结构体</li></ol><p><code>threadpool_adjust</code>(管理线程回调函数)</p><ol><li>每过一定时间，对线程池进行管理（循环）</li><li>对线程池结构体加锁并获取相关的线程池信息</li><li>判断是否需要创建更多的线程，如果需要添加一批新线程</li><li>判断是否需要销毁多余的空闲线程，如果需要销毁一批线程（向线程发送通知，让它们自行结束）</li></ol><p><code>threadpool_thread</code>(任务处理线程回调函数)</p><ol><li>循环等待任务</li><li>对线程池加锁</li><li>如果任务队列为空，阻塞等待唤醒，再次竞争加锁</li><li>如果被唤醒时，需要销毁的线程数量大于0，结束当前的线程</li><li>如果线程池关闭了，结束当前线程</li><li>正常执行任务的情况</li><li>从任务队列中取出一个任务</li><li>通知可以有新的任务加入</li><li>立即释放线程池</li><li>处理任务</li></ol><p><code>threadpool_add</code></p><ol><li>对线程池加锁</li><li>如果任务队列已满，阻塞等待通知</li><li>如果线程池已经关闭，通知所有空闲线程</li><li>正常添加任务</li><li>将任务添加到任务队列队尾</li><li>唤醒线程池中等待处理任务的线程</li></ol><a class=post-dummy-target id=实现></a><h3>实现</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>  1
+</span><span class=lnt>  2
+</span><span class=lnt>  3
+</span><span class=lnt>  4
+</span><span class=lnt>  5
+</span><span class=lnt>  6
+</span><span class=lnt>  7
+</span><span class=lnt>  8
+</span><span class=lnt>  9
+</span><span class=lnt> 10
+</span><span class=lnt> 11
+</span><span class=lnt> 12
+</span><span class=lnt> 13
+</span><span class=lnt> 14
+</span><span class=lnt> 15
+</span><span class=lnt> 16
+</span><span class=lnt> 17
+</span><span class=lnt> 18
+</span><span class=lnt> 19
+</span><span class=lnt> 20
+</span><span class=lnt> 21
+</span><span class=lnt> 22
+</span><span class=lnt> 23
+</span><span class=lnt> 24
+</span><span class=lnt> 25
+</span><span class=lnt> 26
+</span><span class=lnt> 27
+</span><span class=lnt> 28
+</span><span class=lnt> 29
+</span><span class=lnt> 30
+</span><span class=lnt> 31
+</span><span class=lnt> 32
+</span><span class=lnt> 33
+</span><span class=lnt> 34
+</span><span class=lnt> 35
+</span><span class=lnt> 36
+</span><span class=lnt> 37
+</span><span class=lnt> 38
+</span><span class=lnt> 39
+</span><span class=lnt> 40
+</span><span class=lnt> 41
+</span><span class=lnt> 42
+</span><span class=lnt> 43
+</span><span class=lnt> 44
+</span><span class=lnt> 45
+</span><span class=lnt> 46
+</span><span class=lnt> 47
+</span><span class=lnt> 48
+</span><span class=lnt> 49
+</span><span class=lnt> 50
+</span><span class=lnt> 51
+</span><span class=lnt> 52
+</span><span class=lnt> 53
+</span><span class=lnt> 54
+</span><span class=lnt> 55
+</span><span class=lnt> 56
+</span><span class=lnt> 57
+</span><span class=lnt> 58
+</span><span class=lnt> 59
+</span><span class=lnt> 60
+</span><span class=lnt> 61
+</span><span class=lnt> 62
+</span><span class=lnt> 63
+</span><span class=lnt> 64
+</span><span class=lnt> 65
+</span><span class=lnt> 66
+</span><span class=lnt> 67
+</span><span class=lnt> 68
+</span><span class=lnt> 69
+</span><span class=lnt> 70
+</span><span class=lnt> 71
+</span><span class=lnt> 72
+</span><span class=lnt> 73
+</span><span class=lnt> 74
+</span><span class=lnt> 75
+</span><span class=lnt> 76
+</span><span class=lnt> 77
+</span><span class=lnt> 78
+</span><span class=lnt> 79
+</span><span class=lnt> 80
+</span><span class=lnt> 81
+</span><span class=lnt> 82
+</span><span class=lnt> 83
+</span><span class=lnt> 84
+</span><span class=lnt> 85
+</span><span class=lnt> 86
+</span><span class=lnt> 87
+</span><span class=lnt> 88
+</span><span class=lnt> 89
+</span><span class=lnt> 90
+</span><span class=lnt> 91
+</span><span class=lnt> 92
+</span><span class=lnt> 93
+</span><span class=lnt> 94
+</span><span class=lnt> 95
+</span><span class=lnt> 96
+</span><span class=lnt> 97
+</span><span class=lnt> 98
+</span><span class=lnt> 99
+</span><span class=lnt>100
+</span><span class=lnt>101
+</span><span class=lnt>102
+</span><span class=lnt>103
+</span><span class=lnt>104
+</span><span class=lnt>105
+</span><span class=lnt>106
+</span><span class=lnt>107
+</span><span class=lnt>108
+</span><span class=lnt>109
+</span><span class=lnt>110
+</span><span class=lnt>111
+</span><span class=lnt>112
+</span><span class=lnt>113
+</span><span class=lnt>114
+</span><span class=lnt>115
+</span><span class=lnt>116
+</span><span class=lnt>117
+</span><span class=lnt>118
+</span><span class=lnt>119
+</span><span class=lnt>120
+</span><span class=lnt>121
+</span><span class=lnt>122
+</span><span class=lnt>123
+</span><span class=lnt>124
+</span><span class=lnt>125
+</span><span class=lnt>126
+</span><span class=lnt>127
+</span><span class=lnt>128
+</span><span class=lnt>129
+</span><span class=lnt>130
+</span><span class=lnt>131
+</span><span class=lnt>132
+</span><span class=lnt>133
+</span><span class=lnt>134
+</span><span class=lnt>135
+</span><span class=lnt>136
+</span><span class=lnt>137
+</span><span class=lnt>138
+</span><span class=lnt>139
+</span><span class=lnt>140
+</span><span class=lnt>141
+</span><span class=lnt>142
+</span><span class=lnt>143
+</span><span class=lnt>144
+</span><span class=lnt>145
+</span><span class=lnt>146
+</span><span class=lnt>147
+</span><span class=lnt>148
+</span><span class=lnt>149
+</span><span class=lnt>150
+</span><span class=lnt>151
+</span><span class=lnt>152
+</span><span class=lnt>153
+</span><span class=lnt>154
+</span><span class=lnt>155
+</span><span class=lnt>156
+</span><span class=lnt>157
+</span><span class=lnt>158
+</span><span class=lnt>159
+</span><span class=lnt>160
+</span><span class=lnt>161
+</span><span class=lnt>162
+</span><span class=lnt>163
+</span><span class=lnt>164
+</span><span class=lnt>165
+</span><span class=lnt>166
+</span><span class=lnt>167
+</span><span class=lnt>168
+</span><span class=lnt>169
+</span><span class=lnt>170
+</span><span class=lnt>171
+</span><span class=lnt>172
+</span><span class=lnt>173
+</span><span class=lnt>174
+</span><span class=lnt>175
+</span><span class=lnt>176
+</span><span class=lnt>177
+</span><span class=lnt>178
+</span><span class=lnt>179
+</span><span class=lnt>180
+</span><span class=lnt>181
+</span><span class=lnt>182
+</span><span class=lnt>183
+</span><span class=lnt>184
+</span><span class=lnt>185
+</span><span class=lnt>186
+</span><span class=lnt>187
+</span><span class=lnt>188
+</span><span class=lnt>189
+</span><span class=lnt>190
+</span><span class=lnt>191
+</span><span class=lnt>192
+</span><span class=lnt>193
+</span><span class=lnt>194
+</span><span class=lnt>195
+</span><span class=lnt>196
+</span><span class=lnt>197
+</span><span class=lnt>198
+</span><span class=lnt>199
+</span><span class=lnt>200
+</span><span class=lnt>201
+</span><span class=lnt>202
+</span><span class=lnt>203
+</span><span class=lnt>204
+</span><span class=lnt>205
+</span><span class=lnt>206
+</span><span class=lnt>207
+</span><span class=lnt>208
+</span><span class=lnt>209
+</span><span class=lnt>210
+</span><span class=lnt>211
+</span><span class=lnt>212
+</span><span class=lnt>213
+</span><span class=lnt>214
+</span><span class=lnt>215
+</span><span class=lnt>216
+</span><span class=lnt>217
+</span><span class=lnt>218
+</span><span class=lnt>219
+</span><span class=lnt>220
+</span><span class=lnt>221
+</span><span class=lnt>222
+</span><span class=lnt>223
+</span><span class=lnt>224
+</span><span class=lnt>225
+</span><span class=lnt>226
+</span><span class=lnt>227
+</span><span class=lnt>228
+</span><span class=lnt>229
+</span><span class=lnt>230
+</span><span class=lnt>231
+</span><span class=lnt>232
+</span><span class=lnt>233
+</span><span class=lnt>234
+</span><span class=lnt>235
+</span><span class=lnt>236
+</span><span class=lnt>237
+</span><span class=lnt>238
+</span><span class=lnt>239
+</span><span class=lnt>240
+</span><span class=lnt>241
+</span><span class=lnt>242
+</span><span class=lnt>243
+</span><span class=lnt>244
+</span><span class=lnt>245
+</span><span class=lnt>246
+</span><span class=lnt>247
+</span><span class=lnt>248
+</span><span class=lnt>249
+</span><span class=lnt>250
+</span><span class=lnt>251
+</span><span class=lnt>252
+</span><span class=lnt>253
+</span><span class=lnt>254
+</span><span class=lnt>255
+</span><span class=lnt>256
+</span><span class=lnt>257
+</span><span class=lnt>258
+</span><span class=lnt>259
+</span><span class=lnt>260
+</span><span class=lnt>261
+</span><span class=lnt>262
+</span><span class=lnt>263
+</span><span class=lnt>264
+</span><span class=lnt>265
+</span><span class=lnt>266
+</span><span class=lnt>267
+</span><span class=lnt>268
+</span><span class=lnt>269
+</span><span class=lnt>270
+</span><span class=lnt>271
+</span><span class=lnt>272
+</span><span class=lnt>273
+</span><span class=lnt>274
+</span><span class=lnt>275
+</span><span class=lnt>276
+</span><span class=lnt>277
+</span><span class=lnt>278
+</span><span class=lnt>279
+</span><span class=lnt>280
+</span><span class=lnt>281
+</span><span class=lnt>282
+</span><span class=lnt>283
+</span><span class=lnt>284
+</span><span class=lnt>285
+</span><span class=lnt>286
+</span><span class=lnt>287
+</span><span class=lnt>288
+</span><span class=lnt>289
+</span><span class=lnt>290
+</span><span class=lnt>291
+</span><span class=lnt>292
+</span><span class=lnt>293
+</span><span class=lnt>294
+</span><span class=lnt>295
+</span><span class=lnt>296
+</span><span class=lnt>297
+</span><span class=lnt>298
+</span><span class=lnt>299
+</span><span class=lnt>300
+</span><span class=lnt>301
+</span><span class=lnt>302
+</span><span class=lnt>303
+</span><span class=lnt>304
+</span><span class=lnt>305
+</span><span class=lnt>306
+</span><span class=lnt>307
+</span><span class=lnt>308
+</span><span class=lnt>309
+</span><span class=lnt>310
+</span><span class=lnt>311
+</span><span class=lnt>312
+</span><span class=lnt>313
+</span><span class=lnt>314
+</span><span class=lnt>315
+</span><span class=lnt>316
+</span><span class=lnt>317
+</span><span class=lnt>318
+</span><span class=lnt>319
+</span><span class=lnt>320
+</span><span class=lnt>321
+</span><span class=lnt>322
+</span><span class=lnt>323
+</span><span class=lnt>324
+</span><span class=lnt>325
+</span><span class=lnt>326
+</span><span class=lnt>327
+</span><span class=lnt>328
+</span><span class=lnt>329
+</span><span class=lnt>330
+</span><span class=lnt>331
+</span><span class=lnt>332
+</span><span class=lnt>333
+</span><span class=lnt>334
+</span><span class=lnt>335
+</span><span class=lnt>336
+</span><span class=lnt>337
+</span><span class=lnt>338
+</span><span class=lnt>339
+</span><span class=lnt>340
+</span><span class=lnt>341
+</span><span class=lnt>342
+</span><span class=lnt>343
+</span><span class=lnt>344
+</span><span class=lnt>345
+</span><span class=lnt>346
+</span><span class=lnt>347
+</span><span class=lnt>348
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cm>/*
+</span><span class=cm>@Filename : thread_pool.c
+</span><span class=cm>@Description : implementation of thread pool 
+</span><span class=cm>@Datatime : 2022/06/17 09:08:05
+</span><span class=cm>@Author : xushun
+</span><span class=cm>*/</span>
+<span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;errno.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;pthread.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;signal.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=cp>#</span><span class=cp>define DEFAULT_TIME 10         </span><span class=c1>// 管理线程每10秒检测一次
+</span><span class=c1></span><span class=cp>#</span><span class=cp>define MIN_WAIT_TASK_NUM 10    </span><span class=c1>// 如果 queue_size &gt;= MIN_WATI_TASK_NUM 添加新的线程到线程池
+</span><span class=c1></span><span class=cp>#</span><span class=cp>define DEFAULT_THREAD_VARY 10  </span><span class=c1>// 每次创建和销毁的线程的个数
+</span><span class=c1></span><span class=cp>#</span><span class=cp>define true 1</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>define false 0</span><span class=cp>
+</span><span class=cp></span>
+<span class=c1>// 线程池对应的任务
+</span><span class=c1></span><span class=k>typedef</span> <span class=k>struct</span> <span class=p>{</span>
+    <span class=kt>void</span><span class=o>*</span> <span class=p>(</span><span class=o>*</span><span class=n>function</span><span class=p>)</span><span class=p>(</span><span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span><span class=p>;</span>
+    <span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>;</span>
+<span class=p>}</span> <span class=n>threadpool_task_t</span><span class=p>;</span>
+
+<span class=c1>// 线程池
+</span><span class=c1></span><span class=k>typedef</span> <span class=k>struct</span> <span class=p>{</span>
+    <span class=n>pthread_mutex_t</span> <span class=n>lock</span><span class=p>;</span>           <span class=c1>// 锁住本结构体
+</span><span class=c1></span>    <span class=n>pthread_mutex_t</span> <span class=n>thread_counter</span><span class=p>;</span> <span class=c1>// 记录忙状态的线程个数 busy_thread_num
+</span><span class=c1></span>
+    <span class=n>pthread_cond_t</span> <span class=n>queue_not_full</span><span class=p>;</span>  <span class=c1>// 任务队列满 添加任务的线程阻塞
+</span><span class=c1></span>    <span class=n>pthread_cond_t</span> <span class=n>queue_not_empty</span><span class=p>;</span> <span class=c1>// 任务队列空 处理任务的线程阻塞
+</span><span class=c1></span>
+    <span class=n>pthread_t</span><span class=o>*</span> <span class=n>threads</span><span class=p>;</span>             <span class=c1>// 线程池数组 存放每个线程的tid
+</span><span class=c1></span>    <span class=n>pthread_t</span> <span class=n>adjust_thread</span><span class=p>;</span>        <span class=c1>// 管理线程的tid
+</span><span class=c1></span>    <span class=n>threadpool_task_t</span><span class=o>*</span> <span class=n>task_queue</span><span class=p>;</span>  <span class=c1>// 任务队列首地址 (循环队列)
+</span><span class=c1></span>
+    <span class=kt>int</span> <span class=n>min_thread_num</span><span class=p>;</span>       <span class=c1>// 线程池最小线程数
+</span><span class=c1></span>    <span class=kt>int</span> <span class=n>max_thread_num</span><span class=p>;</span>       <span class=c1>// 线程池最大线程数
+</span><span class=c1></span>    <span class=kt>int</span> <span class=n>live_thread_num</span><span class=p>;</span>      <span class=c1>// 当前存活的线程数
+</span><span class=c1></span>    <span class=kt>int</span> <span class=n>busy_thread_num</span><span class=p>;</span>      <span class=c1>// 当前忙的线程数
+</span><span class=c1></span>    <span class=kt>int</span> <span class=n>wait_exit_thread_num</span><span class=p>;</span> <span class=c1>// 要销毁的线程数
+</span><span class=c1></span>
+    <span class=kt>int</span> <span class=n>queue_front</span><span class=p>;</span>    <span class=c1>// 队头下标
+</span><span class=c1></span>    <span class=kt>int</span> <span class=n>queue_rear</span><span class=p>;</span>     <span class=c1>// 队尾下标
+</span><span class=c1></span>    <span class=kt>int</span> <span class=n>queue_size</span><span class=p>;</span>     <span class=c1>// 任务队列实际任务数
+</span><span class=c1></span>    <span class=kt>int</span> <span class=n>queue_max_size</span><span class=p>;</span> <span class=c1>// 任务队列最大任务数
+</span><span class=c1></span>
+    <span class=kt>int</span> <span class=n>shutdown</span><span class=p>;</span> <span class=c1>// 线程池使用状态
+</span><span class=c1></span><span class=p>}</span> <span class=n>threadpool_t</span><span class=p>;</span>
+
+
+<span class=kt>void</span><span class=o>*</span> <span class=nf>threadpool_thread</span><span class=p>(</span><span class=kt>void</span><span class=o>*</span> <span class=n>threadpool</span><span class=p>)</span><span class=p>;</span>
+<span class=kt>int</span> <span class=nf>threadpool_add</span><span class=p>(</span><span class=n>threadpool_t</span><span class=o>*</span> <span class=n>threadpool</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span><span class=p>(</span><span class=o>*</span><span class=n>function</span><span class=p>)</span><span class=p>(</span><span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span><span class=p>;</span>
+<span class=kt>void</span><span class=o>*</span> <span class=nf>process</span><span class=p>(</span><span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span><span class=p>;</span>
+<span class=n>threadpool_t</span><span class=o>*</span> <span class=nf>threadpool_create</span><span class=p>(</span><span class=kt>int</span> <span class=n>min_thread_num</span><span class=p>,</span> <span class=kt>int</span> <span class=n>max_thread_num</span><span class=p>,</span> <span class=kt>int</span> <span class=n>queue_max_size</span><span class=p>)</span><span class=p>;</span>
+<span class=kt>void</span><span class=o>*</span> <span class=nf>threadpool_adjust</span><span class=p>(</span><span class=kt>void</span><span class=o>*</span> <span class=n>threadpool</span><span class=p>)</span><span class=p>;</span>
+<span class=kt>int</span> <span class=nf>is_thread_alive</span><span class=p>(</span><span class=n>pthread_t</span> <span class=n>tid</span><span class=p>)</span><span class=p>;</span>
+<span class=kt>int</span> <span class=nf>threadpool_destroy</span><span class=p>(</span><span class=n>threadpool_t</span><span class=o>*</span> <span class=n>threadpool</span><span class=p>)</span><span class=p>;</span>
+<span class=kt>int</span> <span class=nf>threadpool_free</span><span class=p>(</span><span class=n>threadpool_t</span><span class=o>*</span> <span class=n>threadpool</span><span class=p>)</span><span class=p>;</span>
+
+
+
+<span class=kt>int</span> <span class=nf>threadpool_free</span><span class=p>(</span><span class=n>threadpool_t</span><span class=o>*</span> <span class=n>threadpool</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>threadpool_t</span><span class=o>*</span> <span class=n>pool</span> <span class=o>=</span> <span class=n>threadpool</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>pool</span> <span class=o>=</span><span class=o>=</span> <span class=nb>NULL</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>return</span> <span class=o>-</span><span class=mi>1</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>task_queue</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>free</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>task_queue</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>threads</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>free</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>threads</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>pthread_mutex_lock</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>lock</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>pthread_mutex_destroy</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>lock</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>pthread_mutex_lock</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>thread_counter</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>pthread_mutex_destroy</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>thread_counter</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>pthread_cond_destroy</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_not_empty</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>pthread_cond_destroy</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_not_full</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>free</span><span class=p>(</span><span class=n>pool</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>pool</span> <span class=o>=</span> <span class=nb>NULL</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>int</span> <span class=nf>threadpool_destroy</span><span class=p>(</span><span class=n>threadpool_t</span><span class=o>*</span> <span class=n>threadpool</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>threadpool_t</span><span class=o>*</span> <span class=n>pool</span> <span class=o>=</span> <span class=n>threadpool</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>pool</span> <span class=o>=</span><span class=o>=</span> <span class=nb>NULL</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>return</span> <span class=o>-</span><span class=mi>1</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>shutdown</span> <span class=o>=</span> <span class=nb>true</span><span class=p>;</span>
+    <span class=c1>// 先销毁管理线程
+</span><span class=c1></span>    <span class=n>pthread_join</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>adjust_thread</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 通知所有的空闲线程销毁
+</span><span class=c1></span>    <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>live_thread_num</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>pthread_cond_broadcast</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_not_empty</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=c1>// 回收剩下的线程
+</span><span class=c1></span>    <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>live_thread_num</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>pthread_join</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>threads</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>threadpool_free</span><span class=p>(</span><span class=n>pool</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>int</span> <span class=nf>is_thread_alive</span><span class=p>(</span><span class=n>pthread_t</span> <span class=n>tid</span><span class=p>)</span> <span class=p>{</span>
+    <span class=c1>// 发0号信号，测试线程是否存活
+</span><span class=c1></span>    <span class=kt>int</span> <span class=n>kill_rc</span> <span class=o>=</span> <span class=n>pthread_kill</span><span class=p>(</span><span class=n>tid</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>     
+    <span class=k>if</span> <span class=p>(</span><span class=n>kill_rc</span> <span class=o>=</span><span class=o>=</span> <span class=n>ESRCH</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>return</span> <span class=nb>false</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span> <span class=nb>true</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>void</span><span class=o>*</span> <span class=nf>threadpool_adjust</span><span class=p>(</span><span class=kt>void</span><span class=o>*</span> <span class=n>threadpool</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>threadpool_t</span><span class=o>*</span> <span class=n>pool</span> <span class=o>=</span> <span class=p>(</span><span class=n>threadpool_t</span><span class=o>*</span><span class=p>)</span> <span class=n>threadpool</span><span class=p>;</span>
+    <span class=k>while</span> <span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>shutdown</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=c1>// 定时对线程池进行管理
+</span><span class=c1></span>        <span class=n>sleep</span><span class=p>(</span><span class=n>DEFAULT_TIME</span><span class=p>)</span><span class=p>;</span>
+        <span class=c1>// 根据 queue_size live_thread_num busy_thread_num 确定是否需要创建或销毁线程
+</span><span class=c1></span>        <span class=n>pthread_mutex_lock</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>lock</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=kt>int</span> <span class=n>queue_size</span> <span class=o>=</span> <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_size</span><span class=p>;</span>
+        <span class=kt>int</span> <span class=n>live_thread_num</span> <span class=o>=</span> <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>live_thread_num</span><span class=p>;</span>
+        <span class=n>pthread_mutex_unlock</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>lock</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>pthread_mutex_lock</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>thread_counter</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=kt>int</span> <span class=n>busy_thread_num</span> <span class=o>=</span> <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>busy_thread_num</span><span class=p>;</span>
+        <span class=n>pthread_mutex_unlock</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>thread_counter</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=c1>// 如果需要 创建更多的新线程
+</span><span class=c1></span>        <span class=k>if</span> <span class=p>(</span><span class=n>queue_size</span> <span class=o>&gt;</span><span class=o>=</span> <span class=n>MIN_WAIT_TASK_NUM</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>live_thread_num</span> <span class=o>&lt;</span> <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>max_thread_num</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>pthread_mutex_lock</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>lock</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+            <span class=c1>// 遍历pool -&gt; threads 将线程添加到空的里面
+</span><span class=c1></span>            <span class=c1>// 一次增加DEFAULT_THREAD_VARY个线程
+</span><span class=c1></span>            <span class=kt>int</span> <span class=n>add</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+            <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>max_thread_num</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>add</span> <span class=o>&lt;</span> <span class=n>DEFAULT_THREAD_VARY</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>live_thread_num</span> <span class=o>&lt;</span> <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>max_thread_num</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+                <span class=k>if</span> <span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>threads</span><span class=p>[</span><span class=n>i</span><span class=p>]</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span> <span class=o>|</span><span class=o>|</span> <span class=n>is_thread_alive</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>threads</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=nb>false</span><span class=p>)</span> <span class=p>{</span>
+                    <span class=n>pthread_create</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>threads</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>)</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>,</span> <span class=n>threadpool_thread</span><span class=p>,</span> <span class=p>(</span><span class=kt>void</span><span class=o>*</span><span class=p>)</span><span class=n>pool</span><span class=p>)</span><span class=p>;</span>
+                    <span class=n>add</span> <span class=o>+</span><span class=o>+</span><span class=p>;</span>
+                    <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>live_thread_num</span> <span class=o>+</span><span class=o>+</span><span class=p>;</span>
+                <span class=p>}</span>
+            <span class=p>}</span>
+            <span class=n>pthread_mutex_unlock</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>lock</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=c1>// 如果需要 销毁多余的空闲进程
+</span><span class=c1></span>        <span class=k>if</span> <span class=p>(</span><span class=p>(</span><span class=n>busy_thread_num</span> <span class=o>*</span> <span class=mi>2</span><span class=p>)</span> <span class=o>&lt;</span> <span class=n>live_thread_num</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>live_thread_num</span> <span class=o>&gt;</span> <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>min_thread_num</span><span class=p>)</span> <span class=p>{</span>
+            <span class=c1>// 一次销毁DEFAULT_THREAD_VARY个 随即即可
+</span><span class=c1></span>            <span class=n>pthread_mutex_lock</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>lock</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+            <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>wait_exit_thread_num</span> <span class=o>=</span> <span class=n>DEFAULT_THREAD_VARY</span><span class=p>;</span>
+            <span class=n>pthread_mutex_unlock</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>lock</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+            <span class=c1>// 通知处在空闲状态的进程 它们会自行终止
+</span><span class=c1></span>            <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>DEFAULT_THREAD_VARY</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+                <span class=n>pthread_cond_signal</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_not_empty</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+            <span class=p>}</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=n>pthread_exit</span><span class=p>(</span><span class=nb>NULL</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>void</span><span class=o>*</span> <span class=nf>threadpool_thread</span><span class=p>(</span><span class=kt>void</span><span class=o>*</span> <span class=n>threadpool</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>threadpool_t</span><span class=o>*</span> <span class=n>pool</span> <span class=o>=</span> <span class=p>(</span><span class=n>threadpool_t</span><span class=o>*</span><span class=p>)</span><span class=n>threadpool</span><span class=p>;</span>
+    <span class=n>threadpool_task_t</span> <span class=n>task</span><span class=p>;</span>
+    <span class=k>while</span> <span class=p>(</span><span class=nb>true</span><span class=p>)</span> <span class=p>{</span>
+        <span class=c1>// 尝试对线程池加锁
+</span><span class=c1></span>        <span class=n>pthread_mutex_lock</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>lock</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=c1>// 如果任务队列为空 则解锁阻塞等待唤醒 再次竞争加锁
+</span><span class=c1></span>        <span class=c1>// 如果有任务 则跳过该while
+</span><span class=c1></span>        <span class=k>while</span> <span class=p>(</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_size</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>shutdown</span> <span class=o>=</span><span class=o>=</span> <span class=nb>false</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>thread 0x%x is waiting</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=p>(</span><span class=kt>unsigned</span><span class=p>)</span><span class=n>pthread_self</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+            <span class=n>pthread_cond_wait</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_not_empty</span><span class=p>)</span><span class=p>,</span> <span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>lock</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+            <span class=c1>// 如果要销毁的线程数量大于0 则销毁当前的线程
+</span><span class=c1></span>            <span class=c1>// 此时被唤醒就是为了销毁多余的线程
+</span><span class=c1></span>            <span class=k>if</span> <span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>wait_exit_thread_num</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+                <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>wait_exit_thread_num</span> <span class=o>-</span><span class=o>-</span><span class=p>;</span>
+                <span class=c1>// 如果线程池里线程个数大于最小值时 可以结束当前进程
+</span><span class=c1></span>                <span class=k>if</span> <span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>live_thread_num</span> <span class=o>&gt;</span> <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>min_thread_num</span><span class=p>)</span> <span class=p>{</span>
+                    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>thread 0x%x is exiting</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=p>(</span><span class=kt>unsigned</span><span class=p>)</span><span class=n>pthread_self</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+                    <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>live_thread_num</span> <span class=o>-</span><span class=o>-</span><span class=p>;</span>
+                    <span class=n>pthread_mutex_unlock</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>lock</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+                    <span class=n>pthread_exit</span><span class=p>(</span><span class=nb>NULL</span><span class=p>)</span><span class=p>;</span>
+                <span class=p>}</span>
+            <span class=p>}</span>
+        <span class=p>}</span>
+        <span class=c1>// 如果线程池关闭了 自行退出
+</span><span class=c1></span>        <span class=k>if</span> <span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>shutdown</span> <span class=o>=</span><span class=o>=</span> <span class=nb>true</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>pthread_mutex_unlock</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>lock</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+            <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>thread 0x%x is exiting</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=p>(</span><span class=kt>unsigned</span><span class=p>)</span><span class=n>pthread_self</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+            <span class=n>pthread_detach</span><span class=p>(</span><span class=n>pthread_self</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 清理
+</span><span class=c1></span>            <span class=n>pthread_exit</span><span class=p>(</span><span class=nb>NULL</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=c1>// 从任务队列中取出一个任务
+</span><span class=c1></span>        <span class=n>task</span><span class=p>.</span><span class=n>function</span> <span class=o>=</span> <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>task_queue</span><span class=p>[</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_front</span><span class=p>]</span><span class=p>.</span><span class=n>function</span><span class=p>;</span>
+        <span class=n>task</span><span class=p>.</span><span class=n>arg</span> <span class=o>=</span> <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>task_queue</span><span class=p>[</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_front</span><span class=p>]</span><span class=p>.</span><span class=n>arg</span><span class=p>;</span>
+        <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_front</span> <span class=o>=</span> <span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_front</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span> <span class=o>%</span> <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_max_size</span><span class=p>;</span>
+        <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_size</span> <span class=o>-</span><span class=o>-</span><span class=p>;</span>
+        <span class=c1>// 通知可以有新的任务加入进来
+</span><span class=c1></span>        <span class=n>pthread_cond_broadcast</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_not_full</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=c1>// 立即释放lock
+</span><span class=c1></span>        <span class=n>pthread_mutex_unlock</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>lock</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=c1>// 处理任务
+</span><span class=c1></span>        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>thread 0x%x start working</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=p>(</span><span class=kt>unsigned</span><span class=p>)</span><span class=n>pthread_self</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>pthread_mutex_lock</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>thread_counter</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>busy_thread_num</span> <span class=o>+</span><span class=o>+</span><span class=p>;</span>
+        <span class=n>pthread_mutex_unlock</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>thread_counter</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>(</span><span class=o>*</span><span class=p>(</span><span class=n>task</span><span class=p>.</span><span class=n>function</span><span class=p>)</span><span class=p>)</span><span class=p>(</span><span class=n>task</span><span class=p>.</span><span class=n>arg</span><span class=p>)</span><span class=p>;</span>
+        <span class=c1>// 处理任务完成
+</span><span class=c1></span>        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>thread 0x%x end working</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=p>(</span><span class=kt>unsigned</span><span class=p>)</span><span class=n>pthread_self</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>pthread_mutex_lock</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>thread_counter</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>busy_thread_num</span> <span class=o>-</span><span class=o>-</span><span class=p>;</span>
+        <span class=n>pthread_mutex_unlock</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>thread_counter</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>pthread_exit</span><span class=p>(</span><span class=nb>NULL</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+
+<span class=n>threadpool_t</span><span class=o>*</span> <span class=nf>threadpool_create</span><span class=p>(</span><span class=kt>int</span> <span class=n>min_thread_num</span><span class=p>,</span> <span class=kt>int</span> <span class=n>max_thread_num</span><span class=p>,</span> <span class=kt>int</span> <span class=n>queue_max_size</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>threadpool_t</span><span class=o>*</span> <span class=n>pool</span> <span class=o>=</span> <span class=nb>NULL</span><span class=p>;</span>
+    <span class=k>do</span> <span class=p>{</span>
+        <span class=c1>// 线程池结构体
+</span><span class=c1></span>        <span class=n>pool</span> <span class=o>=</span> <span class=p>(</span><span class=n>threadpool_t</span><span class=o>*</span><span class=p>)</span><span class=n>malloc</span><span class=p>(</span><span class=k>sizeof</span><span class=p>(</span><span class=n>threadpool_t</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>pool</span> <span class=o>=</span><span class=o>=</span> <span class=nb>NULL</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>malloc threadpool_t fail</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+            <span class=k>break</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=c1>// 初始化相关描述信息
+</span><span class=c1></span>        <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>min_thread_num</span> <span class=o>=</span> <span class=n>min_thread_num</span><span class=p>;</span>
+        <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>max_thread_num</span> <span class=o>=</span> <span class=n>max_thread_num</span><span class=p>;</span>
+        <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>busy_thread_num</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+        <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>live_thread_num</span> <span class=o>=</span> <span class=n>min_thread_num</span><span class=p>;</span>
+        <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>wait_exit_thread_num</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+        <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_size</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+        <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_max_size</span> <span class=o>=</span> <span class=n>queue_max_size</span><span class=p>;</span>
+        <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_front</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+        <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_rear</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+        <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>shutdown</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+        <span class=c1>// 线程数组分配空间
+</span><span class=c1></span>        <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>threads</span> <span class=o>=</span> <span class=p>(</span><span class=n>pthread_t</span><span class=o>*</span><span class=p>)</span><span class=n>malloc</span><span class=p>(</span><span class=k>sizeof</span><span class=p>(</span><span class=n>pthread_t</span><span class=p>)</span> <span class=o>*</span> <span class=n>max_thread_num</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>threads</span> <span class=o>=</span><span class=o>=</span> <span class=nb>NULL</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>malloc threads fail</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+            <span class=k>break</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=n>memset</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>threads</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>pthread_t</span><span class=p>)</span> <span class=o>*</span> <span class=n>max_thread_num</span><span class=p>)</span><span class=p>;</span>
+        <span class=c1>// 任务队列分配空间    
+</span><span class=c1></span>        <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>task_queue</span> <span class=o>=</span> <span class=p>(</span><span class=n>threadpool_task_t</span><span class=o>*</span><span class=p>)</span><span class=n>malloc</span><span class=p>(</span><span class=k>sizeof</span><span class=p>(</span><span class=n>threadpool_task_t</span><span class=p>)</span> <span class=o>*</span> <span class=n>queue_max_size</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>task_queue</span> <span class=o>=</span><span class=o>=</span> <span class=nb>NULL</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>malloc task_queue fail</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+            <span class=k>break</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=c1>// 初始化互斥锁和条件变量
+</span><span class=c1></span>        <span class=k>if</span> <span class=p>(</span>   <span class=n>pthread_mutex_init</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>lock</span><span class=p>)</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>)</span> <span class=o>!</span><span class=o>=</span> <span class=mi>0</span>
+            <span class=o>|</span><span class=o>|</span> <span class=n>pthread_mutex_init</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>thread_counter</span><span class=p>)</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>)</span> <span class=o>!</span><span class=o>=</span> <span class=mi>0</span>
+            <span class=o>|</span><span class=o>|</span> <span class=n>pthread_cond_init</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_not_empty</span><span class=p>)</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>)</span> <span class=o>!</span><span class=o>=</span> <span class=mi>0</span>
+            <span class=o>|</span><span class=o>|</span> <span class=n>pthread_cond_init</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_not_full</span><span class=p>)</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>)</span> <span class=o>!</span><span class=o>=</span> <span class=mi>0</span>
+        <span class=p>)</span> <span class=p>{</span>
+            <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>init lock or cond fail</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+            <span class=k>break</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=c1>// 启动min_thread_num数量的线程
+</span><span class=c1></span>        <span class=kt>int</span> <span class=n>ret</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+        <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>min_thread_num</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+            <span class=c1>// 创建任务处理线程 创建时将线程池结构体作为参数传递给线程
+</span><span class=c1></span>            <span class=n>ret</span> <span class=o>=</span> <span class=n>pthread_create</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>threads</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>)</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>,</span> <span class=n>threadpool_thread</span><span class=p>,</span> <span class=p>(</span><span class=kt>void</span><span class=o>*</span><span class=p>)</span><span class=n>pool</span><span class=p>)</span><span class=p>;</span>
+            <span class=k>if</span> <span class=p>(</span><span class=n>ret</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+                <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>create thread 0x%x...</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=p>(</span><span class=kt>unsigned</span><span class=p>)</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>threads</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+            <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+                <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>create pthread fail</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+                <span class=k>break</span><span class=p>;</span>
+            <span class=p>}</span>
+        <span class=p>}</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>ret</span> <span class=o>!</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+            <span class=k>break</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=c1>// 创建管理者线程
+</span><span class=c1></span>        <span class=n>ret</span> <span class=o>=</span> <span class=n>pthread_create</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>adjust_thread</span><span class=p>)</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>,</span> <span class=n>threadpool_adjust</span><span class=p>,</span> <span class=p>(</span><span class=kt>void</span><span class=o>*</span><span class=p>)</span><span class=n>pool</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>ret</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>create thread(adjust) 0x%x...</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=p>(</span><span class=kt>unsigned</span><span class=p>)</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>adjust_thread</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+            <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>create pthread fail</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+            <span class=k>break</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=c1>// success create threadpool_t
+</span><span class=c1></span>        <span class=k>return</span> <span class=n>pool</span><span class=p>;</span>
+    <span class=p>}</span> <span class=k>while</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 如果前面的代码调用失败 释放分配的空间
+</span><span class=c1></span>    <span class=n>threadpool_free</span><span class=p>(</span><span class=n>pool</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=nb>NULL</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>void</span><span class=o>*</span> <span class=nf>process</span><span class=p>(</span><span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>thread 0x%x working on task %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=p>(</span><span class=kt>unsigned</span><span class=p>)</span><span class=n>pthread_self</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=o>*</span><span class=p>(</span><span class=p>(</span><span class=kt>int</span><span class=o>*</span><span class=p>)</span><span class=n>arg</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 模拟处理任务
+</span><span class=c1></span>    <span class=n>sleep</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>task %d is end</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=o>*</span><span class=p>(</span><span class=p>(</span><span class=kt>int</span><span class=o>*</span><span class=p>)</span><span class=n>arg</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=nb>NULL</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>int</span> <span class=nf>threadpool_add</span><span class=p>(</span><span class=n>threadpool_t</span><span class=o>*</span> <span class=n>threadpool</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span><span class=p>(</span><span class=o>*</span><span class=n>function</span><span class=p>)</span><span class=p>(</span><span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>threadpool_t</span><span class=o>*</span> <span class=n>pool</span> <span class=o>=</span> <span class=n>threadpool</span><span class=p>;</span>
+    <span class=n>pthread_mutex_lock</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>lock</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 任务队列已满 阻塞
+</span><span class=c1></span>    <span class=k>while</span> <span class=p>(</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_size</span> <span class=o>=</span><span class=o>=</span> <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_max_size</span><span class=p>)</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>shutdown</span> <span class=o>=</span><span class=o>=</span> <span class=nb>false</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>pthread_cond_wait</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_not_full</span><span class=p>)</span><span class=p>,</span> <span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>lock</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=c1>// 线程池已经关闭
+</span><span class=c1></span>    <span class=k>if</span> <span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>shutdown</span> <span class=o>=</span><span class=o>=</span> <span class=nb>true</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>pthread_cond_broadcast</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_not_empty</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>pthread_mutex_unlock</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>lock</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=c1>// 清空任务队列队尾元素的参数
+</span><span class=c1></span>    <span class=k>if</span> <span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>task_queue</span><span class=p>[</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_rear</span><span class=p>]</span><span class=p>.</span><span class=n>arg</span> <span class=o>!</span><span class=o>=</span> <span class=nb>NULL</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>task_queue</span><span class=p>[</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_rear</span><span class=p>]</span><span class=p>.</span><span class=n>arg</span> <span class=o>=</span> <span class=nb>NULL</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=c1>// 添加任务到队列里
+</span><span class=c1></span>    <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>task_queue</span><span class=p>[</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_rear</span><span class=p>]</span><span class=p>.</span><span class=n>function</span> <span class=o>=</span> <span class=n>function</span><span class=p>;</span>
+    <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>task_queue</span><span class=p>[</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_rear</span><span class=p>]</span><span class=p>.</span><span class=n>arg</span> <span class=o>=</span> <span class=n>arg</span><span class=p>;</span>
+    <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_rear</span> <span class=o>=</span> <span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_rear</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span> <span class=o>%</span> <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_max_size</span><span class=p>;</span>
+    <span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_size</span> <span class=o>+</span><span class=o>+</span><span class=p>;</span>
+    <span class=c1>// 添加完任务后唤醒线程池中等待处理任务的线程
+</span><span class=c1></span>    <span class=n>pthread_cond_signal</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>queue_not_empty</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>pthread_mutex_unlock</span><span class=p>(</span><span class=o>&amp;</span><span class=p>(</span><span class=n>pool</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>lock</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=kt>int</span> <span class=n>argc</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span><span class=o>*</span> <span class=n>argv</span><span class=p>)</span> <span class=p>{</span>
+    <span class=c1>// 创建线程池
+</span><span class=c1></span>    <span class=n>threadpool_t</span><span class=o>*</span> <span class=n>pool</span><span class=p>;</span>
+    <span class=n>pool</span> <span class=o>=</span> <span class=n>threadpool_create</span><span class=p>(</span><span class=mi>3</span><span class=p>,</span> <span class=mi>100</span><span class=p>,</span> <span class=mi>100</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>pool</span> <span class=o>!</span><span class=o>=</span> <span class=nb>NULL</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>thread pool created</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>thread pool create fail</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=c1>// 添加一些任务
+</span><span class=c1></span>    <span class=kt>int</span> <span class=n>nums</span><span class=p>[</span><span class=mi>20</span><span class=p>]</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=mi>20</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>nums</span><span class=p>[</span><span class=n>i</span><span class=p>]</span> <span class=o>=</span> <span class=n>i</span><span class=p>;</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>add task %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>i</span><span class=p>)</span><span class=p>;</span>
+        <span class=c1>// 向线程池中添加一个任务
+</span><span class=c1></span>        <span class=n>threadpool_add</span><span class=p>(</span><span class=n>pool</span><span class=p>,</span> <span class=n>process</span><span class=p>,</span> <span class=p>(</span><span class=kt>void</span><span class=o>*</span><span class=p>)</span><span class=o>&amp;</span><span class=n>nums</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=c1>// 等待任务处理结束
+</span><span class=c1></span>    <span class=n>sleep</span><span class=p>(</span><span class=mi>10</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 销毁线程池
+</span><span class=c1></span>    <span class=n>threadpool_destroy</span><span class=p>(</span><span class=n>pool</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>thread pool destroyed</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+<span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
+<span>2022-06-17</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
+<span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2flinux%25E7%25BD%2591%25E7%25BB%259C%25E7%25BC%2596%25E7%25A8%258B06-%25E7%25BA%25BF%25E7%25A8%258B%25E6%25B1%25A0%2f&text=%e3%80%90Linux%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b%e3%80%9106%20-%20%e7%ba%bf%e7%a8%8b%e6%b1%a0&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2flinux%25E7%25BD%2591%25E7%25BB%259C%25E7%25BC%2596%25E7%25A8%258B06-%25E7%25BA%25BF%25E7%25A8%258B%25E6%25B1%25A0%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2flinux%25E7%25BD%2591%25E7%25BB%259C%25E7%25BC%2596%25E7%25A8%258B06-%25E7%25BA%25BF%25E7%25A8%258B%25E6%25B1%25A0%2f&title=%e3%80%90Linux%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b%e3%80%9106%20-%20%e7%ba%bf%e7%a8%8b%e6%b1%a0" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/linux/><i class="fas fa-tag fa-fw"></i>&nbsp;Linux</a>&nbsp;
+</span><span class=tag><a href=https://xushun1221.github.io/tags/network/><i class="fas fa-tag fa-fw"></i>&nbsp;network</a>&nbsp;</span></section><section><span><a href=javascript:window.history.back();>Back</a></span>&nbsp;|&nbsp;<span><a href=https://xushun1221.github.io>Home</a></span></section></div><div class=post-nav><a href=https://xushun1221.github.io/2022/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B05-epoll-reactor-%E6%A8%A1%E5%9E%8B/ class=prev rel=prev title="【Linux网络编程】05 - epoll - Reactor 模型"><i class="fas fa-angle-left fa-fw"></i>【Linux网络编程】05 - epoll - Reactor 模型</a>
+<a href=https://xushun1221.github.io/2022/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B07-udp-socket%E7%BC%96%E7%A8%8B/ class=next rel=next title="【Linux网络编程】07 - UDP-Socket编程">【Linux网络编程】07 - UDP-Socket编程<i class="fas fa-angle-right fa-fw"></i></a></div><div class=post-comment></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2022</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=https://xushun1221.github.io/about/ target=_blank>xushun</a> | </span>Powered by <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> & <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer">LoveIt</a></div></div></footer></div><a href=# class=dynamic-to-top id=dynamic-to-top data-scroll><span>&nbsp;</span>
+</a><script src=/js/lib/jquery/jquery.slim.min.js></script><script src=/js/lib/lazysizes/lazysizes.min.js></script><script src=/js/lib/smooth-scroll/smooth-scroll.polyfills.min.js></script><script>window.scroll=new SmoothScroll('[data-scroll]',{speed:300,speedAsDuration:true});</script><link rel=stylesheet href=/css/lib/katex/katex.min.css><script src=/js/lib/katex/katex.min.js></script><script defer src=/js/lib/katex/auto-render.min.js></script><link rel=stylesheet href=/css/lib/katex/copy-tex.min.css><script defer src=/js/lib/katex/copy-tex.min.js></script><script defer src=/js/lib/katex/mhchem.min.js></script><script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true},{left:"$",right:"$",display:false},]});});</script><script src=/js/blog.min.js></script></body></html>
