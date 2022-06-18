@@ -1,6 +1,228 @@
-<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【Linux网络编程】07 - UDP-Socket编程 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B06-%E7%BA%BF%E7%A8%8B%E6%B1%A0/><link rel=canonical href=https://xushun1221.github.io/2022/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B07-udp-socket%E7%BC%96%E7%A8%8B/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【Linux网络编程】07 - UDP-Socket编程"><meta name=twitter:description content="TCP和UDP"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【Linux网络编程】07 - UDP-Socket编程","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B07-udp-socket%E7%BC%96%E7%A8%8B\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"Linux, network","wordcount":7,"url":"https:\/\/xushun1221.github.io\/2022\/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B07-udp-socket%E7%BC%96%E7%A8%8B\/","datePublished":"2022-06-18T00:00:00\x2b00:00","dateModified":"2022-06-18T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【Linux网络编程】07 - UDP-Socket编程</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-06-18>2022-06-18</time>&nbsp;
-<i class="fas fa-pencil-alt fa-fw"></i>about 7 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#tcp和udp>TCP和UDP</a></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
-<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#tcp和udp>TCP和UDP</a></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=tcp和udp></a><h2>TCP和UDP</h2></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【Linux网络编程】07 - UDP-Socket编程 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B06-%E7%BA%BF%E7%A8%8B%E6%B1%A0/><link rel=canonical href=https://xushun1221.github.io/2022/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B07-udp-socket%E7%BC%96%E7%A8%8B/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【Linux网络编程】07 - UDP-Socket编程"><meta name=twitter:description content="UDP实现的C/S模型 recvfrom 从对端接收数据。（UDP） 函数原型： 1 2 3 4 5 #include <sys/types.h>#include <sys/socket.h> ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags, struct sockaddr *src_addr, socklen_t *addrlen); 返回值： 失败，-1，errno 成功，"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【Linux网络编程】07 - UDP-Socket编程","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B07-udp-socket%E7%BC%96%E7%A8%8B\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"Linux, network","wordcount":758,"url":"https:\/\/xushun1221.github.io\/2022\/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B07-udp-socket%E7%BC%96%E7%A8%8B\/","datePublished":"2022-06-18T00:00:00\x2b00:00","dateModified":"2022-06-18T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【Linux网络编程】07 - UDP-Socket编程</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-06-18>2022-06-18</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 758 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#udp实现的cs模型>UDP实现的C/S模型</a><ul><li><a href=#recvfrom>recvfrom</a></li><li><a href=#sendto>sendto</a></li><li><a href=#逻辑>逻辑</a></li><li><a href=#实现>实现</a></li></ul></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#udp实现的cs模型>UDP实现的C/S模型</a><ul><li><a href=#recvfrom>recvfrom</a></li><li><a href=#sendto>sendto</a></li><li><a href=#逻辑>逻辑</a></li><li><a href=#实现>实现</a></li></ul></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=udp实现的cs模型></a><h2>UDP实现的C/S模型</h2><a class=post-dummy-target id=recvfrom></a><h3>recvfrom</h3><p>从对端接收数据。（UDP）</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/types.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/socket.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=n>ssize_t</span> <span class=nf>recvfrom</span><span class=p>(</span><span class=kt>int</span> <span class=n>sockfd</span><span class=p>,</span> <span class=kt>void</span> <span class=o>*</span><span class=n>buf</span><span class=p>,</span> <span class=n>size_t</span> <span class=n>len</span><span class=p>,</span> <span class=kt>int</span> <span class=n>flags</span><span class=p>,</span>
+                <span class=k>struct</span> <span class=n>sockaddr</span> <span class=o>*</span><span class=n>src_addr</span><span class=p>,</span> <span class=n>socklen_t</span> <span class=o>*</span><span class=n>addrlen</span><span class=p>)</span><span class=p>;</span>
+</code></pre></td></tr></table></div></div><ul><li>返回值：<ul><li>失败，<code>-1</code>，<code>errno</code></li><li>成功，成功接收的字节数</li><li>对端关闭，<code>0</code></li></ul></li><li><code>sockfd</code>：接收的套接字</li><li><code>buf</code>：缓冲区</li><li><code>len</code>：缓冲区大小</li><li><code>flags</code>：默认<code>0</code></li><li><code>src_addr</code>：发送方的地址结构，传出参数</li><li><code>addrlen</code>：地址结构的大小，传入传出</li></ul><a class=post-dummy-target id=sendto></a><h3>sendto</h3><p>向对端发送数据。（UDP）</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/types.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/socket.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=n>ssize_t</span> <span class=nf>sendto</span><span class=p>(</span><span class=kt>int</span> <span class=n>sockfd</span><span class=p>,</span> <span class=k>const</span> <span class=kt>void</span> <span class=o>*</span><span class=n>buf</span><span class=p>,</span> <span class=n>size_t</span> <span class=n>len</span><span class=p>,</span> <span class=kt>int</span> <span class=n>flags</span><span class=p>,</span>
+                <span class=k>const</span> <span class=k>struct</span> <span class=n>sockaddr</span> <span class=o>*</span><span class=n>dest_addr</span><span class=p>,</span> <span class=n>socklen_t</span> <span class=n>addrlen</span><span class=p>)</span><span class=p>;</span>
+</code></pre></td></tr></table></div></div><ul><li>返回值：<ul><li>失败，<code>-1</code>，<code>errno</code></li><li>成功，成功写出的字节数</li></ul></li><li><code>sockfd</code>：发送的套接字</li><li><code>buf</code>：存储数据的缓冲区</li><li><code>len</code>：缓冲区大小</li><li><code>flags</code>：默认<code>0</code></li><li><code>src_addr</code>：接收方的地址结构，传入参数</li><li><code>addrlen</code>：地址结构的大小</li></ul><a class=post-dummy-target id=逻辑></a><h3>逻辑</h3><p>server：</p><ol><li><code>listen_fd = socket(AF_INET, SOCK_DGRAM, 0)</code></li><li><code>bind()</code></li><li><code>listen()</code>可有可无</li><li><code>while(1)</code><ol><li><code>recvfrom()</code></li><li>处理</li><li><code>sendto()</code></li></ol></li><li><code>close()</code></li></ol><p>client:</p><ol><li><code>client_fd = socket(AF_INET, SOCK_DGRAM, 0)</code></li><li><code>sendto(server的地址结构)</code></li><li><code>recvfrom()</code></li><li>输出</li><li><code>close()</code></li></ol><a class=post-dummy-target id=实现></a><h3>实现</h3><p>server：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cm>/*
+</span><span class=cm>@Filename : server.c
+</span><span class=cm>@Description : udp server test
+</span><span class=cm>@Datatime : 2022/06/18 14:03:53
+</span><span class=cm>@Author : xushun
+</span><span class=cm>*/</span>
+<span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;errno.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;pthread.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;arpa/inet.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/types.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/socket.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;ctype.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=cp>#</span><span class=cp>define SERV_PORT 8888</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>define MAX_BUFSIZE 4096</span><span class=cp>
+</span><span class=cp></span>
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=kt>int</span> <span class=n>argc</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span><span class=o>*</span> <span class=n>argv</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>struct</span> <span class=n>sockaddr_in</span> <span class=n>serv_addr</span><span class=p>;</span>
+    <span class=n>memset</span><span class=p>(</span><span class=o>&amp;</span><span class=n>serv_addr</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>serv_addr</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>serv_addr</span><span class=p>.</span><span class=n>sin_family</span> <span class=o>=</span> <span class=n>AF_INET</span><span class=p>;</span>
+    <span class=n>serv_addr</span><span class=p>.</span><span class=n>sin_port</span> <span class=o>=</span> <span class=n>htons</span><span class=p>(</span><span class=n>SERV_PORT</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>serv_addr</span><span class=p>.</span><span class=n>sin_addr</span><span class=p>.</span><span class=n>s_addr</span> <span class=o>=</span> <span class=n>htonl</span><span class=p>(</span><span class=n>INADDR_ANY</span><span class=p>)</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>listen_fd</span> <span class=o>=</span> <span class=n>socket</span><span class=p>(</span><span class=n>AF_INET</span><span class=p>,</span> <span class=n>SOCK_DGRAM</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>bind</span><span class=p>(</span><span class=n>listen_fd</span><span class=p>,</span> <span class=p>(</span><span class=k>struct</span> <span class=n>sockaddr</span><span class=o>*</span><span class=p>)</span><span class=o>&amp;</span><span class=n>serv_addr</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>serv_addr</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+
+    <span class=k>struct</span> <span class=n>sockaddr_in</span> <span class=n>client_addr</span><span class=p>;</span>
+    <span class=n>socklen_t</span> <span class=n>client_addr_len</span> <span class=o>=</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>client_addr</span><span class=p>)</span><span class=p>;</span>
+
+    <span class=kt>char</span> <span class=n>buf</span><span class=p>[</span><span class=n>MAX_BUFSIZE</span><span class=p>]</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>recvbytes</span><span class=p>,</span> <span class=n>sendbytes</span><span class=p>;</span>
+    <span class=k>while</span> <span class=p>(</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>recvbytes</span> <span class=o>=</span> <span class=n>recvfrom</span><span class=p>(</span><span class=n>listen_fd</span><span class=p>,</span> <span class=n>buf</span><span class=p>,</span> <span class=n>MAX_BUFSIZE</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=p>(</span><span class=k>struct</span> <span class=n>sockaddr</span><span class=o>*</span><span class=p>)</span><span class=o>&amp;</span><span class=n>client_addr</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>client_addr_len</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>recvbytes</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>recvfrom error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+            <span class=n>exit</span><span class=p>(</span><span class=o>-</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=n>write</span><span class=p>(</span><span class=n>STDOUT_FILENO</span><span class=p>,</span> <span class=n>buf</span><span class=p>,</span> <span class=n>recvbytes</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>recvbytes</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>buf</span><span class=p>[</span><span class=n>i</span><span class=p>]</span> <span class=o>=</span> <span class=n>toupper</span><span class=p>(</span><span class=n>buf</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=n>sendbytes</span> <span class=o>=</span> <span class=n>sendto</span><span class=p>(</span><span class=n>listen_fd</span><span class=p>,</span> <span class=n>buf</span><span class=p>,</span> <span class=n>recvbytes</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=p>(</span><span class=k>struct</span> <span class=n>sockaddr</span><span class=o>*</span><span class=p>)</span><span class=o>&amp;</span><span class=n>client_addr</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>client_addr</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>sendbytes</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>sendto error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+            <span class=n>exit</span><span class=p>(</span><span class=o>-</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=n>close</span><span class=p>(</span><span class=n>listen_fd</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>client：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cm>/*
+</span><span class=cm>@Filename : client.c
+</span><span class=cm>@Description : udp client test
+</span><span class=cm>@Datatime : 2022/06/18 13:42:37
+</span><span class=cm>@Author : xushun
+</span><span class=cm>*/</span>
+<span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;errno.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;pthread.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;arpa/inet.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/types.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/socket.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=cp>#</span><span class=cp>define SERV_PORT 8888</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>define SERV_ADDR &#34;127.0.0.1&#34;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>define MAX_BUFSIZE 4096</span><span class=cp>
+</span><span class=cp></span>
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=kt>int</span> <span class=n>argc</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span><span class=o>*</span> <span class=n>argv</span><span class=p>)</span> <span class=p>{</span>
+    
+    <span class=k>struct</span> <span class=n>sockaddr_in</span> <span class=n>serv_addr</span><span class=p>;</span>
+    <span class=n>memset</span><span class=p>(</span><span class=o>&amp;</span><span class=n>serv_addr</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>serv_addr</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>serv_addr</span><span class=p>.</span><span class=n>sin_family</span> <span class=o>=</span> <span class=n>AF_INET</span><span class=p>;</span>
+    <span class=n>serv_addr</span><span class=p>.</span><span class=n>sin_port</span> <span class=o>=</span> <span class=n>htons</span><span class=p>(</span><span class=n>SERV_PORT</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>inet_pton</span><span class=p>(</span><span class=n>AF_INET</span><span class=p>,</span> <span class=n>SERV_ADDR</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>serv_addr</span><span class=p>.</span><span class=n>sin_addr</span><span class=p>.</span><span class=n>s_addr</span><span class=p>)</span><span class=p>;</span>
+
+    <span class=kt>int</span> <span class=n>client_fd</span> <span class=o>=</span> <span class=n>socket</span><span class=p>(</span><span class=n>AF_INET</span><span class=p>,</span> <span class=n>SOCK_DGRAM</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+
+    <span class=kt>char</span> <span class=n>buf</span><span class=p>[</span><span class=n>MAX_BUFSIZE</span><span class=p>]</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>readbytes</span><span class=p>,</span> <span class=n>sendbytes</span><span class=p>,</span> <span class=n>recvbytes</span><span class=p>;</span>
+    <span class=k>while</span> <span class=p>(</span><span class=p>(</span><span class=n>readbytes</span> <span class=o>=</span> <span class=n>read</span><span class=p>(</span><span class=n>STDIN_FILENO</span><span class=p>,</span> <span class=n>buf</span><span class=p>,</span> <span class=n>MAX_BUFSIZE</span><span class=p>)</span><span class=p>)</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>sendbytes</span> <span class=o>=</span> <span class=n>sendto</span><span class=p>(</span><span class=n>client_fd</span><span class=p>,</span> <span class=n>buf</span><span class=p>,</span> <span class=n>readbytes</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=p>(</span><span class=k>struct</span> <span class=n>sockaddr</span><span class=o>*</span><span class=p>)</span><span class=o>&amp;</span><span class=n>serv_addr</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>serv_addr</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>sendbytes</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>sendto error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+            <span class=n>exit</span><span class=p>(</span><span class=o>-</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=n>recvbytes</span> <span class=o>=</span> <span class=n>recvfrom</span><span class=p>(</span><span class=n>client_fd</span><span class=p>,</span> <span class=n>buf</span><span class=p>,</span> <span class=n>MAX_BUFSIZE</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span> <span class=c1>// NULL 不关心对端地址
+</span><span class=c1></span>        <span class=k>if</span> <span class=p>(</span><span class=n>recvbytes</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>recvfrom error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+            <span class=n>exit</span><span class=p>(</span><span class=o>-</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=n>write</span><span class=p>(</span><span class=n>STDOUT_FILENO</span><span class=p>,</span> <span class=n>buf</span><span class=p>,</span> <span class=n>recvbytes</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>close</span><span class=p>(</span><span class=n>client_fd</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
 <span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
 <span>2022-06-18</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
 <span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2flinux%25E7%25BD%2591%25E7%25BB%259C%25E7%25BC%2596%25E7%25A8%258B07-udp-socket%25E7%25BC%2596%25E7%25A8%258B%2f&text=%e3%80%90Linux%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b%e3%80%9107%20-%20UDP-Socket%e7%bc%96%e7%a8%8b&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2flinux%25E7%25BD%2591%25E7%25BB%259C%25E7%25BC%2596%25E7%25A8%258B07-udp-socket%25E7%25BC%2596%25E7%25A8%258B%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2flinux%25E7%25BD%2591%25E7%25BB%259C%25E7%25BC%2596%25E7%25A8%258B07-udp-socket%25E7%25BC%2596%25E7%25A8%258B%2f&title=%e3%80%90Linux%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b%e3%80%9107%20-%20UDP-Socket%e7%bc%96%e7%a8%8b" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/linux/><i class="fas fa-tag fa-fw"></i>&nbsp;Linux</a>&nbsp;
