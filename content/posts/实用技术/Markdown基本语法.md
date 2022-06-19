@@ -2,7 +2,7 @@
 title: Markdown基本语法
 date: 2022-01-17
 tags: [markdown]
-categories: [实用技术]
+categories: [Coding]
 ---
 
 ## 更新注意事项
