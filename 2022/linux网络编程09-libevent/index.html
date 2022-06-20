@@ -1,6 +1,6 @@
-<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【Linux网络编程】09 - libevent | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B07-udp-socket%E7%BC%96%E7%A8%8B/><link rel=canonical href=https://xushun1221.github.io/2022/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B09-libevent/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【Linux网络编程】09 - libevent"><meta name=twitter:description content="libevent库是开源的、精简的、跨平台的、专注于网络通信的库。 安装libevent 这里使用libevent-2.1.8版本。 libeve"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【Linux网络编程】09 - libevent","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B09-libevent\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"Linux, network","wordcount":568,"url":"https:\/\/xushun1221.github.io\/2022\/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B09-libevent\/","datePublished":"2022-06-19T00:00:00\x2b00:00","dateModified":"2022-06-19T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【Linux网络编程】09 - libevent</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-06-19>2022-06-19</time>&nbsp;
-<i class="fas fa-pencil-alt fa-fw"></i>about 568 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#安装libevent>安装libevent</a></li><li><a href=#libevent的特点>libevent的特点</a></li><li><a href=#libevent-框架>Libevent 框架</a></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
-<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#安装libevent>安装libevent</a></li><li><a href=#libevent的特点>libevent的特点</a></li><li><a href=#libevent-框架>Libevent 框架</a></li></ul></nav></div></details></div><div class=post-content><p>libevent库是开源的、精简的、跨平台的、专注于网络通信的库。</p><a class=post-dummy-target id=安装libevent></a><h2>安装libevent</h2><p>这里使用libevent-2.1.8版本。</p><p>libevent官方网站 <a href=https://libevent.org target=_blank>libevent.org</a></p><p>解压安装过程：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【Linux网络编程】09 - libevent | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B07-udp-socket%E7%BC%96%E7%A8%8B/><link rel=canonical href=https://xushun1221.github.io/2022/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B09-libevent/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【Linux网络编程】09 - libevent"><meta name=twitter:description content="libevent库是开源的、精简的、跨平台的、专注于网络通信的库。 安装libevent 这里使用libevent-2.1.8版本。 libeve"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【Linux网络编程】09 - libevent","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B09-libevent\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"Linux, network","wordcount":4439,"url":"https:\/\/xushun1221.github.io\/2022\/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B09-libevent\/","datePublished":"2022-06-19T00:00:00\x2b00:00","dateModified":"2022-06-19T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【Linux网络编程】09 - libevent</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-06-19>2022-06-19</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 4439 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#安装libevent>安装libevent</a></li><li><a href=#libevent的特点>libevent的特点</a></li><li><a href=#libevent-框架>Libevent 框架</a></li><li><a href=#查看系统支持哪些多路io方法>查看系统支持哪些多路IO方法</a></li><li><a href=#常规事件-event>常规事件 event</a><ul><li><a href=#event_new>event_new</a></li><li><a href=#event_add>event_add</a></li><li><a href=#evnet_del>evnet_del</a></li><li><a href=#event_free>event_free</a></li></ul></li><li><a href=#未决和非未决状态>未决和非未决状态</a></li><li><a href=#示例---fifo读写>示例 - fifo读写</a></li><li><a href=#带缓冲区的事件-bufferevent>带缓冲区的事件 bufferevent</a><ul><li><a href=#bufferevent_socket_new>bufferevent_socket_new</a></li><li><a href=#bufferevent_free>bufferevent_free</a></li><li><a href=#bufferevent_setcb>bufferevent_setcb</a></li><li><a href=#bufferevent_enable-disable>bufferevent_enable (disable)</a></li><li><a href=#客户端连接-bufferevent_socket_connect>客户端连接 bufferevent_socket_connect</a></li><li><a href=#监听器-evconnlistener_new_bind>监听器 evconnlistener_new_bind</a></li><li><a href=#evconnlistener_free>evconnlistener_free</a></li><li><a href=#监听器的回调函数>监听器的回调函数</a></li></ul></li><li><a href=#tcp服务器的实现流程>TCP服务器的实现流程</a></li><li><a href=#tcp客户端的实现流程>TCP客户端的实现流程</a></li><li><a href=#cs模型tcp通信实现>C/S模型TCP通信实现</a></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#安装libevent>安装libevent</a></li><li><a href=#libevent的特点>libevent的特点</a></li><li><a href=#libevent-框架>Libevent 框架</a></li><li><a href=#查看系统支持哪些多路io方法>查看系统支持哪些多路IO方法</a></li><li><a href=#常规事件-event>常规事件 event</a><ul><li><a href=#event_new>event_new</a></li><li><a href=#event_add>event_add</a></li><li><a href=#evnet_del>evnet_del</a></li><li><a href=#event_free>event_free</a></li></ul></li><li><a href=#未决和非未决状态>未决和非未决状态</a></li><li><a href=#示例---fifo读写>示例 - fifo读写</a></li><li><a href=#带缓冲区的事件-bufferevent>带缓冲区的事件 bufferevent</a><ul><li><a href=#bufferevent_socket_new>bufferevent_socket_new</a></li><li><a href=#bufferevent_free>bufferevent_free</a></li><li><a href=#bufferevent_setcb>bufferevent_setcb</a></li><li><a href=#bufferevent_enable-disable>bufferevent_enable (disable)</a></li><li><a href=#客户端连接-bufferevent_socket_connect>客户端连接 bufferevent_socket_connect</a></li><li><a href=#监听器-evconnlistener_new_bind>监听器 evconnlistener_new_bind</a></li><li><a href=#evconnlistener_free>evconnlistener_free</a></li><li><a href=#监听器的回调函数>监听器的回调函数</a></li></ul></li><li><a href=#tcp服务器的实现流程>TCP服务器的实现流程</a></li><li><a href=#tcp客户端的实现流程>TCP客户端的实现流程</a></li><li><a href=#cs模型tcp通信实现>C/S模型TCP通信实现</a></li></ul></nav></div></details></div><div class=post-content><p>libevent库是开源的、精简的、跨平台的、专注于网络通信的库。</p><a class=post-dummy-target id=安装libevent></a><h2>安装libevent</h2><p>这里使用libevent-2.1.8版本。</p><p>libevent官方网站 <a href=https://libevent.org target=_blank>libevent.org</a></p><p>解压安装过程：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
 </span><span class=lnt> 2
 </span><span class=lnt> 3
 </span><span class=lnt> 4
@@ -42,7 +42,643 @@ xushun@xushun-virtual-machine:~$ nc 127.1 9995
 Hello, World!
 
 # 安装完成
-</code></pre></td></tr></table></div></div><p><code>libevent.so libevent.a</code>在<code>/usr/local/lib</code>目录下<br>相关头文件在<code>/usr/local/include</code>目录下</p><a class=post-dummy-target id=libevent的特点></a><h2>libevent的特点</h2><ul><li>事件驱动，高性能</li><li>轻量级，专注于网络</li><li>跨平台，支持Windows，Linux，MacOS等</li><li>支持多种IO多路复用技术，epoll，pool，dev/poll，select，kqueue等</li><li>支持IO，定时器，信号等事件</li></ul><p>libevent是基于<strong>事件</strong>的<strong>异步</strong>通信模型。（异步通信主要依赖于<strong>注册-回调</strong>机制）</p><a class=post-dummy-target id=libevent-框架></a><h2>Libevent 框架</h2><p>使用libevent需要搭建起Libevent的框架。</p><ol><li>创建<code>event_base</code>（libevent中<code>event_base</code>是万物起源）</li><li>创建事件<code>event</code>或<code>bufferevent</code></li><li>将事件添加到<code>event_base</code></li><li>启动循环监听</li><li>释放<code>event_base</code></li></ol></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+</code></pre></td></tr></table></div></div><p><code>libevent.so libevent.a</code>在<code>/usr/local/lib</code>目录下<br>相关头文件在<code>/usr/local/include</code>目录下</p><a class=post-dummy-target id=libevent的特点></a><h2>libevent的特点</h2><ul><li>事件驱动，高性能</li><li>轻量级，专注于网络</li><li>跨平台，支持Windows，Linux，MacOS等</li><li>支持多种IO多路复用技术，epoll，pool，dev/poll，select，kqueue等</li><li>支持IO，定时器，信号等事件</li></ul><p>libevent是基于<strong>事件</strong>的<strong>异步</strong>通信模型。（异步通信主要依赖于<strong>注册-回调</strong>机制）</p><a class=post-dummy-target id=libevent-框架></a><h2>Libevent 框架</h2><p>使用libevent需要搭建起Libevent的框架。</p><ol><li>创建<code>event_base</code>（libevent中<code>event_base</code>是万物起源）
+<code>struct event_base* event_base_new(void);</code></li><li>创建事件<code>event</code>或<code>bufferevent</code><ol><li>常规事件 <code>struct event* event_new(...);</code></li><li>带缓冲区的事件 <code>struct bufferevent* bufferevent_socket_new(...);</code></li></ol></li><li>将事件添加到<code>event_base</code>
+<code>int event_add(struct event* ev, const struct timeval* tv);</code></li><li>启动循环监听
+<code>int event_base_dispatch(struct event_base* base);</code></li><li>释放<code>event_base</code>
+<code>void event_base_free(struct event_base* base);</code></li></ol><a class=post-dummy-target id=查看系统支持哪些多路io方法></a><h2>查看系统支持哪些多路IO方法</h2><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;event2/event.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=kt>int</span> <span class=n>argc</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span><span class=o>*</span> <span class=n>argv</span><span class=p>)</span> <span class=p>{</span>
+    <span class=c1>//struct event_base* base = event_new();
+</span><span class=c1></span>    <span class=k>const</span> <span class=kt>char</span><span class=o>*</span><span class=o>*</span> <span class=n>buf</span> <span class=o>=</span> <span class=n>event_get_supported_methods</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=mi>5</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>buf[i] = %s</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>buf</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>编译运行，遇到这个问题：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-fallback data-lang=fallback>xushun@xushun-virtual-machine:~/LinuxNetProgramming/test_libevent$ ./test_io_multiplexing 
+./test_io_multiplexing: error while loading shared libraries: libevent-2.1.so.6: cannot open shared object file: No such file or directory
+</code></pre></td></tr></table></div></div><p>解决方法：我们需要为动态链接器指定动态库的位置，在终端配置<code>~/.bashrc</code>中添加一行<code>export LD_LIBRARY_PATH=/usr/local/lib</code>，因为libevent存放在<code>/usr/local/lib</code>，重启终端即可。</p><p>输出：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-fallback data-lang=fallback>xushun@xushun-virtual-machine:~/LinuxNetProgramming/test_libevent$ ./test_io_multiplexing 
+buf[i] = epoll
+buf[i] = poll
+buf[i] = select
+buf[i] = (null)
+buf[i] = (null)
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=常规事件-event></a><h2>常规事件 event</h2><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;event2/event&gt;</span><span class=cp>
+</span></code></pre></td></tr></table></div></div><a class=post-dummy-target id=event_new></a><h3>event_new</h3><p>创建一个事件。</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=k>struct</span> <span class=n>event</span><span class=o>*</span> <span class=nf>event_new</span><span class=p>(</span><span class=k>struct</span> <span class=n>event_base</span><span class=o>*</span> <span class=n>base</span><span class=p>,</span> <span class=n>evutil_t</span> <span class=n>fd</span><span class=p>,</span> <span class=kt>short</span> <span class=n>what</span><span class=p>,</span> <span class=n>event_callback_fn</span> <span class=n>cb</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span><span class=p>;</span>
+<span class=k>typedef</span> <span class=nf>void</span><span class=p>(</span><span class=o>*</span><span class=n>event_callback_fn</span><span class=p>)</span><span class=p>(</span><span class=n>evutil_socket_t</span> <span class=n>fd</span><span class=p>,</span> <span class=kt>short</span> <span class=n>what</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span><span class=p>;</span>
+</code></pre></td></tr></table></div></div><ul><li>返回值：成功创建的<code>event</code></li><li><code>base</code>：event_base</li><li><code>fd</code>：绑定到<code>event</code>的文件描述符</li><li><code>what</code>：事件类型<ul><li><code>EV_READ</code>，一次读事件</li><li><code>EV_WRITE</code>，一次写事件</li><li><code>EV_PERSIST</code>，连续触发，结合<code>event_base_dispatch</code>使用</li></ul></li><li><code>cb</code>：监听事件就绪时调用的回调函数</li><li><code>arg</code>：回调函数的参数</li></ul><a class=post-dummy-target id=event_add></a><h3>event_add</h3><p>将事件添加到<code>event_base</code>。</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=kt>int</span> <span class=nf>event_add</span><span class=p>(</span><span class=k>struct</span> <span class=n>event</span><span class=o>*</span> <span class=n>ev</span><span class=p>,</span> <span class=k>const</span> <span class=k>struct</span> <span class=n>timeval</span><span class=o>*</span> <span class=n>tv</span><span class=p>)</span><span class=p>;</span>
+</code></pre></td></tr></table></div></div><ul><li>返回值：<ul><li>成功，<code>0</code></li><li>失败，<code>-1</code></li></ul></li><li><code>ev</code>：event</li><li><code>tv</code>：超时时长<ul><li><code>NULL</code>：不会超时，一直等到事件被触发，回调函数才会被调用</li><li><code>非0</code>：等待期间，检查事件是否触发，时间到，即使没有触发回调函数依旧会被调用</li></ul></li></ul><a class=post-dummy-target id=evnet_del></a><h3>evnet_del</h3><p>将事件从<code>event_base</code>上摘下。</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=kt>int</span> <span class=nf>event_del</span><span class=p>(</span><span class=k>struct</span> <span class=n>event</span><span class=o>*</span> <span class=n>ev</span><span class=p>)</span><span class=p>;</span>
+</code></pre></td></tr></table></div></div><ul><li>返回值：<ul><li>成功，<code>0</code></li><li>失败，<code>-1</code></li></ul></li></ul><a class=post-dummy-target id=event_free></a><h3>event_free</h3><p>释放一个event</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=kt>int</span> <span class=nf>event_free</span><span class=p>(</span><span class=k>struct</span> <span class=n>event</span><span class=o>*</span> <span class=n>ev</span><span class=p>)</span><span class=p>;</span>
+</code></pre></td></tr></table></div></div><ul><li>返回值：<ul><li>成功，<code>0</code></li><li>失败，<code>-1</code></li></ul></li></ul><a class=post-dummy-target id=未决和非未决状态></a><h2>未决和非未决状态</h2><p>事件有<strong>未决</strong>和<strong>非未决</strong>两种状态。</p><ul><li>未决：有资格被处理，但尚未被处理</li><li>非未决：没有资格被处理</li></ul><ol><li><code>ev = event_new()</code>，新创建的事件属于非未决</li><li><code>event_add(ev)</code>，将事件添加到<code>event_base</code>上后变为未决</li><li>调用<code>event_base_dispatch()</code>并且监听事件被触发，变为激活态</li><li>执行回调函数（处理态），执行完成后变为非未决态</li><li>如果创建新事件时，设置了<code>EV_PERSIST</code>，那么回调函数执行完后，依然为未决态</li><li>使用<code>event_del()</code>可以转为非未决态</li></ol><a class=post-dummy-target id=示例---fifo读写></a><h2>示例 - fifo读写</h2><p>read_fifo.c：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;event2/event.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/stat.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;fcntl.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=kt>void</span> <span class=nf>read_cb</span><span class=p>(</span><span class=n>evutil_socket_t</span> <span class=n>fd</span><span class=p>,</span> <span class=kt>short</span> <span class=n>what</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>char</span> <span class=n>buf</span><span class=p>[</span><span class=mi>4096</span><span class=p>]</span> <span class=o>=</span> <span class=p>{</span><span class=mi>0</span><span class=p>}</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>read_bytes</span> <span class=o>=</span> <span class=n>read</span><span class=p>(</span><span class=n>fd</span><span class=p>,</span> <span class=n>buf</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>buf</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>read event: %s, </span><span class=s>&#34;</span><span class=p>,</span> <span class=n>what</span> <span class=o>&amp;</span> <span class=n>EV_READ</span> <span class=o>?</span> <span class=sa></span><span class=s>&#34;</span><span class=s>Yes</span><span class=s>&#34;</span> <span class=o>:</span> <span class=sa></span><span class=s>&#34;</span><span class=s>No</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>data len = %d, buf = %s</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>read_bytes</span><span class=p>,</span> <span class=n>buf</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>sleep</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=kt>int</span> <span class=n>argc</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span><span class=o>*</span> <span class=n>argv</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>unlink</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>myfifo</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>mkfifo</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>myfifo</span><span class=s>&#34;</span><span class=p>,</span> <span class=mo>0644</span><span class=p>)</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>fd</span> <span class=o>=</span> <span class=n>open</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>myfifo</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>O_RDONLY</span> <span class=o>|</span> <span class=n>O_NONBLOCK</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>struct</span> <span class=n>event_base</span><span class=o>*</span> <span class=n>base</span> <span class=o>=</span> <span class=n>event_base_new</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>struct</span> <span class=n>event</span><span class=o>*</span> <span class=n>ev</span> <span class=o>=</span> <span class=n>event_new</span><span class=p>(</span><span class=n>base</span><span class=p>,</span> <span class=n>fd</span><span class=p>,</span> <span class=n>EV_READ</span> <span class=o>|</span> <span class=n>EV_PERSIST</span><span class=p>,</span> <span class=n>read_cb</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// struct event* ev = event_new(base, fd, EV_READ, read_cb, NULL); // 使用这一行 只会读一次就退出循环
+</span><span class=c1></span>    <span class=n>event_add</span><span class=p>(</span><span class=n>ev</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>event_base_dispatch</span><span class=p>(</span><span class=n>base</span><span class=p>)</span><span class=p>;</span> <span class=c1>// while (1) { epoll_wait(); ...}
+</span><span class=c1></span>    <span class=n>event_free</span><span class=p>(</span><span class=n>ev</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>event_base_free</span><span class=p>(</span><span class=n>base</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>close</span><span class=p>(</span><span class=n>fd</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>unlink</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>myfifo</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>write_fifo.c：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;event2/event.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/stat.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;fcntl.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=kt>void</span> <span class=nf>write_cb</span><span class=p>(</span><span class=n>evutil_socket_t</span> <span class=n>fd</span><span class=p>,</span> <span class=kt>short</span> <span class=n>what</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>char</span> <span class=n>buf</span><span class=p>[</span><span class=mi>4096</span><span class=p>]</span><span class=p>;</span>
+    <span class=k>static</span> <span class=kt>int</span> <span class=n>num</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+    <span class=n>sprintf</span><span class=p>(</span><span class=n>buf</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>hello %d</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>num</span> <span class=o>+</span><span class=o>+</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>write</span><span class=p>(</span><span class=n>fd</span><span class=p>,</span> <span class=n>buf</span><span class=p>,</span> <span class=n>strlen</span><span class=p>(</span><span class=n>buf</span><span class=p>)</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span><span class=p>;</span> <span class=c1>// sprintf 自动加 \0
+</span><span class=c1></span>    <span class=n>sleep</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=kt>int</span> <span class=n>argc</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span><span class=o>*</span> <span class=n>argv</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>fd</span> <span class=o>=</span> <span class=n>open</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>myfifo</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>O_WRONLY</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>struct</span> <span class=n>event_base</span><span class=o>*</span> <span class=n>base</span> <span class=o>=</span> <span class=n>event_base_new</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>struct</span> <span class=n>event</span><span class=o>*</span> <span class=n>ev</span> <span class=o>=</span> <span class=n>event_new</span><span class=p>(</span><span class=n>base</span><span class=p>,</span> <span class=n>fd</span><span class=p>,</span> <span class=n>EV_WRITE</span> <span class=o>|</span> <span class=n>EV_PERSIST</span><span class=p>,</span> <span class=n>write_cb</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// struct event* ev = event_new(base, fd, EV_WRITE, write_cb, NULL);
+</span><span class=c1></span>    <span class=n>event_add</span><span class=p>(</span><span class=n>ev</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>event_base_dispatch</span><span class=p>(</span><span class=n>base</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>event_free</span><span class=p>(</span><span class=n>ev</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>event_base_free</span><span class=p>(</span><span class=n>base</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>close</span><span class=p>(</span><span class=n>fd</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>测试结果：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-fallback data-lang=fallback>xushun@xushun-virtual-machine:~/LinuxNetProgramming/test_libevent$ ./read_fifo 
+read event: Yes, data len = 8, buf = hello 0
+read event: Yes, data len = 8, buf = hello 1
+read event: Yes, data len = 8, buf = hello 2
+read event: Yes, data len = 8, buf = hello 3
+read event: Yes, data len = 8, buf = hello 4
+read event: Yes, data len = 0, buf = 
+read event: Yes, data len = 0, buf = 
+read event: Yes, data len = 0, buf = 
+read event: Yes, data len = 0, buf = 
+read event: Yes, data len = 0, buf = 
+^C
+</code></pre></td></tr></table></div></div><p>第五次写数据后关闭写端，依然会触发读事件。</p><a class=post-dummy-target id=带缓冲区的事件-bufferevent></a><h2>带缓冲区的事件 bufferevent</h2><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;event2/bufferevent&gt;</span><span class=cp>
+</span></code></pre></td></tr></table></div></div><p><code>bufferevent</code>有读写两个缓冲区，是借助队列实现的，先进先出。</p><p>当读缓冲区有数据时，读回调函数就会被调用，使用<code>bufferevent_read()</code>读数据。</p><p>使用<code>bufferevent_read()</code>向写缓冲区写数据，该缓冲区中存在数据时，就会自动写出到对端，然后写回调函数会被调用。</p><a class=post-dummy-target id=bufferevent_socket_new></a><h3>bufferevent_socket_new</h3><p>创建带缓冲区的<code>bufferevent</code>。</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=k>struct</span> <span class=n>bufferevent</span><span class=o>*</span> <span class=nf>bufferevent_socket_new</span><span class=p>(</span><span class=k>struct</span> <span class=n>event_base</span> <span class=o>*</span><span class=n>base</span><span class=p>,</span> <span class=n>evutil_socket_t</span> <span class=n>fd</span><span class=p>,</span> <span class=k>enum</span> <span class=n>bufferevent_options</span> <span class=n>options</span><span class=p>)</span><span class=p>;</span>
+</code></pre></td></tr></table></div></div><ul><li>返回值：成功创建的<code>bufferevent</code></li><li><code>base</code>：event_base</li><li><code>fd</code>：封装的文件描述符</li><li><code>options</code>：<ul><li><code>BEV_OPT_CLOSE_ON_FREE</code>：指定该选项释放时会关闭fd</li></ul></li></ul><a class=post-dummy-target id=bufferevent_free></a><h3>bufferevent_free</h3><p>释放<code>bufferevent</code>。</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=kt>void</span> <span class=nf>buffereventt_free</span><span class=p>(</span><span class=k>struct</span> <span class=n>bufferevent</span><span class=o>*</span> <span class=n>ev</span><span class=p>)</span><span class=p>;</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=bufferevent_setcb></a><h3>bufferevent_setcb</h3><p>为<code>bufferevent</code>设置回调函数。</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=kt>void</span> <span class=nf>bufferevent_setcb</span><span class=p>(</span><span class=k>struct</span> <span class=n>bufferevent</span> <span class=o>*</span> <span class=n>bufev</span><span class=p>,</span>
+                        <span class=n>bufferevent_data_cb</span> <span class=n>readcb</span><span class=p>,</span>
+                        <span class=n>bufferevent_data_cb</span> <span class=n>writecb</span><span class=p>,</span>
+                        <span class=n>bufferevent_event_cb</span> <span class=n>eventcb</span><span class=p>,</span>
+                        <span class=kt>void</span> <span class=o>*</span><span class=n>cbarg</span> <span class=p>)</span><span class=p>;</span>
+
+<span class=k>typedef</span> <span class=nf>void</span><span class=p>(</span><span class=o>*</span><span class=n>bufferevent_data_cb</span><span class=p>)</span><span class=p>(</span><span class=k>struct</span> <span class=n>bufferevent</span><span class=o>*</span> <span class=n>bev</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>ctx</span><span class=p>)</span><span class=p>;</span> <span class=c1>// ctx -- cbarg
+</span><span class=c1></span><span class=k>typedef</span> <span class=nf>void</span><span class=p>(</span><span class=o>*</span><span class=n>bufferevent_event_cb</span><span class=p>)</span><span class=p>(</span><span class=k>struct</span> <span class=n>bufferevent</span><span class=o>*</span> <span class=n>bev</span><span class=p>,</span> <span class=kt>short</span> <span class=n>events</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>ctx</span><span class=p>)</span><span class=p>;</span>
+
+<span class=c1>// 用于读写缓冲区 代替read和write
+</span><span class=c1></span><span class=n>size_t</span> <span class=nf>bufferevent_read</span><span class=p>(</span><span class=k>struct</span> <span class=n>bufferevent</span><span class=o>*</span> <span class=n>bufev</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>data</span><span class=p>,</span> <span class=n>size_t</span> <span class=n>bufsize</span><span class=p>)</span><span class=p>;</span>
+<span class=kt>int</span> <span class=nf>bufferevent_write</span><span class=p>(</span><span class=k>struct</span> <span class=n>bufferevent</span><span class=o>*</span> <span class=n>bufev</span><span class=p>,</span> <span class=k>const</span> <span class=kt>void</span><span class=o>*</span> <span class=n>data</span><span class=p>,</span> <span class=n>size_t</span> <span class=n>size</span><span class=p>)</span><span class=p>;</span>
+</code></pre></td></tr></table></div></div><ul><li><p><code>bufev</code>：bufferevent</p></li><li><p><code>readcb</code>：读缓冲回调</p><ul><li><code>void read_cb(struct bufferevent* bev, void* arg) { ... bufferevent_read(); ... }</code></li></ul></li><li><p><code>writecb</code>：写缓冲回调</p></li><li><p><code>eventcb</code>：其他情况，可以NULL</p></li><li><p><code>cbarg</code>：回调参数</p></li><li><p><code>events</code>：</p><ul><li><code>EV_EVENT_READING</code>：读数据时触发</li><li><code>BEV_EVENT_WRITING</code>：写数据时触发</li><li><code>BEV_EVENT_ERROR</code>：发生错误，调用<code>EVUTIL_SOCKET_ERROR()</code>查看错误信息</li><li><code>BEV_EVENT_TIMEOUT</code>：超时</li><li><code>BEV_EVENT_EOF</code>：文件结束</li><li><code>BEV_EVENT_CONNECTED</code>：（重点）请求的连接过程已完成，实现客户端时可用</li></ul></li></ul><a class=post-dummy-target id=bufferevent_enable-disable></a><h3>bufferevent_enable (disable)</h3><p>启用、禁用缓冲区。</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=kt>void</span> <span class=nf>bufferevent_enable</span><span class=p>(</span><span class=k>struct</span> <span class=n>bufferevent</span><span class=o>*</span> <span class=n>bufev</span><span class=p>,</span> <span class=kt>short</span> <span class=n>events</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 启用
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>bufferevent_disable</span><span class=p>(</span><span class=k>struct</span> <span class=n>bufferevent</span><span class=o>*</span> <span class=n>bufev</span><span class=p>,</span> <span class=kt>short</span> <span class=n>events</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 禁用
+</span><span class=c1></span><span class=kt>short</span> <span class=nf>bufferevent_get_enabled</span><span class=p>(</span><span class=k>struct</span> <span class=n>bufferevent</span><span class=o>*</span> <span class=n>bufev</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 获取禁用状态 &amp;
+</span></code></pre></td></tr></table></div></div><ul><li><code>events</code>：<ul><li><code>EV_READ</code>：读</li><li><code>EV_WRITE</code>：写</li><li><code>EV_READ | EV_WRITE</code>：读写</li></ul></li></ul><p>默认情况下，写缓冲开启，读缓冲关闭，<code>bufferevent_enable(bev, EV_READ)</code>开启读缓冲。</p><a class=post-dummy-target id=客户端连接-bufferevent_socket_connect></a><h3>客户端连接 bufferevent_socket_connect</h3><p>客户端连接服务器。</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=kt>int</span> <span class=nf>bufferevent_socket_connect</span><span class=p>(</span><span class=k>struct</span> <span class=n>bufferevent</span><span class=o>*</span> <span class=n>bev</span><span class=p>,</span> <span class=k>struct</span> <span class=n>sockaddr</span><span class=o>*</span> <span class=n>address</span><span class=p>,</span> <span class=kt>int</span> <span class=n>addrlen</span><span class=p>)</span><span class=p>;</span>
+</code></pre></td></tr></table></div></div><ul><li><code>bev</code>：事件对象（封装了fd）</li><li><code>address</code>：服务器端的地址结构</li><li><code>addrlen</code>：地址结构的大小</li></ul><a class=post-dummy-target id=监听器-evconnlistener_new_bind></a><h3>监听器 evconnlistener_new_bind</h3><p>创建监听器。相当于<code>socket() bind() listen() accept()</code>的作用。</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;event2/listener.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=k>struct</span> <span class=n>evconnlistener</span><span class=o>*</span> <span class=nf>evconnlistener_new_bind</span> <span class=p>(</span>	
+        <span class=k>struct</span> <span class=n>event_base</span><span class=o>*</span> <span class=n>base</span><span class=p>,</span>
+        <span class=n>evconnlistener_cb</span> <span class=n>cb</span><span class=p>,</span> 
+        <span class=kt>void</span><span class=o>*</span> <span class=n>ptr</span><span class=p>,</span> 
+        <span class=kt>unsigned</span> <span class=n>flags</span><span class=p>,</span>
+        <span class=kt>int</span> <span class=n>backlog</span><span class=p>,</span>
+        <span class=k>const</span> <span class=k>struct</span> <span class=n>sockaddr</span><span class=o>*</span> <span class=n>sa</span><span class=p>,</span>
+        <span class=kt>int</span> <span class=n>socklen</span><span class=p>)</span><span class=p>;</span>
+</code></pre></td></tr></table></div></div><ul><li>返回值：成功创建的监听器</li><li><code>base</code>：event_base</li><li><code>cb</code>：监听回调，接收连接后，要做的操作</li><li><code>ptr</code>：回调的参数</li><li><code>flags</code>：<ul><li><code>LEV_OPT_CLOSE_ON_FREE</code>：释放时，关闭底层的套接字</li><li><code>LEV_OPT_REUSEABLE</code>：端口复用</li><li><code>LEV_OPT_CLOSE_ON_FREE | LEV_OPT_REUSEABLE</code></li></ul></li><li><code>backlog</code>：<code>listen</code>的参2，<code>-1</code>表示最大值</li><li><code>sa</code>：服务器自己的地址结构</li><li><code>socklen</code>：地址结构大小</li></ul><a class=post-dummy-target id=evconnlistener_free></a><h3>evconnlistener_free</h3><p>释放监听器。</p><p>函数原型：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;event2/listener.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=kt>void</span> <span class=nf>evconnlistener_free</span><span class=p>(</span><span class=k>struct</span> <span class=n>evconnlistener</span><span class=o>*</span> <span class=n>lev</span><span class=p>)</span><span class=p>;</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=监听器的回调函数></a><h3>监听器的回调函数</h3><p>客户端连接后使用的回调。</p><p>定义：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=k>typedef</span> <span class=nf>void</span><span class=p>(</span><span class=o>*</span><span class=n>evconnlistener</span> <span class=n>cb</span><span class=p>)</span><span class=p>(</span>
+    <span class=k>struct</span> <span class=n>evconnlistener</span><span class=o>*</span> <span class=n>listener</span><span class=p>,</span>
+    <span class=n>evutil_socket_t</span> <span class=n>sock</span><span class=p>,</span>
+    <span class=k>struct</span> <span class=n>sockaddr</span><span class=o>*</span> <span class=n>addr</span><span class=p>,</span>
+    <span class=kt>int</span> <span class=n>len</span><span class=p>,</span>
+    <span class=kt>void</span><span class=o>*</span> <span class=n>ptr</span>
+<span class=p>)</span><span class=p>;</span>
+</code></pre></td></tr></table></div></div><ul><li><code>listener</code>：<code>evconnlistener_new_bind()</code>返回值</li><li><code>sock</code>：用于通信的fd</li><li><code>addr</code>：客户端地址结构</li><li><code>len</code>：addr的大小</li><li><code>ptr</code>：外部<code>ptr</code>的值</li></ul><a class=post-dummy-target id=tcp服务器的实现流程></a><h2>TCP服务器的实现流程</h2><ol><li>创建<code>event_base</code></li><li>创建服务器连接监听器<code>evconnlistener_new_bind()</code></li><li>在<code>evconnlistener_new_bind()</code>的回调函数中，处理接收连接后的操作</li><li>回调函数被调用说明有一个新客户端连接，会得到一个新的fd，用于和客户端通信</li><li>使用<code>bufferevent_socket_new()</code>创建一个新<code>bufferevent</code>事件，将fd封装到这个事件对象中</li><li>使用<code>bufferevent_setcb()</code>给这个<code>bufferevent</code>设置回调</li><li>设置<code>bufferevent</code>的读写缓冲区<code>enable/disable</code></li><li>接收、发送数据<code>bufferevent_read() bufferevent_write()</code></li><li>启动监听循环</li><li>释放资源</li></ol><a class=post-dummy-target id=tcp客户端的实现流程></a><h2>TCP客户端的实现流程</h2><ol><li>创建<code>event_base</code></li><li>使用<code>bufferevent_socket_new()</code>创建一个和服务器通信的<code>bufferevet</code></li><li>使用<code>bufferevent_socket_connect()</code>连接服务器</li><li>使用<code>bufferevent_setcb()</code>设置回调函数</li><li>设置<code>bufferevent</code>的读写缓冲区<code>enable/disable</code></li><li>接收、发送数据</li><li>启动监听循环</li><li>释放资源</li></ol><a class=post-dummy-target id=cs模型tcp通信实现></a><h2>C/S模型TCP通信实现</h2><p>server.c：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span><span class=lnt>59
+</span><span class=lnt>60
+</span><span class=lnt>61
+</span><span class=lnt>62
+</span><span class=lnt>63
+</span><span class=lnt>64
+</span><span class=lnt>65
+</span><span class=lnt>66
+</span><span class=lnt>67
+</span><span class=lnt>68
+</span><span class=lnt>69
+</span><span class=lnt>70
+</span><span class=lnt>71
+</span><span class=lnt>72
+</span><span class=lnt>73
+</span><span class=lnt>74
+</span><span class=lnt>75
+</span><span class=lnt>76
+</span><span class=lnt>77
+</span><span class=lnt>78
+</span><span class=lnt>79
+</span><span class=lnt>80
+</span><span class=lnt>81
+</span><span class=lnt>82
+</span><span class=lnt>83
+</span><span class=lnt>84
+</span><span class=lnt>85
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cm>/*
+</span><span class=cm>@Filename : server.c
+</span><span class=cm>@Description : libevent TCP server
+</span><span class=cm>@Datatime : 2022/06/20 20:17:12
+</span><span class=cm>@Author : xushun
+</span><span class=cm>*/</span>
+<span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;errno.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;arpa/inet.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/socket.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;event2/bufferevent.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;event2/listener.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=cp>#</span><span class=cp>define SERV_PORT 8888</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>define MAX_BUFSIZE 1024</span><span class=cp>
+</span><span class=cp></span>
+<span class=kt>void</span> <span class=nf>read_cb</span><span class=p>(</span><span class=k>struct</span> <span class=n>bufferevent</span><span class=o>*</span> <span class=n>bev</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>ctx</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>char</span> <span class=n>buf</span><span class=p>[</span><span class=n>MAX_BUFSIZE</span><span class=p>]</span> <span class=o>=</span> <span class=p>{</span><span class=mi>0</span><span class=p>}</span><span class=p>;</span>
+    <span class=n>bufferevent_read</span><span class=p>(</span><span class=n>bev</span><span class=p>,</span> <span class=n>buf</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>buf</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>client : %s</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>buf</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>sprintf</span><span class=p>(</span><span class=n>buf</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>server : got your message</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>bufferevent_write</span><span class=p>(</span><span class=n>bev</span><span class=p>,</span> <span class=n>buf</span><span class=p>,</span> <span class=n>strlen</span><span class=p>(</span><span class=n>buf</span><span class=p>)</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>void</span> <span class=nf>write_cb</span><span class=p>(</span><span class=k>struct</span> <span class=n>bufferevent</span><span class=o>*</span> <span class=n>bev</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>ctx</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>server : reply client success, callback called</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>void</span> <span class=nf>event_cb</span><span class=p>(</span><span class=k>struct</span> <span class=n>bufferevent</span><span class=o>*</span> <span class=n>bev</span><span class=p>,</span> <span class=kt>short</span> <span class=n>events</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>ctx</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>events</span> <span class=o>&amp;</span> <span class=n>BEV_EVENT_EOF</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>client closed</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span> <span class=k>else</span> <span class=k>if</span> <span class=p>(</span><span class=n>events</span> <span class=o>&amp;</span> <span class=n>BEV_EVENT_ERROR</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>bufferevent error</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+        <span class=k>return</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>bufferevent_free</span><span class=p>(</span><span class=n>bev</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>bufferevent free</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=c1>// listener callback
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>listener_cb</span><span class=p>(</span>
+    <span class=k>struct</span> <span class=n>evconnlistener</span><span class=o>*</span> <span class=n>listener</span><span class=p>,</span> <span class=n>evutil_socket_t</span> <span class=n>sock</span><span class=p>,</span> 
+    <span class=k>struct</span> <span class=n>sockaddr</span><span class=o>*</span> <span class=n>addr</span><span class=p>,</span> <span class=kt>int</span> <span class=n>len</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>ptr</span>
+<span class=p>)</span> <span class=p>{</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>new client connected</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// get event_base from arg
+</span><span class=c1></span>    <span class=k>struct</span> <span class=n>event_base</span><span class=o>*</span> <span class=n>base</span> <span class=o>=</span> <span class=p>(</span><span class=k>struct</span> <span class=n>event_base</span><span class=o>*</span><span class=p>)</span><span class=n>ptr</span><span class=p>;</span>
+    <span class=c1>// new bufferevent
+</span><span class=c1></span>    <span class=k>struct</span> <span class=n>bufferevent</span><span class=o>*</span> <span class=n>bev</span> <span class=o>=</span> <span class=n>bufferevent_socket_new</span><span class=p>(</span><span class=n>base</span><span class=p>,</span> <span class=n>sock</span><span class=p>,</span> <span class=n>BEV_OPT_CLOSE_ON_FREE</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// set callback function for buffer
+</span><span class=c1></span>    <span class=n>bufferevent_setcb</span><span class=p>(</span><span class=n>bev</span><span class=p>,</span> <span class=n>read_cb</span><span class=p>,</span> <span class=n>write_cb</span><span class=p>,</span> <span class=n>event_cb</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// enable read_buffer
+</span><span class=c1></span>    <span class=n>bufferevent_enable</span><span class=p>(</span><span class=n>bev</span><span class=p>,</span> <span class=n>EV_READ</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=kt>int</span> <span class=n>argc</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span><span class=o>*</span> <span class=n>argv</span><span class=p>)</span> <span class=p>{</span>
+    <span class=c1>// server socket
+</span><span class=c1></span>    <span class=k>struct</span> <span class=n>sockaddr_in</span> <span class=n>serv_addr</span><span class=p>;</span>
+    <span class=n>memset</span><span class=p>(</span><span class=o>&amp;</span><span class=n>serv_addr</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>serv_addr</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>serv_addr</span><span class=p>.</span><span class=n>sin_family</span> <span class=o>=</span> <span class=n>AF_INET</span><span class=p>;</span>
+    <span class=n>serv_addr</span><span class=p>.</span><span class=n>sin_port</span> <span class=o>=</span> <span class=n>htons</span><span class=p>(</span><span class=n>SERV_PORT</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>serv_addr</span><span class=p>.</span><span class=n>sin_addr</span><span class=p>.</span><span class=n>s_addr</span> <span class=o>=</span> <span class=n>htons</span><span class=p>(</span><span class=n>INADDR_ANY</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// base
+</span><span class=c1></span>    <span class=k>struct</span> <span class=n>event_base</span><span class=o>*</span> <span class=n>base</span> <span class=o>=</span> <span class=n>event_base_new</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// socket bind listen accept
+</span><span class=c1></span>    <span class=k>struct</span> <span class=n>evconnlistener</span><span class=o>*</span> <span class=n>listener</span> <span class=o>=</span> <span class=n>evconnlistener_new_bind</span><span class=p>(</span>
+        <span class=n>base</span><span class=p>,</span> <span class=n>listener_cb</span><span class=p>,</span> <span class=n>base</span><span class=p>,</span>
+        <span class=n>LEV_OPT_CLOSE_ON_FREE</span> <span class=o>|</span> <span class=n>LEV_OPT_REUSEABLE</span><span class=p>,</span>
+        <span class=o>-</span><span class=mi>1</span><span class=p>,</span> <span class=p>(</span><span class=k>struct</span> <span class=n>sockaddr</span><span class=o>*</span><span class=p>)</span><span class=o>&amp;</span><span class=n>serv_addr</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>serv_addr</span><span class=p>)</span>
+    <span class=p>)</span><span class=p>;</span>
+    <span class=c1>// loop
+</span><span class=c1></span>    <span class=n>event_base_dispatch</span><span class=p>(</span><span class=n>base</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// free
+</span><span class=c1></span>    <span class=n>evconnlistener_free</span><span class=p>(</span><span class=n>listener</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>event_base_free</span><span class=p>(</span><span class=n>base</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>client.c：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span><span class=lnt>59
+</span><span class=lnt>60
+</span><span class=lnt>61
+</span><span class=lnt>62
+</span><span class=lnt>63
+</span><span class=lnt>64
+</span><span class=lnt>65
+</span><span class=lnt>66
+</span><span class=lnt>67
+</span><span class=lnt>68
+</span><span class=lnt>69
+</span><span class=lnt>70
+</span><span class=lnt>71
+</span><span class=lnt>72
+</span><span class=lnt>73
+</span><span class=lnt>74
+</span><span class=lnt>75
+</span><span class=lnt>76
+</span><span class=lnt>77
+</span><span class=lnt>78
+</span><span class=lnt>79
+</span><span class=lnt>80
+</span><span class=lnt>81
+</span><span class=lnt>82
+</span><span class=lnt>83
+</span><span class=lnt>84
+</span><span class=lnt>85
+</span><span class=lnt>86
+</span><span class=lnt>87
+</span><span class=lnt>88
+</span><span class=lnt>89
+</span><span class=lnt>90
+</span><span class=lnt>91
+</span><span class=lnt>92
+</span><span class=lnt>93
+</span><span class=lnt>94
+</span><span class=lnt>95
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cm>/*
+</span><span class=cm>@Filename : client.c
+</span><span class=cm>@Description : libevent TCP client
+</span><span class=cm>@Datatime : 2022/06/20 21:12:43
+</span><span class=cm>@Author : xushun
+</span><span class=cm>*/</span>
+<span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;errno.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;pthread.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;arpa/inet.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/socket.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;event2/bufferevent.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;event2/listener.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=cp>#</span><span class=cp>define SERV_PORT 8888</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>define SERV_ADDR &#34;127.0.0.1&#34;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>define MAX_BUFSIZE 1024</span><span class=cp>
+</span><span class=cp></span>
+<span class=kt>void</span> <span class=nf>read_cb</span><span class=p>(</span><span class=k>struct</span> <span class=n>bufferevent</span><span class=o>*</span> <span class=n>bev</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>ctx</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>char</span> <span class=n>buf</span><span class=p>[</span><span class=n>MAX_BUFSIZE</span><span class=p>]</span> <span class=o>=</span> <span class=p>{</span><span class=mi>0</span><span class=p>}</span><span class=p>;</span>
+    <span class=n>bufferevent_read</span><span class=p>(</span><span class=n>bev</span><span class=p>,</span> <span class=n>buf</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>buf</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 从终端写的数据发送给server
+</span><span class=c1></span>    <span class=c1>// 从server读取的数据显示到终端
+</span><span class=c1></span>    <span class=k>if</span> <span class=p>(</span><span class=n>buf</span><span class=p>[</span><span class=mi>0</span><span class=p>]</span> <span class=o>=</span><span class=o>=</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>#</span><span class=sc>&#39;</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>bufferevent_write</span><span class=p>(</span><span class=n>bev</span><span class=p>,</span> <span class=n>buf</span> <span class=o>+</span> <span class=mi>1</span><span class=p>,</span> <span class=n>strlen</span><span class=p>(</span><span class=n>buf</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>%s</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>buf</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>void</span> <span class=nf>write_cb</span><span class=p>(</span><span class=k>struct</span> <span class=n>bufferevent</span><span class=o>*</span> <span class=n>bev</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>ctx</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>client : send to server success, callback called</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>void</span> <span class=nf>event_cb</span><span class=p>(</span><span class=k>struct</span> <span class=n>bufferevent</span><span class=o>*</span> <span class=n>bev</span><span class=p>,</span> <span class=kt>short</span> <span class=n>events</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>ctx</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>events</span> <span class=o>&amp;</span> <span class=n>BEV_EVENT_EOF</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>client closed</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span> <span class=k>else</span> <span class=k>if</span> <span class=p>(</span><span class=n>events</span> <span class=o>&amp;</span> <span class=n>BEV_EVENT_ERROR</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>bufferevent error</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span> <span class=k>else</span> <span class=k>if</span> <span class=p>(</span><span class=n>events</span> <span class=o>&amp;</span> <span class=n>BEV_EVENT_CONNECTED</span><span class=p>)</span><span class=p>{</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>connected to server</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>return</span><span class=p>;</span>
+    <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+        <span class=k>return</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>bufferevent_free</span><span class=p>(</span><span class=n>bev</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>bufferevent free</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=c1>// read bytes from terminal
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>read_terminal</span><span class=p>(</span><span class=n>evutil_socket_t</span> <span class=n>fd</span><span class=p>,</span> <span class=kt>short</span> <span class=n>what</span><span class=p>,</span> <span class=kt>void</span><span class=o>*</span> <span class=n>arg</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>char</span> <span class=n>buf</span><span class=p>[</span><span class=n>MAX_BUFSIZE</span><span class=p>]</span> <span class=o>=</span> <span class=p>{</span><span class=mi>0</span><span class=p>}</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>read_bytes</span> <span class=o>=</span> <span class=n>read</span><span class=p>(</span><span class=n>fd</span><span class=p>,</span> <span class=n>buf</span> <span class=o>+</span> <span class=mi>1</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>buf</span><span class=p>)</span> <span class=o>-</span> <span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>buf</span><span class=p>[</span><span class=mi>0</span><span class=p>]</span> <span class=o>=</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>#</span><span class=sc>&#39;</span><span class=p>;</span>
+    <span class=k>struct</span> <span class=n>bufferevent</span><span class=o>*</span> <span class=n>bev</span> <span class=o>=</span> <span class=p>(</span><span class=k>struct</span> <span class=n>bufferevent</span><span class=o>*</span><span class=p>)</span><span class=n>arg</span><span class=p>;</span>
+    <span class=n>bufferevent_write</span><span class=p>(</span><span class=n>bev</span><span class=p>,</span> <span class=n>buf</span><span class=p>,</span> <span class=n>read_bytes</span> <span class=o>+</span> <span class=mi>2</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=kt>int</span> <span class=n>argc</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span><span class=o>*</span> <span class=n>argv</span><span class=p>)</span> <span class=p>{</span>
+    <span class=c1>// base
+</span><span class=c1></span>    <span class=k>struct</span> <span class=n>event_base</span><span class=o>*</span> <span class=n>base</span> <span class=o>=</span> <span class=n>event_base_new</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// client fd -&gt; bufferevent
+</span><span class=c1></span>    <span class=kt>int</span> <span class=n>client_fd</span> <span class=o>=</span> <span class=n>socket</span><span class=p>(</span><span class=n>AF_INET</span><span class=p>,</span> <span class=n>SOCK_STREAM</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>struct</span> <span class=n>bufferevent</span><span class=o>*</span> <span class=n>bev</span> <span class=o>=</span> <span class=n>bufferevent_socket_new</span><span class=p>(</span><span class=n>base</span><span class=p>,</span> <span class=n>client_fd</span><span class=p>,</span> <span class=n>BEV_OPT_CLOSE_ON_FREE</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// server info
+</span><span class=c1></span>    <span class=k>struct</span> <span class=n>sockaddr_in</span> <span class=n>serv_addr</span><span class=p>;</span>
+    <span class=n>memset</span><span class=p>(</span><span class=o>&amp;</span><span class=n>serv_addr</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>serv_addr</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>serv_addr</span><span class=p>.</span><span class=n>sin_family</span> <span class=o>=</span> <span class=n>AF_INET</span><span class=p>;</span>
+    <span class=n>serv_addr</span><span class=p>.</span><span class=n>sin_port</span> <span class=o>=</span> <span class=n>htons</span><span class=p>(</span><span class=n>SERV_PORT</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>inet_pton</span><span class=p>(</span><span class=n>AF_INET</span><span class=p>,</span> <span class=n>SERV_ADDR</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>serv_addr</span><span class=p>.</span><span class=n>sin_addr</span><span class=p>.</span><span class=n>s_addr</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// connect to server
+</span><span class=c1></span>    <span class=n>bufferevent_socket_connect</span><span class=p>(</span><span class=n>bev</span><span class=p>,</span> <span class=p>(</span><span class=k>struct</span> <span class=n>sockaddr</span><span class=o>*</span><span class=p>)</span><span class=o>&amp;</span><span class=n>serv_addr</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>serv_addr</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// set callback
+</span><span class=c1></span>    <span class=n>bufferevent_setcb</span><span class=p>(</span><span class=n>bev</span><span class=p>,</span> <span class=n>read_cb</span><span class=p>,</span> <span class=n>write_cb</span><span class=p>,</span> <span class=n>event_cb</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// enable read
+</span><span class=c1></span>    <span class=n>bufferevent_enable</span><span class=p>(</span><span class=n>bev</span><span class=p>,</span> <span class=n>EV_READ</span><span class=p>)</span><span class=p>;</span>
+
+    <span class=c1>// event : listen bytes from terminal
+</span><span class=c1></span>    <span class=k>struct</span> <span class=n>event</span><span class=o>*</span> <span class=n>ev</span> <span class=o>=</span> <span class=n>event_new</span><span class=p>(</span><span class=n>base</span><span class=p>,</span> <span class=n>STDOUT_FILENO</span><span class=p>,</span> <span class=n>EV_READ</span> <span class=o>|</span> <span class=n>EV_PERSIST</span><span class=p>,</span> <span class=n>read_terminal</span><span class=p>,</span> <span class=n>bev</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>event_add</span><span class=p>(</span><span class=n>ev</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>)</span><span class=p>;</span>
+
+    <span class=c1>// loop
+</span><span class=c1></span>    <span class=n>event_base_dispatch</span><span class=p>(</span><span class=n>base</span><span class=p>)</span><span class=p>;</span>
+
+    <span class=n>event_base_free</span><span class=p>(</span><span class=n>base</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>event_free</span><span class=p>(</span><span class=n>ev</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>bufferevent_free</span><span class=p>(</span><span class=n>bev</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
 <span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
 <span>2022-06-19</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
 <span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2flinux%25E7%25BD%2591%25E7%25BB%259C%25E7%25BC%2596%25E7%25A8%258B09-libevent%2f&text=%e3%80%90Linux%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b%e3%80%9109%20-%20libevent&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2flinux%25E7%25BD%2591%25E7%25BB%259C%25E7%25BC%2596%25E7%25A8%258B09-libevent%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2flinux%25E7%25BD%2591%25E7%25BB%259C%25E7%25BC%2596%25E7%25A8%258B09-libevent%2f&title=%e3%80%90Linux%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b%e3%80%9109%20-%20libevent" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/linux/><i class="fas fa-tag fa-fw"></i>&nbsp;Linux</a>&nbsp;
