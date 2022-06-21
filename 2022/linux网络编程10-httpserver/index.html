@@ -1,0 +1,1017 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【Linux网络编程】10 - HTTPServer | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B09-libevent/><link rel=canonical href=https://xushun1221.github.io/2022/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B10-httpserver/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【Linux网络编程】10 - HTTPServer"><meta name=twitter:description content="通信流程分析 获取 http协议的第一行。 从首行中拆分 GET、文件名、协议版本。 获取用户请求的文件名。 判断文件是否存在。 stat() 判断是文件还是目录。 是"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【Linux网络编程】10 - HTTPServer","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B10-httpserver\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"Linux, network, libevent","wordcount":3028,"url":"https:\/\/xushun1221.github.io\/2022\/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B10-httpserver\/","datePublished":"2022-06-21T00:00:00\x2b00:00","dateModified":"2022-06-21T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【Linux网络编程】10 - HTTPServer</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-06-21>2022-06-21</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 3028 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#通信流程分析>通信流程分析</a></li><li><a href=#epoll实现>epoll实现</a></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#通信流程分析>通信流程分析</a></li><li><a href=#epoll实现>epoll实现</a></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=通信流程分析></a><h2>通信流程分析</h2><ol><li>获取 http协议的第一行。</li><li>从首行中拆分 GET、文件名、协议版本。 获取用户请求的文件名。</li><li>判断文件是否存在。 stat()</li><li>判断是文件还是目录。</li><li>是文件&ndash; open &ndash; read &ndash; 写回给浏览器</li><li>写 http 应答协议头</li><li>写文件数据</li></ol><a class=post-dummy-target id=epoll实现></a><h2>epoll实现</h2><p>main.c：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cm>/*
+</span><span class=cm>@Filename : main.c
+</span><span class=cm>@Description : http server by epoll
+</span><span class=cm>@Datatime : 2022/06/21 15:53:08
+</span><span class=cm>@Author : xushun
+</span><span class=cm>*/</span>
+<span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;server.h&#34;</span><span class=cp>
+</span><span class=cp></span>
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=kt>int</span> <span class=n>argc</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span><span class=o>*</span> <span class=n>argv</span><span class=p>)</span> <span class=p>{</span>
+    <span class=c1>// 检查输入的参数
+</span><span class=c1></span>    <span class=k>if</span> <span class=p>(</span><span class=n>argc</span> <span class=o>&lt;</span> <span class=mi>3</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>eg: ./server port paht</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=c1>// 采用指定的端口
+</span><span class=c1></span>    <span class=kt>int</span> <span class=n>port</span> <span class=o>=</span> <span class=n>atoi</span><span class=p>(</span><span class=n>argv</span><span class=p>[</span><span class=mi>1</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 切换工作目录
+</span><span class=c1></span>    <span class=kt>int</span> <span class=n>ret</span> <span class=o>=</span> <span class=n>chdir</span><span class=p>(</span><span class=n>argv</span><span class=p>[</span><span class=mi>2</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>ret</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>chdir error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=c1>// 启动epoll模型
+</span><span class=c1></span>    <span class=n>epoll_run</span><span class=p>(</span><span class=n>port</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>server.h：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cm>/*
+</span><span class=cm>@Filename : server.h
+</span><span class=cm>@Description : header of server
+</span><span class=cm>@Datatime : 2022/06/21 15:33:55
+</span><span class=cm>@Author : xushun
+</span><span class=cm>*/</span>
+<span class=cp>#</span><span class=cp>ifndef __SERVER_H_</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>define __SERVER_H_</span><span class=cp>
+</span><span class=cp></span>
+<span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdlib.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;errno.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;fcntl.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;dirent.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;ctype.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/types.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/epoll.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/stat.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;arpa/inet.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=cp>#</span><span class=cp>define MAX_CLIENTS 1000</span><span class=cp>
+</span><span class=cp></span>
+<span class=kt>int</span> <span class=nf>init_listen_fd</span><span class=p>(</span><span class=kt>int</span> <span class=n>port</span><span class=p>,</span> <span class=kt>int</span> <span class=n>epfd</span><span class=p>)</span><span class=p>;</span>
+<span class=kt>void</span> <span class=nf>epoll_run</span><span class=p>(</span><span class=kt>int</span> <span class=n>port</span><span class=p>)</span><span class=p>;</span>
+<span class=kt>void</span> <span class=nf>do_accept</span><span class=p>(</span><span class=kt>int</span> <span class=n>listen_fd</span><span class=p>,</span> <span class=kt>int</span> <span class=n>epfd</span><span class=p>)</span><span class=p>;</span>
+<span class=kt>void</span> <span class=nf>do_read</span><span class=p>(</span><span class=kt>int</span> <span class=n>client_fd</span><span class=p>,</span> <span class=kt>int</span> <span class=n>epfd</span><span class=p>)</span><span class=p>;</span>
+<span class=kt>int</span> <span class=nf>get_line</span><span class=p>(</span><span class=kt>int</span> <span class=n>sock</span><span class=p>,</span> <span class=kt>char</span> <span class=o>*</span> <span class=n>buf</span><span class=p>,</span> <span class=kt>int</span> <span class=n>size</span><span class=p>)</span><span class=p>;</span>
+<span class=kt>void</span> <span class=nf>disconnect</span><span class=p>(</span><span class=kt>int</span> <span class=n>client_fd</span><span class=p>,</span> <span class=kt>int</span> <span class=n>epfd</span><span class=p>)</span><span class=p>;</span>
+<span class=kt>void</span> <span class=nf>http_request</span><span class=p>(</span><span class=k>const</span> <span class=kt>char</span><span class=o>*</span> <span class=n>request</span><span class=p>,</span> <span class=kt>int</span> <span class=n>client_fd</span><span class=p>)</span><span class=p>;</span>
+<span class=kt>void</span> <span class=nf>send_responsd_head</span><span class=p>(</span><span class=kt>int</span> <span class=n>client_fd</span><span class=p>,</span> <span class=kt>int</span> <span class=n>no</span><span class=p>,</span> <span class=k>const</span> <span class=kt>char</span><span class=o>*</span> <span class=n>description</span><span class=p>,</span> <span class=k>const</span> <span class=kt>char</span><span class=o>*</span> <span class=n>type</span><span class=p>,</span> <span class=kt>long</span> <span class=n>len</span><span class=p>)</span><span class=p>;</span>
+<span class=kt>void</span> <span class=nf>send_file</span><span class=p>(</span><span class=kt>int</span> <span class=n>client_fd</span><span class=p>,</span> <span class=k>const</span> <span class=kt>char</span><span class=o>*</span> <span class=n>filename</span><span class=p>)</span><span class=p>;</span>
+<span class=kt>void</span> <span class=nf>send_dir</span><span class=p>(</span><span class=kt>int</span> <span class=n>client_fd</span><span class=p>,</span> <span class=k>const</span> <span class=kt>char</span><span class=o>*</span> <span class=n>dirname</span><span class=p>)</span><span class=p>;</span>
+<span class=kt>void</span> <span class=nf>send_error</span><span class=p>(</span><span class=kt>int</span> <span class=n>client_fd</span><span class=p>,</span> <span class=kt>int</span> <span class=n>status</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span> <span class=n>title</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span> <span class=n>text</span><span class=p>)</span><span class=p>;</span>
+<span class=kt>int</span> <span class=nf>hexit</span><span class=p>(</span><span class=kt>char</span> <span class=n>c</span><span class=p>)</span><span class=p>;</span>
+<span class=kt>void</span> <span class=nf>encode_str</span><span class=p>(</span><span class=kt>char</span><span class=o>*</span> <span class=n>to</span><span class=p>,</span> <span class=kt>int</span> <span class=n>tosize</span><span class=p>,</span> <span class=k>const</span> <span class=kt>char</span><span class=o>*</span> <span class=n>from</span><span class=p>)</span><span class=p>;</span>
+<span class=kt>void</span> <span class=nf>decode_str</span><span class=p>(</span><span class=kt>char</span><span class=o>*</span> <span class=n>to</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span> <span class=n>from</span><span class=p>)</span><span class=p>;</span>
+<span class=k>const</span> <span class=kt>char</span><span class=o>*</span> <span class=nf>get_file_type</span><span class=p>(</span><span class=k>const</span> <span class=kt>char</span><span class=o>*</span> <span class=n>filename</span><span class=p>)</span><span class=p>;</span>
+
+<span class=cp>#</span><span class=cp>endif</span><span class=cp>
+</span></code></pre></td></tr></table></div></div><p>server.c：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>  1
+</span><span class=lnt>  2
+</span><span class=lnt>  3
+</span><span class=lnt>  4
+</span><span class=lnt>  5
+</span><span class=lnt>  6
+</span><span class=lnt>  7
+</span><span class=lnt>  8
+</span><span class=lnt>  9
+</span><span class=lnt> 10
+</span><span class=lnt> 11
+</span><span class=lnt> 12
+</span><span class=lnt> 13
+</span><span class=lnt> 14
+</span><span class=lnt> 15
+</span><span class=lnt> 16
+</span><span class=lnt> 17
+</span><span class=lnt> 18
+</span><span class=lnt> 19
+</span><span class=lnt> 20
+</span><span class=lnt> 21
+</span><span class=lnt> 22
+</span><span class=lnt> 23
+</span><span class=lnt> 24
+</span><span class=lnt> 25
+</span><span class=lnt> 26
+</span><span class=lnt> 27
+</span><span class=lnt> 28
+</span><span class=lnt> 29
+</span><span class=lnt> 30
+</span><span class=lnt> 31
+</span><span class=lnt> 32
+</span><span class=lnt> 33
+</span><span class=lnt> 34
+</span><span class=lnt> 35
+</span><span class=lnt> 36
+</span><span class=lnt> 37
+</span><span class=lnt> 38
+</span><span class=lnt> 39
+</span><span class=lnt> 40
+</span><span class=lnt> 41
+</span><span class=lnt> 42
+</span><span class=lnt> 43
+</span><span class=lnt> 44
+</span><span class=lnt> 45
+</span><span class=lnt> 46
+</span><span class=lnt> 47
+</span><span class=lnt> 48
+</span><span class=lnt> 49
+</span><span class=lnt> 50
+</span><span class=lnt> 51
+</span><span class=lnt> 52
+</span><span class=lnt> 53
+</span><span class=lnt> 54
+</span><span class=lnt> 55
+</span><span class=lnt> 56
+</span><span class=lnt> 57
+</span><span class=lnt> 58
+</span><span class=lnt> 59
+</span><span class=lnt> 60
+</span><span class=lnt> 61
+</span><span class=lnt> 62
+</span><span class=lnt> 63
+</span><span class=lnt> 64
+</span><span class=lnt> 65
+</span><span class=lnt> 66
+</span><span class=lnt> 67
+</span><span class=lnt> 68
+</span><span class=lnt> 69
+</span><span class=lnt> 70
+</span><span class=lnt> 71
+</span><span class=lnt> 72
+</span><span class=lnt> 73
+</span><span class=lnt> 74
+</span><span class=lnt> 75
+</span><span class=lnt> 76
+</span><span class=lnt> 77
+</span><span class=lnt> 78
+</span><span class=lnt> 79
+</span><span class=lnt> 80
+</span><span class=lnt> 81
+</span><span class=lnt> 82
+</span><span class=lnt> 83
+</span><span class=lnt> 84
+</span><span class=lnt> 85
+</span><span class=lnt> 86
+</span><span class=lnt> 87
+</span><span class=lnt> 88
+</span><span class=lnt> 89
+</span><span class=lnt> 90
+</span><span class=lnt> 91
+</span><span class=lnt> 92
+</span><span class=lnt> 93
+</span><span class=lnt> 94
+</span><span class=lnt> 95
+</span><span class=lnt> 96
+</span><span class=lnt> 97
+</span><span class=lnt> 98
+</span><span class=lnt> 99
+</span><span class=lnt>100
+</span><span class=lnt>101
+</span><span class=lnt>102
+</span><span class=lnt>103
+</span><span class=lnt>104
+</span><span class=lnt>105
+</span><span class=lnt>106
+</span><span class=lnt>107
+</span><span class=lnt>108
+</span><span class=lnt>109
+</span><span class=lnt>110
+</span><span class=lnt>111
+</span><span class=lnt>112
+</span><span class=lnt>113
+</span><span class=lnt>114
+</span><span class=lnt>115
+</span><span class=lnt>116
+</span><span class=lnt>117
+</span><span class=lnt>118
+</span><span class=lnt>119
+</span><span class=lnt>120
+</span><span class=lnt>121
+</span><span class=lnt>122
+</span><span class=lnt>123
+</span><span class=lnt>124
+</span><span class=lnt>125
+</span><span class=lnt>126
+</span><span class=lnt>127
+</span><span class=lnt>128
+</span><span class=lnt>129
+</span><span class=lnt>130
+</span><span class=lnt>131
+</span><span class=lnt>132
+</span><span class=lnt>133
+</span><span class=lnt>134
+</span><span class=lnt>135
+</span><span class=lnt>136
+</span><span class=lnt>137
+</span><span class=lnt>138
+</span><span class=lnt>139
+</span><span class=lnt>140
+</span><span class=lnt>141
+</span><span class=lnt>142
+</span><span class=lnt>143
+</span><span class=lnt>144
+</span><span class=lnt>145
+</span><span class=lnt>146
+</span><span class=lnt>147
+</span><span class=lnt>148
+</span><span class=lnt>149
+</span><span class=lnt>150
+</span><span class=lnt>151
+</span><span class=lnt>152
+</span><span class=lnt>153
+</span><span class=lnt>154
+</span><span class=lnt>155
+</span><span class=lnt>156
+</span><span class=lnt>157
+</span><span class=lnt>158
+</span><span class=lnt>159
+</span><span class=lnt>160
+</span><span class=lnt>161
+</span><span class=lnt>162
+</span><span class=lnt>163
+</span><span class=lnt>164
+</span><span class=lnt>165
+</span><span class=lnt>166
+</span><span class=lnt>167
+</span><span class=lnt>168
+</span><span class=lnt>169
+</span><span class=lnt>170
+</span><span class=lnt>171
+</span><span class=lnt>172
+</span><span class=lnt>173
+</span><span class=lnt>174
+</span><span class=lnt>175
+</span><span class=lnt>176
+</span><span class=lnt>177
+</span><span class=lnt>178
+</span><span class=lnt>179
+</span><span class=lnt>180
+</span><span class=lnt>181
+</span><span class=lnt>182
+</span><span class=lnt>183
+</span><span class=lnt>184
+</span><span class=lnt>185
+</span><span class=lnt>186
+</span><span class=lnt>187
+</span><span class=lnt>188
+</span><span class=lnt>189
+</span><span class=lnt>190
+</span><span class=lnt>191
+</span><span class=lnt>192
+</span><span class=lnt>193
+</span><span class=lnt>194
+</span><span class=lnt>195
+</span><span class=lnt>196
+</span><span class=lnt>197
+</span><span class=lnt>198
+</span><span class=lnt>199
+</span><span class=lnt>200
+</span><span class=lnt>201
+</span><span class=lnt>202
+</span><span class=lnt>203
+</span><span class=lnt>204
+</span><span class=lnt>205
+</span><span class=lnt>206
+</span><span class=lnt>207
+</span><span class=lnt>208
+</span><span class=lnt>209
+</span><span class=lnt>210
+</span><span class=lnt>211
+</span><span class=lnt>212
+</span><span class=lnt>213
+</span><span class=lnt>214
+</span><span class=lnt>215
+</span><span class=lnt>216
+</span><span class=lnt>217
+</span><span class=lnt>218
+</span><span class=lnt>219
+</span><span class=lnt>220
+</span><span class=lnt>221
+</span><span class=lnt>222
+</span><span class=lnt>223
+</span><span class=lnt>224
+</span><span class=lnt>225
+</span><span class=lnt>226
+</span><span class=lnt>227
+</span><span class=lnt>228
+</span><span class=lnt>229
+</span><span class=lnt>230
+</span><span class=lnt>231
+</span><span class=lnt>232
+</span><span class=lnt>233
+</span><span class=lnt>234
+</span><span class=lnt>235
+</span><span class=lnt>236
+</span><span class=lnt>237
+</span><span class=lnt>238
+</span><span class=lnt>239
+</span><span class=lnt>240
+</span><span class=lnt>241
+</span><span class=lnt>242
+</span><span class=lnt>243
+</span><span class=lnt>244
+</span><span class=lnt>245
+</span><span class=lnt>246
+</span><span class=lnt>247
+</span><span class=lnt>248
+</span><span class=lnt>249
+</span><span class=lnt>250
+</span><span class=lnt>251
+</span><span class=lnt>252
+</span><span class=lnt>253
+</span><span class=lnt>254
+</span><span class=lnt>255
+</span><span class=lnt>256
+</span><span class=lnt>257
+</span><span class=lnt>258
+</span><span class=lnt>259
+</span><span class=lnt>260
+</span><span class=lnt>261
+</span><span class=lnt>262
+</span><span class=lnt>263
+</span><span class=lnt>264
+</span><span class=lnt>265
+</span><span class=lnt>266
+</span><span class=lnt>267
+</span><span class=lnt>268
+</span><span class=lnt>269
+</span><span class=lnt>270
+</span><span class=lnt>271
+</span><span class=lnt>272
+</span><span class=lnt>273
+</span><span class=lnt>274
+</span><span class=lnt>275
+</span><span class=lnt>276
+</span><span class=lnt>277
+</span><span class=lnt>278
+</span><span class=lnt>279
+</span><span class=lnt>280
+</span><span class=lnt>281
+</span><span class=lnt>282
+</span><span class=lnt>283
+</span><span class=lnt>284
+</span><span class=lnt>285
+</span><span class=lnt>286
+</span><span class=lnt>287
+</span><span class=lnt>288
+</span><span class=lnt>289
+</span><span class=lnt>290
+</span><span class=lnt>291
+</span><span class=lnt>292
+</span><span class=lnt>293
+</span><span class=lnt>294
+</span><span class=lnt>295
+</span><span class=lnt>296
+</span><span class=lnt>297
+</span><span class=lnt>298
+</span><span class=lnt>299
+</span><span class=lnt>300
+</span><span class=lnt>301
+</span><span class=lnt>302
+</span><span class=lnt>303
+</span><span class=lnt>304
+</span><span class=lnt>305
+</span><span class=lnt>306
+</span><span class=lnt>307
+</span><span class=lnt>308
+</span><span class=lnt>309
+</span><span class=lnt>310
+</span><span class=lnt>311
+</span><span class=lnt>312
+</span><span class=lnt>313
+</span><span class=lnt>314
+</span><span class=lnt>315
+</span><span class=lnt>316
+</span><span class=lnt>317
+</span><span class=lnt>318
+</span><span class=lnt>319
+</span><span class=lnt>320
+</span><span class=lnt>321
+</span><span class=lnt>322
+</span><span class=lnt>323
+</span><span class=lnt>324
+</span><span class=lnt>325
+</span><span class=lnt>326
+</span><span class=lnt>327
+</span><span class=lnt>328
+</span><span class=lnt>329
+</span><span class=lnt>330
+</span><span class=lnt>331
+</span><span class=lnt>332
+</span><span class=lnt>333
+</span><span class=lnt>334
+</span><span class=lnt>335
+</span><span class=lnt>336
+</span><span class=lnt>337
+</span><span class=lnt>338
+</span><span class=lnt>339
+</span><span class=lnt>340
+</span><span class=lnt>341
+</span><span class=lnt>342
+</span><span class=lnt>343
+</span><span class=lnt>344
+</span><span class=lnt>345
+</span><span class=lnt>346
+</span><span class=lnt>347
+</span><span class=lnt>348
+</span><span class=lnt>349
+</span><span class=lnt>350
+</span><span class=lnt>351
+</span><span class=lnt>352
+</span><span class=lnt>353
+</span><span class=lnt>354
+</span><span class=lnt>355
+</span><span class=lnt>356
+</span><span class=lnt>357
+</span><span class=lnt>358
+</span><span class=lnt>359
+</span><span class=lnt>360
+</span><span class=lnt>361
+</span><span class=lnt>362
+</span><span class=lnt>363
+</span><span class=lnt>364
+</span><span class=lnt>365
+</span><span class=lnt>366
+</span><span class=lnt>367
+</span><span class=lnt>368
+</span><span class=lnt>369
+</span><span class=lnt>370
+</span><span class=lnt>371
+</span><span class=lnt>372
+</span><span class=lnt>373
+</span><span class=lnt>374
+</span><span class=lnt>375
+</span><span class=lnt>376
+</span><span class=lnt>377
+</span><span class=lnt>378
+</span><span class=lnt>379
+</span><span class=lnt>380
+</span><span class=lnt>381
+</span><span class=lnt>382
+</span><span class=lnt>383
+</span><span class=lnt>384
+</span><span class=lnt>385
+</span><span class=lnt>386
+</span><span class=lnt>387
+</span><span class=lnt>388
+</span><span class=lnt>389
+</span><span class=lnt>390
+</span><span class=lnt>391
+</span><span class=lnt>392
+</span><span class=lnt>393
+</span><span class=lnt>394
+</span><span class=lnt>395
+</span><span class=lnt>396
+</span><span class=lnt>397
+</span><span class=lnt>398
+</span><span class=lnt>399
+</span><span class=lnt>400
+</span><span class=lnt>401
+</span><span class=lnt>402
+</span><span class=lnt>403
+</span><span class=lnt>404
+</span><span class=lnt>405
+</span><span class=lnt>406
+</span><span class=lnt>407
+</span><span class=lnt>408
+</span><span class=lnt>409
+</span><span class=lnt>410
+</span><span class=lnt>411
+</span><span class=lnt>412
+</span><span class=lnt>413
+</span><span class=lnt>414
+</span><span class=lnt>415
+</span><span class=lnt>416
+</span><span class=lnt>417
+</span><span class=lnt>418
+</span><span class=lnt>419
+</span><span class=lnt>420
+</span><span class=lnt>421
+</span><span class=lnt>422
+</span><span class=lnt>423
+</span><span class=lnt>424
+</span><span class=lnt>425
+</span><span class=lnt>426
+</span><span class=lnt>427
+</span><span class=lnt>428
+</span><span class=lnt>429
+</span><span class=lnt>430
+</span><span class=lnt>431
+</span><span class=lnt>432
+</span><span class=lnt>433
+</span><span class=lnt>434
+</span><span class=lnt>435
+</span><span class=lnt>436
+</span><span class=lnt>437
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cm>/*
+</span><span class=cm>@Filename : server.c
+</span><span class=cm>@Description : server functions
+</span><span class=cm>@Datatime : 2022/06/21 15:51:10
+</span><span class=cm>@Author : xushun
+</span><span class=cm>*/</span>
+
+<span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;server.h&#34;</span><span class=cp>
+</span><span class=cp></span>
+<span class=c1>// 创建监听套接字 并将其添加到监听树上 监听其读事件
+</span><span class=c1></span><span class=kt>int</span> <span class=nf>init_listen_fd</span><span class=p>(</span><span class=kt>int</span> <span class=n>port</span><span class=p>,</span> <span class=kt>int</span> <span class=n>epfd</span><span class=p>)</span> <span class=p>{</span>
+    <span class=c1>// 创建用于监听连接的套接字
+</span><span class=c1></span>    <span class=kt>int</span> <span class=n>listen_fd</span> <span class=o>=</span> <span class=n>socket</span><span class=p>(</span><span class=n>AF_INET</span><span class=p>,</span> <span class=n>SOCK_STREAM</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>listen_fd</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>socket error (listen_fd init fail)</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=c1>// 端口复用
+</span><span class=c1></span>    <span class=kt>int</span> <span class=n>opt</span> <span class=o>=</span> <span class=mi>1</span><span class=p>;</span>
+    <span class=n>setsockopt</span><span class=p>(</span><span class=n>listen_fd</span><span class=p>,</span> <span class=n>SOL_SOCKET</span><span class=p>,</span> <span class=n>SO_REUSEADDR</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>opt</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>opt</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 绑定本地IP和端口
+</span><span class=c1></span>    <span class=k>struct</span> <span class=n>sockaddr_in</span> <span class=n>serv_addr</span><span class=p>;</span>
+    <span class=n>memset</span><span class=p>(</span><span class=o>&amp;</span><span class=n>serv_addr</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>serv_addr</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>serv_addr</span><span class=p>.</span><span class=n>sin_family</span> <span class=o>=</span> <span class=n>AF_INET</span><span class=p>;</span>
+    <span class=n>serv_addr</span><span class=p>.</span><span class=n>sin_port</span> <span class=o>=</span> <span class=n>htons</span><span class=p>(</span><span class=n>port</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>serv_addr</span><span class=p>.</span><span class=n>sin_addr</span><span class=p>.</span><span class=n>s_addr</span> <span class=o>=</span> <span class=n>htonl</span><span class=p>(</span><span class=n>INADDR_ANY</span><span class=p>)</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>ret</span> <span class=o>=</span> <span class=n>bind</span><span class=p>(</span><span class=n>listen_fd</span><span class=p>,</span> <span class=p>(</span><span class=k>struct</span> <span class=n>sockaddr</span><span class=o>*</span><span class=p>)</span><span class=o>&amp;</span><span class=n>serv_addr</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>serv_addr</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>ret</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>bind error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=c1>// 设置监听
+</span><span class=c1></span>    <span class=n>ret</span> <span class=o>=</span> <span class=n>listen</span><span class=p>(</span><span class=n>listen_fd</span><span class=p>,</span> <span class=mi>64</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>ret</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>listen error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=c1>// listen_fd 添加到监听树
+</span><span class=c1></span>    <span class=k>struct</span> <span class=n>epoll_event</span> <span class=n>listen_ev</span><span class=p>;</span>
+    <span class=n>listen_ev</span><span class=p>.</span><span class=n>data</span><span class=p>.</span><span class=n>fd</span> <span class=o>=</span> <span class=n>listen_fd</span><span class=p>;</span>
+    <span class=n>listen_ev</span><span class=p>.</span><span class=n>events</span> <span class=o>=</span> <span class=n>EPOLLIN</span><span class=p>;</span>
+    <span class=n>ret</span> <span class=o>=</span> <span class=n>epoll_ctl</span><span class=p>(</span><span class=n>epfd</span><span class=p>,</span> <span class=n>EPOLL_CTL_ADD</span><span class=p>,</span> <span class=n>listen_fd</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>listen_ev</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>ret</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>epoll_ctl add listen_fd error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span> <span class=n>listen_fd</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=c1>// 创建epoll监听树 并启动监听循环
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>epoll_run</span><span class=p>(</span><span class=kt>int</span> <span class=n>port</span><span class=p>)</span> <span class=p>{</span>
+    <span class=c1>// 创建epoll监听树
+</span><span class=c1></span>    <span class=kt>int</span> <span class=n>epfd</span> <span class=o>=</span> <span class=n>epoll_create</span><span class=p>(</span><span class=n>MAX_CLIENTS</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>epfd</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>epoll_create error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=c1>// 将监听套接字添加到监听树上
+</span><span class=c1></span>    <span class=kt>int</span> <span class=n>listen_fd</span> <span class=o>=</span> <span class=n>init_listen_fd</span><span class=p>(</span><span class=n>port</span><span class=p>,</span> <span class=n>epfd</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 启动监听循环 监听树上节点的事件
+</span><span class=c1></span>    <span class=k>struct</span> <span class=n>epoll_event</span> <span class=n>ret_events</span><span class=p>[</span><span class=n>MAX_CLIENTS</span><span class=p>]</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>ret_nready</span><span class=p>;</span>
+    <span class=k>while</span> <span class=p>(</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=c1>// 获得满足条件的监听事件
+</span><span class=c1></span>        <span class=n>ret_nready</span> <span class=o>=</span> <span class=n>epoll_wait</span><span class=p>(</span><span class=n>epfd</span><span class=p>,</span> <span class=n>ret_events</span><span class=p>,</span> <span class=n>MAX_CLIENTS</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>ret_nready</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>epoll_wait error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+            <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span> <span class=k>else</span> <span class=k>if</span> <span class=p>(</span><span class=n>ret_nready</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+            <span class=c1>// 遍历返回的事件
+</span><span class=c1></span>            <span class=k>struct</span> <span class=n>epoll_event</span><span class=o>*</span> <span class=n>epev</span><span class=p>;</span>
+            <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>ret_nready</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+                <span class=n>epev</span> <span class=o>=</span> <span class=o>&amp;</span><span class=n>ret_events</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>;</span>
+                <span class=c1>// 只处理读事件
+</span><span class=c1></span>                <span class=k>if</span> <span class=p>(</span><span class=o>!</span><span class=p>(</span><span class=n>epev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>events</span> <span class=o>&amp;</span> <span class=n>EPOLLIN</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+                    <span class=k>continue</span><span class=p>;</span>
+                <span class=p>}</span>
+                <span class=c1>// 处理新连接请求 或http请求
+</span><span class=c1></span>                <span class=k>if</span> <span class=p>(</span><span class=n>epev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>data</span><span class=p>.</span><span class=n>fd</span> <span class=o>=</span><span class=o>=</span> <span class=n>listen_fd</span><span class=p>)</span> <span class=p>{</span>
+                    <span class=n>do_accept</span><span class=p>(</span><span class=n>listen_fd</span><span class=p>,</span> <span class=n>epfd</span><span class=p>)</span><span class=p>;</span>
+                <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+                    <span class=n>do_read</span><span class=p>(</span><span class=n>epev</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>data</span><span class=p>.</span><span class=n>fd</span><span class=p>,</span> <span class=n>epfd</span><span class=p>)</span><span class=p>;</span>
+                <span class=p>}</span>
+            <span class=p>}</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=k>return</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=c1>// 接收新的连接请求 并将其读事件添加到监听树
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>do_accept</span><span class=p>(</span><span class=kt>int</span> <span class=n>listen_fd</span><span class=p>,</span> <span class=kt>int</span> <span class=n>epfd</span><span class=p>)</span> <span class=p>{</span>
+    <span class=c1>// 接受连接请求
+</span><span class=c1></span>    <span class=k>struct</span> <span class=n>sockaddr_in</span> <span class=n>client_addr</span><span class=p>;</span>
+    <span class=n>socklen_t</span> <span class=n>client_addr_len</span> <span class=o>=</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>client_addr</span><span class=p>)</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>client_fd</span> <span class=o>=</span> <span class=n>accept</span><span class=p>(</span><span class=n>listen_fd</span><span class=p>,</span> <span class=p>(</span><span class=k>struct</span> <span class=n>sockaddr</span><span class=o>*</span><span class=p>)</span><span class=o>&amp;</span><span class=n>client_addr</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>client_addr_len</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>client_fd</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>accept error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+        <span class=c1>// close(listen_fd); return;
+</span><span class=c1></span>    <span class=p>}</span>
+    <span class=c1>// 打印客户端信息
+</span><span class=c1></span>    <span class=kt>char</span> <span class=n>client_ip</span><span class=p>[</span><span class=mi>100</span><span class=p>]</span> <span class=o>=</span> <span class=p>{</span><span class=mi>0</span><span class=p>}</span><span class=p>;</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>[new client] ip : %s, port : %d, fd : %d</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span>
+        <span class=n>inet_ntop</span><span class=p>(</span><span class=n>AF_INET</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>client_addr</span><span class=p>.</span><span class=n>sin_addr</span><span class=p>.</span><span class=n>s_addr</span><span class=p>,</span> <span class=n>client_ip</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>client_ip</span><span class=p>)</span><span class=p>)</span><span class=p>,</span>
+        <span class=n>ntohs</span><span class=p>(</span><span class=n>client_addr</span><span class=p>.</span><span class=n>sin_port</span><span class=p>)</span><span class=p>,</span>
+        <span class=n>client_fd</span>
+    <span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 设置为非阻塞
+</span><span class=c1></span>    <span class=kt>int</span> <span class=n>flag</span> <span class=o>=</span> <span class=n>fcntl</span><span class=p>(</span><span class=n>client_fd</span><span class=p>,</span> <span class=n>F_GETFL</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>flag</span> <span class=o>|</span><span class=o>=</span> <span class=n>O_NONBLOCK</span><span class=p>;</span>
+    <span class=n>fcntl</span><span class=p>(</span><span class=n>client_fd</span><span class=p>,</span> <span class=n>F_SETFL</span><span class=p>,</span> <span class=n>flag</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 新客户端添加到监听树上 使用ET模式
+</span><span class=c1></span>    <span class=k>struct</span> <span class=n>epoll_event</span> <span class=n>client_ev</span><span class=p>;</span>
+    <span class=n>client_ev</span><span class=p>.</span><span class=n>data</span><span class=p>.</span><span class=n>fd</span> <span class=o>=</span> <span class=n>client_fd</span><span class=p>;</span>
+    <span class=n>client_ev</span><span class=p>.</span><span class=n>events</span> <span class=o>=</span> <span class=n>EPOLLIN</span> <span class=o>|</span> <span class=n>EPOLLET</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>ret</span> <span class=o>=</span> <span class=n>epoll_ctl</span><span class=p>(</span><span class=n>epfd</span><span class=p>,</span> <span class=n>EPOLL_CTL_ADD</span><span class=p>,</span> <span class=n>client_fd</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>client_ev</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>ret</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>epoll_ctl add client_fd fail</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+        <span class=c1>// close(listen_fd); return;
+</span><span class=c1></span>    <span class=p>}</span>
+    <span class=k>return</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=c1>// 处理客户端连接的读事件
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>do_read</span><span class=p>(</span><span class=kt>int</span> <span class=n>client_fd</span><span class=p>,</span> <span class=kt>int</span> <span class=n>epfd</span><span class=p>)</span> <span class=p>{</span>
+    <span class=c1>// 读取浏览器发来的请求行
+</span><span class=c1></span>    <span class=kt>char</span> <span class=n>line</span><span class=p>[</span><span class=mi>1024</span><span class=p>]</span> <span class=o>=</span> <span class=p>{</span><span class=mi>0</span><span class=p>}</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>recv_bytes</span> <span class=o>=</span> <span class=n>get_line</span><span class=p>(</span><span class=n>client_fd</span><span class=p>,</span> <span class=n>line</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>line</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 客户端关闭 or 正常读请求行
+</span><span class=c1></span>    <span class=k>if</span> <span class=p>(</span><span class=n>recv_bytes</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>client closed</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>disconnect</span><span class=p>(</span><span class=n>client_fd</span><span class=p>,</span> <span class=n>epfd</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+        <span class=c1>// 如果有数据没读完 继续读
+</span><span class=c1></span>        <span class=k>while</span> <span class=p>(</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+            <span class=kt>char</span> <span class=n>buf</span><span class=p>[</span><span class=mi>1024</span><span class=p>]</span> <span class=o>=</span> <span class=p>{</span><span class=mi>0</span><span class=p>}</span><span class=p>;</span>
+            <span class=n>recv_bytes</span> <span class=o>=</span> <span class=n>get_line</span><span class=p>(</span><span class=n>client_fd</span><span class=p>,</span> <span class=n>buf</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>buf</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+            <span class=c1>// 读到空行 读完了
+</span><span class=c1></span>            <span class=k>if</span> <span class=p>(</span><span class=n>buf</span><span class=p>[</span><span class=mi>0</span><span class=p>]</span> <span class=o>=</span><span class=o>=</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>\n</span><span class=sc>&#39;</span><span class=p>)</span> <span class=p>{</span>
+                <span class=k>break</span><span class=p>;</span>
+            <span class=p>}</span> <span class=k>else</span> <span class=k>if</span><span class=p>(</span><span class=n>recv_bytes</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+                <span class=k>break</span><span class=p>;</span>
+            <span class=p>}</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=c1>// 判断是否GET请求 strncasecmp比较字符串前n字符
+</span><span class=c1></span>    <span class=k>if</span> <span class=p>(</span><span class=n>strncasecmp</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>get</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>line</span><span class=p>,</span> <span class=mi>3</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=c1>// 处理http请求
+</span><span class=c1></span>        <span class=n>http_request</span><span class=p>(</span><span class=n>line</span><span class=p>,</span> <span class=n>client_fd</span><span class=p>)</span><span class=p>;</span>
+        <span class=c1>// 关闭连接
+</span><span class=c1></span>        <span class=n>disconnect</span><span class=p>(</span><span class=n>client_fd</span><span class=p>,</span> <span class=n>epfd</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=c1>// 接收请求消息的每一行内容
+</span><span class=c1></span><span class=kt>int</span> <span class=nf>get_line</span><span class=p>(</span><span class=kt>int</span> <span class=n>sock</span><span class=p>,</span> <span class=kt>char</span> <span class=o>*</span> <span class=n>buf</span><span class=p>,</span> <span class=kt>int</span> <span class=n>size</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+    <span class=kt>char</span> <span class=n>ch</span> <span class=o>=</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>\0</span><span class=sc>&#39;</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>recv_byte</span><span class=p>;</span>
+    <span class=k>while</span> <span class=p>(</span><span class=p>(</span><span class=n>i</span> <span class=o>&lt;</span> <span class=n>size</span> <span class=o>-</span> <span class=mi>1</span><span class=p>)</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=p>(</span><span class=n>ch</span> <span class=o>!</span><span class=o>=</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>\n</span><span class=sc>&#39;</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+        <span class=c1>// 在读到`\n`之前 每次读一个字符
+</span><span class=c1></span>        <span class=n>recv_byte</span> <span class=o>=</span> <span class=n>recv</span><span class=p>(</span><span class=n>sock</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>ch</span><span class=p>,</span> <span class=mi>1</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>recv_byte</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+            <span class=c1>// &#34;\r\n&#34;表示行尾
+</span><span class=c1></span>            <span class=k>if</span> <span class=p>(</span><span class=n>ch</span> <span class=o>=</span><span class=o>=</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>\r</span><span class=sc>&#39;</span><span class=p>)</span> <span class=p>{</span>
+                <span class=c1>// 参看后一个字符是否为`\n` 不会读出
+</span><span class=c1></span>                <span class=n>recv_byte</span> <span class=o>=</span> <span class=n>recv</span><span class=p>(</span><span class=n>sock</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>ch</span><span class=p>,</span> <span class=mi>1</span><span class=p>,</span> <span class=n>MSG_PEEK</span><span class=p>)</span><span class=p>;</span>
+                <span class=c1>// 读到行尾
+</span><span class=c1></span>                <span class=k>if</span> <span class=p>(</span><span class=p>(</span><span class=n>recv_byte</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>)</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=p>(</span><span class=n>ch</span> <span class=o>=</span><span class=o>=</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>\n</span><span class=sc>&#39;</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+                    <span class=n>recv</span><span class=p>(</span><span class=n>sock</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>ch</span><span class=p>,</span> <span class=mi>1</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+                <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+                    <span class=n>ch</span> <span class=o>=</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>\n</span><span class=sc>&#39;</span><span class=p>;</span>
+                <span class=p>}</span>
+            <span class=p>}</span>
+            <span class=n>buf</span><span class=p>[</span><span class=n>i</span><span class=p>]</span> <span class=o>=</span> <span class=n>ch</span><span class=p>;</span>
+            <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>;</span>
+        <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+            <span class=n>ch</span> <span class=o>=</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>\n</span><span class=sc>&#39;</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=n>buf</span><span class=p>[</span><span class=n>i</span><span class=p>]</span> <span class=o>=</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>\0</span><span class=sc>&#39;</span><span class=p>;</span>
+    <span class=k>return</span> <span class=n>i</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=c1>// 断开和客户端的连接 并将其从监听树上取下 关闭套接字
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>disconnect</span><span class=p>(</span><span class=kt>int</span> <span class=n>client_fd</span><span class=p>,</span> <span class=kt>int</span> <span class=n>epfd</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>ret</span> <span class=o>=</span> <span class=n>epoll_ctl</span><span class=p>(</span><span class=n>epfd</span><span class=p>,</span> <span class=n>EPOLL_CTL_DEL</span><span class=p>,</span> <span class=n>client_fd</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>ret</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>epoll_ctl del client_fd fail</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>close</span><span class=p>(</span><span class=n>client_fd</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=c1>// 处理http请求行
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>http_request</span><span class=p>(</span><span class=k>const</span> <span class=kt>char</span><span class=o>*</span> <span class=n>request</span><span class=p>,</span> <span class=kt>int</span> <span class=n>client_fd</span><span class=p>)</span> <span class=p>{</span>
+    <span class=c1>// 拆分请求行 正则表达式拆分以空格间隔的字段
+</span><span class=c1></span>    <span class=kt>char</span> <span class=n>method</span><span class=p>[</span><span class=mi>12</span><span class=p>]</span><span class=p>,</span> <span class=n>path</span><span class=p>[</span><span class=mi>1024</span><span class=p>]</span><span class=p>,</span> <span class=n>protocol</span><span class=p>[</span><span class=mi>12</span><span class=p>]</span><span class=p>;</span>
+    <span class=n>sscanf</span><span class=p>(</span><span class=n>request</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>%[^ ] %[^ ] %[^ ]</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>method</span><span class=p>,</span> <span class=n>path</span><span class=p>,</span> <span class=n>protocol</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>method = %s, path = %s, protocol = %s</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>method</span><span class=p>,</span> <span class=n>path</span><span class=p>,</span> <span class=n>protocol</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 解码
+</span><span class=c1></span>    <span class=n>decode_str</span><span class=p>(</span><span class=n>path</span><span class=p>,</span> <span class=n>path</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 去掉paht中的&#39;/&#39; 获取文件名
+</span><span class=c1></span>    <span class=kt>char</span><span class=o>*</span> <span class=n>filename</span> <span class=o>=</span> <span class=n>path</span> <span class=o>+</span> <span class=mi>1</span><span class=p>;</span>
+    <span class=c1>// 如果没有指定访问的资源 默认显示资源目录中的内容
+</span><span class=c1></span>    <span class=k>if</span> <span class=p>(</span><span class=n>strcmp</span><span class=p>(</span><span class=n>path</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>/</span><span class=s>&#34;</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>filename</span> <span class=o>=</span> <span class=sa></span><span class=s>&#34;</span><span class=s>./</span><span class=s>&#34;</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=c1>// 获取文件属性
+</span><span class=c1></span>    <span class=k>struct</span> <span class=n>stat</span> <span class=n>st</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>ret</span> <span class=o>=</span> <span class=n>stat</span><span class=p>(</span><span class=n>filename</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>st</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 没有这个文件
+</span><span class=c1></span>    <span class=k>if</span> <span class=p>(</span><span class=n>ret</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>send_error</span><span class=p>(</span><span class=n>client_fd</span><span class=p>,</span> <span class=mi>404</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>Not Found</span><span class=s>&#34;</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>No such file or direntry</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>return</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=c1>// 判断文件时普通文件还是目录文件
+</span><span class=c1></span>    <span class=k>if</span> <span class=p>(</span><span class=n>S_ISDIR</span><span class=p>(</span><span class=n>st</span><span class=p>.</span><span class=n>st_mode</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+        <span class=c1>// 发送报头
+</span><span class=c1></span>        <span class=n>send_responsd_head</span><span class=p>(</span><span class=n>client_fd</span><span class=p>,</span> <span class=mi>200</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>OK</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>get_file_type</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>.html</span><span class=s>&#34;</span><span class=p>)</span><span class=p>,</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+        <span class=c1>// 发送目录信息
+</span><span class=c1></span>        <span class=n>send_dir</span><span class=p>(</span><span class=n>client_fd</span><span class=p>,</span> <span class=n>filename</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span> <span class=k>else</span> <span class=k>if</span> <span class=p>(</span><span class=n>S_ISREG</span><span class=p>(</span><span class=n>st</span><span class=p>.</span><span class=n>st_mode</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+        <span class=c1>// 发送报头
+</span><span class=c1></span>        <span class=n>send_responsd_head</span><span class=p>(</span><span class=n>client_fd</span><span class=p>,</span> <span class=mi>200</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>OK</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>get_file_type</span><span class=p>(</span><span class=n>filename</span><span class=p>)</span><span class=p>,</span> <span class=n>st</span><span class=p>.</span><span class=n>st_size</span><span class=p>)</span><span class=p>;</span>
+        <span class=c1>// 发送文件内容
+</span><span class=c1></span>        <span class=n>send_file</span><span class=p>(</span><span class=n>client_fd</span><span class=p>,</span> <span class=n>filename</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=c1>// 发送报文头
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>send_responsd_head</span><span class=p>(</span><span class=kt>int</span> <span class=n>client_fd</span><span class=p>,</span> <span class=kt>int</span> <span class=n>no</span><span class=p>,</span> <span class=k>const</span> <span class=kt>char</span><span class=o>*</span> <span class=n>description</span><span class=p>,</span> <span class=k>const</span> <span class=kt>char</span><span class=o>*</span> <span class=n>type</span><span class=p>,</span> <span class=kt>long</span> <span class=n>len</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>char</span> <span class=n>buf</span><span class=p>[</span><span class=mi>4096</span><span class=p>]</span> <span class=o>=</span> <span class=p>{</span><span class=mi>0</span><span class=p>}</span><span class=p>;</span>
+    <span class=c1>// 状态行
+</span><span class=c1></span>    <span class=n>sprintf</span><span class=p>(</span><span class=n>buf</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>http/1.1 %d %s</span><span class=se>\r</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>no</span><span class=p>,</span> <span class=n>description</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>send</span><span class=p>(</span><span class=n>client_fd</span><span class=p>,</span> <span class=n>buf</span><span class=p>,</span> <span class=n>strlen</span><span class=p>(</span><span class=n>buf</span><span class=p>)</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 报头
+</span><span class=c1></span>    <span class=n>sprintf</span><span class=p>(</span><span class=n>buf</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>Content-Type:%s</span><span class=se>\r</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>type</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>sprintf</span><span class=p>(</span><span class=n>buf</span> <span class=o>+</span> <span class=n>strlen</span><span class=p>(</span><span class=n>buf</span><span class=p>)</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>Content-Length:%ld</span><span class=se>\r</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>len</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>send</span><span class=p>(</span><span class=n>client_fd</span><span class=p>,</span> <span class=n>buf</span><span class=p>,</span> <span class=n>strlen</span><span class=p>(</span><span class=n>buf</span><span class=p>)</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 空行
+</span><span class=c1></span>    <span class=n>send</span><span class=p>(</span><span class=n>client_fd</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=se>\r</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=mi>2</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=c1>// 发送文件内容
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>send_file</span><span class=p>(</span><span class=kt>int</span> <span class=n>client_fd</span><span class=p>,</span> <span class=k>const</span> <span class=kt>char</span><span class=o>*</span> <span class=n>filename</span><span class=p>)</span> <span class=p>{</span>
+    <span class=c1>// 打开文件
+</span><span class=c1></span>    <span class=kt>int</span> <span class=n>fd</span> <span class=o>=</span> <span class=n>open</span><span class=p>(</span><span class=n>filename</span><span class=p>,</span> <span class=n>O_RDONLY</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>fd</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>send_error</span><span class=p>(</span><span class=n>client_fd</span><span class=p>,</span> <span class=mi>404</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>Not Found</span><span class=s>&#34;</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>No such file or direntry</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=c1>// 处理请求行的时候检查过该文件存在 此时没有说明出错
+</span><span class=c1></span>        <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>open error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=c1>// 循环读文件
+</span><span class=c1></span>    <span class=kt>char</span> <span class=n>buf</span><span class=p>[</span><span class=mi>4096</span><span class=p>]</span> <span class=o>=</span> <span class=p>{</span><span class=mi>0</span><span class=p>}</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>read_bytes</span> <span class=o>=</span> <span class=mi>0</span><span class=p>,</span> <span class=n>send_bytes</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+    <span class=k>while</span> <span class=p>(</span><span class=p>(</span><span class=n>read_bytes</span> <span class=o>=</span> <span class=n>read</span><span class=p>(</span><span class=n>fd</span><span class=p>,</span> <span class=n>buf</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>buf</span><span class=p>)</span><span class=p>)</span><span class=p>)</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=c1>// 发送读到的数据
+</span><span class=c1></span>        <span class=n>send_bytes</span> <span class=o>=</span> <span class=n>send</span><span class=p>(</span><span class=n>client_fd</span><span class=p>,</span> <span class=n>buf</span><span class=p>,</span> <span class=n>read_bytes</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>send_bytes</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+            <span class=k>if</span> <span class=p>(</span><span class=n>errno</span> <span class=o>=</span><span class=o>=</span> <span class=n>EAGAIN</span><span class=p>)</span> <span class=p>{</span>
+                <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>send error EAGAIN</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+                <span class=k>continue</span><span class=p>;</span>
+            <span class=p>}</span> <span class=k>else</span> <span class=k>if</span> <span class=p>(</span><span class=n>errno</span> <span class=o>=</span><span class=o>=</span> <span class=n>EINTR</span><span class=p>)</span> <span class=p>{</span>
+                <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>send error EINTR</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+                <span class=k>continue</span><span class=p>;</span>
+            <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+                <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>send error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+                <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+            <span class=p>}</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>read_bytes</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>read error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>regular file send OK</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>close</span><span class=p>(</span><span class=n>fd</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=c1>// 发送目录文件内容
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>send_dir</span><span class=p>(</span><span class=kt>int</span> <span class=n>client_fd</span><span class=p>,</span> <span class=k>const</span> <span class=kt>char</span><span class=o>*</span> <span class=n>dirname</span><span class=p>)</span> <span class=p>{</span>
+    <span class=c1>// 作为html页面发送
+</span><span class=c1></span>    <span class=kt>char</span> <span class=n>buf</span><span class=p>[</span><span class=mi>4096</span><span class=p>]</span> <span class=o>=</span> <span class=p>{</span><span class=mi>0</span><span class=p>}</span><span class=p>;</span>
+    <span class=n>sprintf</span><span class=p>(</span><span class=n>buf</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>&lt;html&gt;&lt;head&gt;&lt;title&gt;目录名: %s&lt;/title&gt;&lt;/head&gt;</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>dirname</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>sprintf</span><span class=p>(</span><span class=n>buf</span> <span class=o>+</span> <span class=n>strlen</span><span class=p>(</span><span class=n>buf</span><span class=p>)</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>&lt;body&gt;&lt;h1&gt;当前目录: %s&lt;/h1&gt;&lt;table&gt;</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>dirname</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 目录项数组
+</span><span class=c1></span>    <span class=k>struct</span> <span class=n>dirent</span><span class=o>*</span><span class=o>*</span> <span class=n>dptr</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>dnum</span> <span class=o>=</span> <span class=n>scandir</span><span class=p>(</span><span class=n>dirname</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>dptr</span><span class=p>,</span> <span class=nb>NULL</span><span class=p>,</span> <span class=n>alphasort</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 遍历目录项
+</span><span class=c1></span>    <span class=kt>char</span> <span class=n>en_str</span><span class=p>[</span><span class=mi>1024</span><span class=p>]</span> <span class=o>=</span> <span class=p>{</span><span class=mi>0</span><span class=p>}</span><span class=p>;</span>
+    <span class=kt>char</span> <span class=n>path</span><span class=p>[</span><span class=mi>1024</span><span class=p>]</span> <span class=o>=</span> <span class=p>{</span><span class=mi>0</span><span class=p>}</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>dnum</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+        <span class=kt>char</span><span class=o>*</span> <span class=n>name</span> <span class=o>=</span> <span class=n>dptr</span><span class=p>[</span><span class=n>i</span><span class=p>]</span> <span class=o>-</span><span class=o>&gt;</span> <span class=n>d_name</span><span class=p>;</span>
+        <span class=c1>// 拼接文件的完整路径
+</span><span class=c1></span>        <span class=n>sprintf</span><span class=p>(</span><span class=n>path</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>%s/%s</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>dirname</span><span class=p>,</span> <span class=n>name</span><span class=p>)</span><span class=p>;</span>
+        <span class=c1>// 获得文件信息
+</span><span class=c1></span>        <span class=k>struct</span> <span class=n>stat</span> <span class=n>st</span><span class=p>;</span>
+        <span class=n>stat</span><span class=p>(</span><span class=n>path</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>st</span><span class=p>)</span><span class=p>;</span>
+        <span class=c1>// 编码文件名
+</span><span class=c1></span>        <span class=n>encode_str</span><span class=p>(</span><span class=n>en_str</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>en_str</span><span class=p>)</span><span class=p>,</span> <span class=n>name</span><span class=p>)</span><span class=p>;</span>
+        <span class=c1>// 普通文件 or 目录文件
+</span><span class=c1></span>        <span class=k>if</span> <span class=p>(</span><span class=n>S_ISREG</span><span class=p>(</span><span class=n>st</span><span class=p>.</span><span class=n>st_mode</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>sprintf</span><span class=p>(</span><span class=n>buf</span> <span class=o>+</span> <span class=n>strlen</span><span class=p>(</span><span class=n>buf</span><span class=p>)</span><span class=p>,</span>
+                <span class=sa></span><span class=s>&#34;</span><span class=s>&lt;tr&gt;&lt;td&gt;&lt;a href=</span><span class=se>\&#34;</span><span class=s>%s</span><span class=se>\&#34;</span><span class=s>&gt;%s&lt;/a&gt;&lt;/td&gt;&lt;td&gt;%ld&lt;/td&gt;&lt;/tr&gt;</span><span class=s>&#34;</span><span class=p>,</span>
+                <span class=n>en_str</span><span class=p>,</span> <span class=n>name</span><span class=p>,</span> <span class=p>(</span><span class=kt>long</span><span class=p>)</span><span class=n>st</span><span class=p>.</span><span class=n>st_size</span>
+            <span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span> <span class=k>else</span> <span class=k>if</span> <span class=p>(</span><span class=n>S_ISDIR</span><span class=p>(</span><span class=n>st</span><span class=p>.</span><span class=n>st_mode</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>sprintf</span><span class=p>(</span><span class=n>buf</span> <span class=o>+</span> <span class=n>strlen</span><span class=p>(</span><span class=n>buf</span><span class=p>)</span><span class=p>,</span>
+                <span class=sa></span><span class=s>&#34;</span><span class=s>&lt;tr&gt;&lt;td&gt;&lt;a href=</span><span class=se>\&#34;</span><span class=s>%s/</span><span class=se>\&#34;</span><span class=s>&gt;%s/&lt;/a&gt;&lt;/td&gt;&lt;td&gt;%ld&lt;/td&gt;&lt;/tr&gt;</span><span class=s>&#34;</span><span class=p>,</span>
+                <span class=n>en_str</span><span class=p>,</span> <span class=n>name</span><span class=p>,</span> <span class=p>(</span><span class=kt>long</span><span class=p>)</span><span class=n>st</span><span class=p>.</span><span class=n>st_size</span>
+            <span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=c1>// 发送
+</span><span class=c1></span>        <span class=kt>int</span> <span class=n>send_bytes</span> <span class=o>=</span> <span class=n>send</span><span class=p>(</span><span class=n>client_fd</span><span class=p>,</span> <span class=n>buf</span><span class=p>,</span> <span class=n>strlen</span><span class=p>(</span><span class=n>buf</span><span class=p>)</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>send_bytes</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+            <span class=k>if</span> <span class=p>(</span><span class=n>errno</span> <span class=o>=</span><span class=o>=</span> <span class=n>EAGAIN</span><span class=p>)</span> <span class=p>{</span>
+                <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>send error EAGAIN</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+                <span class=k>continue</span><span class=p>;</span>
+            <span class=p>}</span> <span class=k>else</span> <span class=k>if</span> <span class=p>(</span><span class=n>errno</span> <span class=o>=</span><span class=o>=</span> <span class=n>EINTR</span><span class=p>)</span> <span class=p>{</span>
+                <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>send error EINTR</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+                <span class=k>continue</span><span class=p>;</span>
+            <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+                <span class=n>perror</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>send error</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+                <span class=n>exit</span><span class=p>(</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+            <span class=p>}</span>
+        <span class=p>}</span>
+        <span class=n>memset</span><span class=p>(</span><span class=n>buf</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>buf</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>sprintf</span><span class=p>(</span><span class=n>buf</span> <span class=o>+</span> <span class=n>strlen</span><span class=p>(</span><span class=n>buf</span><span class=p>)</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>&lt;/table&gt;&lt;/body&gt;&lt;/html&gt;</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>send</span><span class=p>(</span><span class=n>client_fd</span><span class=p>,</span> <span class=n>buf</span><span class=p>,</span> <span class=n>strlen</span><span class=p>(</span><span class=n>buf</span><span class=p>)</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>dir message send OK</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=c1>// 发送404给浏览器
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>send_error</span><span class=p>(</span><span class=kt>int</span> <span class=n>client_fd</span><span class=p>,</span> <span class=kt>int</span> <span class=n>status</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span> <span class=n>title</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span> <span class=n>text</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>char</span> <span class=n>buf</span><span class=p>[</span><span class=mi>4096</span><span class=p>]</span> <span class=o>=</span> <span class=p>{</span><span class=mi>0</span><span class=p>}</span><span class=p>;</span>
+    <span class=c1>// 报文头
+</span><span class=c1></span>	<span class=n>sprintf</span><span class=p>(</span><span class=n>buf</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>%s %d %s</span><span class=se>\r</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>HTTP/1.1</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>status</span><span class=p>,</span> <span class=n>title</span><span class=p>)</span><span class=p>;</span>
+	<span class=n>sprintf</span><span class=p>(</span><span class=n>buf</span><span class=o>+</span><span class=n>strlen</span><span class=p>(</span><span class=n>buf</span><span class=p>)</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>Content-Type:%s</span><span class=se>\r</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>text/html</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+	<span class=n>sprintf</span><span class=p>(</span><span class=n>buf</span><span class=o>+</span><span class=n>strlen</span><span class=p>(</span><span class=n>buf</span><span class=p>)</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>Content-Length:%d</span><span class=se>\r</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+	<span class=n>sprintf</span><span class=p>(</span><span class=n>buf</span><span class=o>+</span><span class=n>strlen</span><span class=p>(</span><span class=n>buf</span><span class=p>)</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>Connection: close</span><span class=se>\r</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+	<span class=n>send</span><span class=p>(</span><span class=n>client_fd</span><span class=p>,</span> <span class=n>buf</span><span class=p>,</span> <span class=n>strlen</span><span class=p>(</span><span class=n>buf</span><span class=p>)</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+	<span class=n>send</span><span class=p>(</span><span class=n>client_fd</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=se>\r</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=mi>2</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 404 页面
+</span><span class=c1></span>	<span class=n>memset</span><span class=p>(</span><span class=n>buf</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>buf</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+	<span class=n>sprintf</span><span class=p>(</span><span class=n>buf</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>&lt;html&gt;&lt;head&gt;&lt;title&gt;%d %s&lt;/title&gt;&lt;/head&gt;</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>status</span><span class=p>,</span> <span class=n>title</span><span class=p>)</span><span class=p>;</span>
+	<span class=n>sprintf</span><span class=p>(</span><span class=n>buf</span><span class=o>+</span><span class=n>strlen</span><span class=p>(</span><span class=n>buf</span><span class=p>)</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>&lt;body bgcolor=</span><span class=se>\&#34;</span><span class=s>#cc99cc</span><span class=se>\&#34;</span><span class=s>&gt;&lt;h2 align=</span><span class=se>\&#34;</span><span class=s>center</span><span class=se>\&#34;</span><span class=s>&gt;%d %s&lt;/h4&gt;</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>status</span><span class=p>,</span> <span class=n>title</span><span class=p>)</span><span class=p>;</span>
+	<span class=n>sprintf</span><span class=p>(</span><span class=n>buf</span><span class=o>+</span><span class=n>strlen</span><span class=p>(</span><span class=n>buf</span><span class=p>)</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>%s</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>text</span><span class=p>)</span><span class=p>;</span>
+	<span class=n>sprintf</span><span class=p>(</span><span class=n>buf</span><span class=o>+</span><span class=n>strlen</span><span class=p>(</span><span class=n>buf</span><span class=p>)</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>&lt;hr&gt;</span><span class=se>\n</span><span class=s>&lt;/body&gt;</span><span class=se>\n</span><span class=s>&lt;/html&gt;</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+	<span class=n>send</span><span class=p>(</span><span class=n>client_fd</span><span class=p>,</span> <span class=n>buf</span><span class=p>,</span> <span class=n>strlen</span><span class=p>(</span><span class=n>buf</span><span class=p>)</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+	<span class=k>return</span> <span class=p>;</span>
+<span class=p>}</span>
+
+<span class=c1>// 字符串编码 向浏览器写数据时 将数字字母以及/_.-~以外的字符编码
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>encode_str</span><span class=p>(</span><span class=kt>char</span><span class=o>*</span> <span class=n>to</span><span class=p>,</span> <span class=kt>int</span> <span class=n>tosize</span><span class=p>,</span> <span class=k>const</span> <span class=kt>char</span><span class=o>*</span> <span class=n>from</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>tolen</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span><span class=n>tolen</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=o>*</span><span class=n>from</span> <span class=o>!</span><span class=o>=</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>\0</span><span class=sc>&#39;</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>tolen</span> <span class=o>+</span> <span class=mi>4</span> <span class=o>&lt;</span> <span class=n>tosize</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span><span class=n>from</span><span class=p>)</span> <span class=p>{</span>    
+        <span class=k>if</span> <span class=p>(</span><span class=n>isalnum</span><span class=p>(</span><span class=o>*</span><span class=n>from</span><span class=p>)</span> <span class=o>|</span><span class=o>|</span> <span class=n>strchr</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>/_.-~</span><span class=s>&#34;</span><span class=p>,</span> <span class=o>*</span><span class=n>from</span><span class=p>)</span> <span class=o>!</span><span class=o>=</span> <span class=p>(</span><span class=kt>char</span><span class=o>*</span><span class=p>)</span><span class=mi>0</span><span class=p>)</span> <span class=p>{</span>      
+            <span class=o>*</span><span class=n>to</span> <span class=o>=</span> <span class=o>*</span><span class=n>from</span><span class=p>;</span>
+            <span class=o>+</span><span class=o>+</span><span class=n>to</span><span class=p>;</span>
+            <span class=o>+</span><span class=o>+</span><span class=n>tolen</span><span class=p>;</span>
+        <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+            <span class=n>sprintf</span><span class=p>(</span><span class=n>to</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>%%%02x</span><span class=s>&#34;</span><span class=p>,</span> <span class=p>(</span><span class=kt>int</span><span class=p>)</span> <span class=o>*</span><span class=n>from</span> <span class=o>&amp;</span> <span class=mh>0xff</span><span class=p>)</span><span class=p>;</span>
+            <span class=n>to</span> <span class=o>+</span><span class=o>=</span> <span class=mi>3</span><span class=p>;</span>
+            <span class=n>tolen</span> <span class=o>+</span><span class=o>=</span> <span class=mi>3</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=o>*</span><span class=n>to</span> <span class=o>=</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>\0</span><span class=sc>&#39;</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=c1>// 16进制数转化为10进制
+</span><span class=c1></span><span class=kt>int</span> <span class=nf>hexit</span><span class=p>(</span><span class=kt>char</span> <span class=n>c</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>c</span> <span class=o>&gt;</span><span class=o>=</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>0</span><span class=sc>&#39;</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>c</span> <span class=o>&lt;</span><span class=o>=</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>9</span><span class=sc>&#39;</span><span class=p>)</span>
+        <span class=k>return</span> <span class=n>c</span> <span class=o>-</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>0</span><span class=sc>&#39;</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>c</span> <span class=o>&gt;</span><span class=o>=</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>a</span><span class=sc>&#39;</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>c</span> <span class=o>&lt;</span><span class=o>=</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>f</span><span class=sc>&#39;</span><span class=p>)</span>
+        <span class=k>return</span> <span class=n>c</span> <span class=o>-</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>a</span><span class=sc>&#39;</span> <span class=o>+</span> <span class=mi>10</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>c</span> <span class=o>&gt;</span><span class=o>=</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>A</span><span class=sc>&#39;</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>c</span> <span class=o>&lt;</span><span class=o>=</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>F</span><span class=sc>&#39;</span><span class=p>)</span>
+        <span class=k>return</span> <span class=n>c</span> <span class=o>-</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>A</span><span class=sc>&#39;</span> <span class=o>+</span> <span class=mi>10</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=c1>// 字符串解码
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>decode_str</span><span class=p>(</span><span class=kt>char</span><span class=o>*</span> <span class=n>to</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span> <span class=n>from</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>for</span> <span class=p>(</span> <span class=p>;</span> <span class=o>*</span><span class=n>from</span> <span class=o>!</span><span class=o>=</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>\0</span><span class=sc>&#39;</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span><span class=n>to</span><span class=p>,</span> <span class=o>+</span><span class=o>+</span><span class=n>from</span>  <span class=p>)</span> <span class=p>{</span>     
+        <span class=k>if</span> <span class=p>(</span><span class=n>from</span><span class=p>[</span><span class=mi>0</span><span class=p>]</span> <span class=o>=</span><span class=o>=</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>%</span><span class=sc>&#39;</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>isxdigit</span><span class=p>(</span><span class=n>from</span><span class=p>[</span><span class=mi>1</span><span class=p>]</span><span class=p>)</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>isxdigit</span><span class=p>(</span><span class=n>from</span><span class=p>[</span><span class=mi>2</span><span class=p>]</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>       
+            <span class=o>*</span><span class=n>to</span> <span class=o>=</span> <span class=n>hexit</span><span class=p>(</span><span class=n>from</span><span class=p>[</span><span class=mi>1</span><span class=p>]</span><span class=p>)</span><span class=o>*</span><span class=mi>16</span> <span class=o>+</span> <span class=n>hexit</span><span class=p>(</span><span class=n>from</span><span class=p>[</span><span class=mi>2</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+            <span class=n>from</span> <span class=o>+</span><span class=o>=</span> <span class=mi>2</span><span class=p>;</span>                      
+        <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+            <span class=o>*</span><span class=n>to</span> <span class=o>=</span> <span class=o>*</span><span class=n>from</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=o>*</span><span class=n>to</span> <span class=o>=</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>\0</span><span class=sc>&#39;</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=c1>// 通过文件名获得文件的类型
+</span><span class=c1></span><span class=k>const</span> <span class=kt>char</span><span class=o>*</span> <span class=nf>get_file_type</span><span class=p>(</span><span class=k>const</span> <span class=kt>char</span><span class=o>*</span> <span class=n>filename</span><span class=p>)</span> <span class=p>{</span>
+    <span class=c1>// 自右向左查找`.`字符的位置 不存在返回NULL
+</span><span class=c1></span>    <span class=kt>char</span><span class=o>*</span> <span class=n>dot</span> <span class=o>=</span> <span class=n>strrchr</span><span class=p>(</span><span class=n>filename</span><span class=p>,</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>.</span><span class=sc>&#39;</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>dot</span> <span class=o>=</span><span class=o>=</span> <span class=nb>NULL</span><span class=p>)</span>
+        <span class=k>return</span> <span class=sa></span><span class=s>&#34;</span><span class=s>text/plain; charset=utf-8</span><span class=s>&#34;</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>strcmp</span><span class=p>(</span><span class=n>dot</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>.html</span><span class=s>&#34;</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span> <span class=o>|</span><span class=o>|</span> <span class=n>strcmp</span><span class=p>(</span><span class=n>dot</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>.htm</span><span class=s>&#34;</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span>
+        <span class=k>return</span> <span class=sa></span><span class=s>&#34;</span><span class=s>text/html; charset=utf-8</span><span class=s>&#34;</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>strcmp</span><span class=p>(</span><span class=n>dot</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>.jpg</span><span class=s>&#34;</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span> <span class=o>|</span><span class=o>|</span> <span class=n>strcmp</span><span class=p>(</span><span class=n>dot</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>.jpeg</span><span class=s>&#34;</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span>
+        <span class=k>return</span> <span class=sa></span><span class=s>&#34;</span><span class=s>image/jpeg</span><span class=s>&#34;</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>strcmp</span><span class=p>(</span><span class=n>dot</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>.gif</span><span class=s>&#34;</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span>
+        <span class=k>return</span> <span class=sa></span><span class=s>&#34;</span><span class=s>image/gif</span><span class=s>&#34;</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>strcmp</span><span class=p>(</span><span class=n>dot</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>.png</span><span class=s>&#34;</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span>
+        <span class=k>return</span> <span class=sa></span><span class=s>&#34;</span><span class=s>image/png</span><span class=s>&#34;</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>strcmp</span><span class=p>(</span><span class=n>dot</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>.css</span><span class=s>&#34;</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span>
+        <span class=k>return</span> <span class=sa></span><span class=s>&#34;</span><span class=s>text/css</span><span class=s>&#34;</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>strcmp</span><span class=p>(</span><span class=n>dot</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>.au</span><span class=s>&#34;</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span>
+        <span class=k>return</span> <span class=sa></span><span class=s>&#34;</span><span class=s>audio/basic</span><span class=s>&#34;</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>strcmp</span><span class=p>(</span><span class=n>dot</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>.wav</span><span class=s>&#34;</span> <span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span>
+        <span class=k>return</span> <span class=sa></span><span class=s>&#34;</span><span class=s>audio/wav</span><span class=s>&#34;</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>strcmp</span><span class=p>(</span><span class=n>dot</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>.avi</span><span class=s>&#34;</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span>
+        <span class=k>return</span> <span class=sa></span><span class=s>&#34;</span><span class=s>video/x-msvideo</span><span class=s>&#34;</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>strcmp</span><span class=p>(</span><span class=n>dot</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>.mov</span><span class=s>&#34;</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span> <span class=o>|</span><span class=o>|</span> <span class=n>strcmp</span><span class=p>(</span><span class=n>dot</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>.qt</span><span class=s>&#34;</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span>
+        <span class=k>return</span> <span class=sa></span><span class=s>&#34;</span><span class=s>video/quicktime</span><span class=s>&#34;</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>strcmp</span><span class=p>(</span><span class=n>dot</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>.mpeg</span><span class=s>&#34;</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span> <span class=o>|</span><span class=o>|</span> <span class=n>strcmp</span><span class=p>(</span><span class=n>dot</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>.mpe</span><span class=s>&#34;</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span>
+        <span class=k>return</span> <span class=sa></span><span class=s>&#34;</span><span class=s>video/mpeg</span><span class=s>&#34;</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>strcmp</span><span class=p>(</span><span class=n>dot</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>.vrml</span><span class=s>&#34;</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span> <span class=o>|</span><span class=o>|</span> <span class=n>strcmp</span><span class=p>(</span><span class=n>dot</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>.wrl</span><span class=s>&#34;</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span>
+        <span class=k>return</span> <span class=sa></span><span class=s>&#34;</span><span class=s>model/vrml</span><span class=s>&#34;</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>strcmp</span><span class=p>(</span><span class=n>dot</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>.midi</span><span class=s>&#34;</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span> <span class=o>|</span><span class=o>|</span> <span class=n>strcmp</span><span class=p>(</span><span class=n>dot</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>.mid</span><span class=s>&#34;</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span>
+        <span class=k>return</span> <span class=sa></span><span class=s>&#34;</span><span class=s>audio/midi</span><span class=s>&#34;</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>strcmp</span><span class=p>(</span><span class=n>dot</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>.mp3</span><span class=s>&#34;</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span>
+        <span class=k>return</span> <span class=sa></span><span class=s>&#34;</span><span class=s>audio/mpeg</span><span class=s>&#34;</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>strcmp</span><span class=p>(</span><span class=n>dot</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>.ogg</span><span class=s>&#34;</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span>
+        <span class=k>return</span> <span class=sa></span><span class=s>&#34;</span><span class=s>application/ogg</span><span class=s>&#34;</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>strcmp</span><span class=p>(</span><span class=n>dot</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>.pac</span><span class=s>&#34;</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span>
+        <span class=k>return</span> <span class=sa></span><span class=s>&#34;</span><span class=s>application/x-ns-proxy-autoconfig</span><span class=s>&#34;</span><span class=p>;</span>
+    <span class=k>return</span> <span class=sa></span><span class=s>&#34;</span><span class=s>text/plain; charset=utf-8</span><span class=s>&#34;</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+<span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
+<span>2022-06-21</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
+<span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2flinux%25E7%25BD%2591%25E7%25BB%259C%25E7%25BC%2596%25E7%25A8%258B10-httpserver%2f&text=%e3%80%90Linux%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b%e3%80%9110%20-%20HTTPServer&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2flinux%25E7%25BD%2591%25E7%25BB%259C%25E7%25BC%2596%25E7%25A8%258B10-httpserver%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2flinux%25E7%25BD%2591%25E7%25BB%259C%25E7%25BC%2596%25E7%25A8%258B10-httpserver%2f&title=%e3%80%90Linux%e7%bd%91%e7%bb%9c%e7%bc%96%e7%a8%8b%e3%80%9110%20-%20HTTPServer" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/linux/><i class="fas fa-tag fa-fw"></i>&nbsp;Linux</a>&nbsp;
+</span><span class=tag><a href=https://xushun1221.github.io/tags/network/><i class="fas fa-tag fa-fw"></i>&nbsp;network</a>&nbsp;
+</span><span class=tag><a href=https://xushun1221.github.io/tags/libevent/><i class="fas fa-tag fa-fw"></i>&nbsp;libevent</a>&nbsp;</span></section><section><span><a href=javascript:window.history.back();>Back</a></span>&nbsp;|&nbsp;<span><a href=https://xushun1221.github.io>Home</a></span></section></div><div class=post-nav><a href=https://xushun1221.github.io/2022/linux%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B09-libevent/ class=prev rel=prev title="【Linux网络编程】09 - libevent"><i class="fas fa-angle-left fa-fw"></i>【Linux网络编程】09 - libevent</a></div><div class=post-comment></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2022</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=https://xushun1221.github.io/about/ target=_blank>xushun</a> | </span>Powered by <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> & <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer">LoveIt</a></div></div></footer></div><a href=# class=dynamic-to-top id=dynamic-to-top data-scroll><span>&nbsp;</span>
+</a><script src=/js/lib/jquery/jquery.slim.min.js></script><script src=/js/lib/lazysizes/lazysizes.min.js></script><script src=/js/lib/smooth-scroll/smooth-scroll.polyfills.min.js></script><script>window.scroll=new SmoothScroll('[data-scroll]',{speed:300,speedAsDuration:true});</script><link rel=stylesheet href=/css/lib/katex/katex.min.css><script src=/js/lib/katex/katex.min.js></script><script defer src=/js/lib/katex/auto-render.min.js></script><link rel=stylesheet href=/css/lib/katex/copy-tex.min.css><script defer src=/js/lib/katex/copy-tex.min.js></script><script defer src=/js/lib/katex/mhchem.min.js></script><script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true},{left:"$",right:"$",display:false},]});});</script><script src=/js/blog.min.js></script></body></html>
