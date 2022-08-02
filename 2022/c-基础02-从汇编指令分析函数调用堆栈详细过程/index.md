@@ -1,0 +1,65 @@
+# 【C++基础】02 - 从汇编指令分析函数调用堆栈详细过程
+
+
+## 问题
+考虑这样一段代码：  
+```C++
+int sum (int a, int b) {
+    int temp = 0;
+    temp = a + b;
+    return temp;
+}
+
+int main() {
+    int a = 10;
+    int b = 20;
+    int ret = sum(a, b);
+    return 0;
+}
+```
+
+思考两个问题：  
+1. `main`函数调用`sum`函数，`sum`函数执行完成后，怎么知道回到哪个函数中？
+2. `sum`函数执行完成，回到`main`之后，怎么知道从哪一行指令继续执行？
+
+
+## 分析函数调用过程
+函数是执行在栈帧上的，需要在栈上开辟空间。
+
+`main`函数的执行过程如下：  
+1. （栈是从高地址向低地址方向增长的）`ebp`代表栈帧的栈底，`esp`代表栈帧的栈顶；
+   ![](/post_images/posts/Coding/C++基础/栈帧1.jpg "栈帧1")
+2. `int a = 10;`，`mov dword ptr[ebp-4], 0Ah`，`main`函数的局部变量`a`存放在栈底指针向低地址偏移4字节的位置；
+   ![](/post_images/posts/Coding/C++基础/栈帧2.jpg "栈帧2")
+3. `int b = 20;`，`mov dword ptr[ebp-8], 14h`，`main`函数的局部变量`b`存放在栈底指针向低地址偏移8字节的位置；
+   ![](/post_images/posts/Coding/C++基础/栈帧3.jpg "栈帧3")
+4. `int ret = sum(a, b);`，执行第三条语句时调用了`sum`函数，需要进行实参压栈操作，压栈操作先从右向左将参数压到栈顶，也就是先压`20`再压`10`，此时`20`就代表`sum`函数的形参`int b`，`10`代表`sum`函数的形参`int a`。（从这里我们可以得知，函数调用过程中形参变量内存的开辟，是调用方函数做的）对应的汇编指令如下；
+   ![](/post_images/posts/Coding/C++基础/栈帧4.jpg "栈帧4")
+   1. `mov eax, dword ptr[ebp-8]`
+   2. `push eax` （执行`push`指令，`esp`指针增长）
+   3. `mov eax, dword ptr[ebp-4]`
+   4. `push eax`
+5. 参数压栈完成后，`call sum`指令调用`sum`函数，会生成以下两条指令，这两条指令在函数调用结束后执行
+   ![](/post_images/posts/Coding/C++基础/栈帧5.jpg "栈帧5")
+   1. `add esp, 8` （假设该行指令的地址为`0x08124567`，`call`指令执行时，会首先将该地址压栈，函数返回后，从该指令开始执行）
+   2. `mov dword ptr[ebp-0Ch], eax`
+6. 进入`sum`函数，在执行第一条语句（`int temp = 0;`）之前（也就是执行到左大括号时），还有一些指令生成（开辟栈帧空间）
+   ![](/post_images/posts/Coding/C++基础/栈帧6.jpg "栈帧6")
+   1. `push ebp`，进入`sum`之后，`ebp`还指向`main`函数栈帧的栈底，这时记录`main`函数栈帧的栈底地址，就可以分配`sum`函数的栈帧了
+   2. `mov ebp, esp`，`ebp`被赋值为`main`函数栈帧的栈顶，确定`sum`函数栈帧的栈底；
+   3. `sub esp, 4Ch`，分配了`sum`函数栈帧的大小（栈向低地址方向增长，所以使用`sub`指令），`sum`函数的栈帧空间就被开辟了；
+7. `int temp = 0;`，`mov dword ptr[ebp-4], 0`，`sum`函数的局部变量存入栈帧；
+   ![](/post_images/posts/Coding/C++基础/栈帧7.jpg "栈帧7")
+8. `temp = a + b;`
+   ![](/post_images/posts/Coding/C++基础/栈帧8.jpg "栈帧8")
+   1. `mov eax, dword ptr[ebp+0Ch]`，将`b`参数放入`eax`寄存器中；
+   2. `add eax, dword ptr[ebp+8]`，将`a`参数和`eax`中的`b`参数相加；
+   3. `mov dword ptr[ebp-4], eax`，将`a + b`的结果存入`temp`中
+9.  `return temp;`，`mov eax, dword ptr[ebp-4]`，将`temp`的内容存入`eax`寄存器中返回；
+10. `sum`函数执行完成后（执行到右大括号时），还有一些指令生成（还原`main`函数的栈帧）
+    ![](/post_images/posts/Coding/C++基础/栈帧10.jpg "栈帧10")
+    1.  `mov esp, ebp`，归还`sum`函数的栈帧；
+    2.  `pop ebp`，栈顶元素退栈并交给`ebp`，此时`ebp`又回到了`main`函数栈帧的栈底；
+    3.  `ret`，出栈，把出栈的内容放入`pc`寄存器中，从该地址（`0x08124567`）的指令开始执行。
+11. 执行第五点的两条指令，将两个参数退栈，将`eax`中保存的`a + b`结果放入栈帧中。
+    ![](/post_images/posts/Coding/C++基础/栈帧11.jpg "栈帧11")
