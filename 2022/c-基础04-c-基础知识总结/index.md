@@ -292,7 +292,7 @@ extern "C" {
 
 
 
-## const、指针、引用 全面总结
+## const总结
 
 ### const在C和C++中的区别
 `const`的初步理解：`const`修饰的变量，在初始化完成后，其值不能被修改（不能再次作为左值）。
@@ -390,10 +390,74 @@ int main() {
 #### const和一级指针的结合
 注意，C++语法规范：`const`修饰的是离它最近的类型。
 
-`const`和一级指针结合的情况：  
-1. `const int* p`
-2. `int const* p`
-3. `int* const p`
-4. `const int* const p`
+`const`和一级指针结合的情况如下，我们需要用上述语法规则分析：  
+1. `const int* p`：由于`const`修饰离它最近的类型，那么这里修饰的就是`int`（不是`int*`，因为`int`最近），那么去掉`const int`剩下`* p`，这说明`*p`不能被修改。也就是说`p`可以指向任意的`int`内存地址，但是，不能修改该地址上的值；
+2. `int const* p`：`const`仍然修饰最近的`int`，所以同上；
+3. `int* const p`：这里的`const`修饰最近的类型`int*`，去掉`int* const`，剩下`p`，这说明，`p`不能被修改。也就是说`p`指针是常量，它只能指向其初始化的地址，不能指向其他地址，但是仍然可以通过解引用`*p`来改变其指向的地址的值；
+4. `const int* const p`：第一个`const`修饰后面最近的`int`，表示`*p`不能修改，第二个`const`修饰前面最近的`int*`，表示`p`不能修改。所以这种表示结合了上面两种，是最严格的形式，既不能修改`p`指针指向的值，也不能将`p`指针指向其他`int`变量的地址。
+
+总的来说，`const`和一级指针结合，有两种情况，第一种是，`const`修饰指针指向的内存不可修改，第二种是，`const`修饰指针本身不控修改。（或者两种同时限制）
+
+`cosnt`一级指针转换公式：  
+1. `int* <= const int*`：错误
+2. `const int* <= int*`：错误
+
+示例代码：  
+```C++
+int main() {
+    // 注意 如果const右没有* 则const不参与类型
+    //      如果const右有* 则const参与类型 const和右侧结合
+    // 例如 int* const 和 int* 相同
+    int a = 10;
+    int* p1 = &a;       // int* <- int* 合法
+    const int* p2 = &a; // const int* <- int* 合法
+    int* const p3 = &a; // int* <- int* 合法
+
+    // const指针和普通指针的转换遵循以下的规则
+    const int b = 20;
+    // int* p4 = &b;    // int* <- const int* 非法
+    const int* p5 = &b; // const int* <- const int* 合法
+}
+```
 
 
+#### const和二级（多级）指针的结合
+
+`const`和二级指针结合分析：  
+1. `const int** p`：`const`修饰`int`，`**p`不能修改；
+2. `int *const* p`：`const`修饰`int*`，`*p`不能修改；
+3. `int** const p`：`const`修饰`int**`，`p`不能修改。
+
+`const`二级指针转换公式：  
+1. `int** <= const int**`：错误
+2. `const int** <= int**`：错误
+3. 二级指针，只有这样是正确的
+   1. `int** <= int**`
+   2. `const int** <= const int**`
+4. `int** <= int*const*`：错误，相当于`* <= const*`
+5. `int*const* <= int**`：正确，相当于`const* <= *`
+
+示例代码：  
+```C++
+int main() {
+    int a = 10;
+    int* p = &a;
+    const int** q = &p; // 错误写法 const int** <- int**
+    /*  错误原因分析：
+        const int** q = &p;
+        从这句可以得知 *q 和 p 的内容是相同的 指向同一块内存
+        此时 如果给*q赋值 就相当于给p赋值
+        *q 的类型为 const int* 整型常量的指针
+        也就是说可以将这样的地址赋给*q
+        const int b = 20;
+        *q = &b;
+        那么也就意味着把一个整型常量指针赋值给了普通指针 p （int* <= const int*）
+        不能将一个常量的地址泄露给一个普通指针
+        所以错误
+
+        如果要改正 需要这样写
+        const int* p = &a;
+    */
+    return 0;
+}
+```
