@@ -1,6 +1,6 @@
-<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【C++基础】04 - C++基础知识总结 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/c-%E5%9F%BA%E7%A1%8003-%E7%90%86%E8%A7%A3c-%E4%BB%A3%E7%A0%81%E7%9A%84%E7%BC%96%E8%AF%91%E5%92%8C%E9%93%BE%E6%8E%A5%E5%8E%9F%E7%90%86/><link rel=canonical href=https://xushun1221.github.io/2022/c-%E5%9F%BA%E7%A1%8004-c-%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86%E6%80%BB%E7%BB%93/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【C++基础】04 - C++基础知识总结"><meta name=twitter:description content="本篇总结C++OOP之外的基础知识。 形参带默认值的函数 默认参数应该从右向左给出，调用时从左向右给出参数，如未指定某个参数则从此向右的参数使用"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【C\x2b\x2b基础】04 - C\x2b\x2b基础知识总结","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/c-%E5%9F%BA%E7%A1%8004-c-%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86%E6%80%BB%E7%BB%93\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"C\x2b\x2b, Linux","wordcount":1069,"url":"https:\/\/xushun1221.github.io\/2022\/c-%E5%9F%BA%E7%A1%8004-c-%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86%E6%80%BB%E7%BB%93\/","datePublished":"2022-08-04T00:00:00\x2b00:00","dateModified":"2022-08-04T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【C++基础】04 - C++基础知识总结</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-08-04>2022-08-04</time>&nbsp;
-<i class="fas fa-pencil-alt fa-fw"></i>about 1069 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#形参带默认值的函数>形参带默认值的函数</a><ul><li><a href=#形参默认值顺序--调用效率>形参默认值顺序 & 调用效率</a></li><li><a href=#定义和声明处给出形参默认值>定义和声明处给出形参默认值</a></li></ul></li><li><a href=#inline内联函数>inline内联函数</a></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
-<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#形参带默认值的函数>形参带默认值的函数</a><ul><li><a href=#形参默认值顺序--调用效率>形参默认值顺序 & 调用效率</a></li><li><a href=#定义和声明处给出形参默认值>定义和声明处给出形参默认值</a></li></ul></li><li><a href=#inline内联函数>inline内联函数</a></li></ul></nav></div></details></div><div class=post-content><p>本篇总结C++OOP之外的基础知识。</p><a class=post-dummy-target id=形参带默认值的函数></a><h2>形参带默认值的函数</h2><ol><li>默认参数应该从右向左给出，调用时从左向右给出参数，如未指定某个参数则从此向右的参数使用默认参数；</li><li>调用效率问题，使用默认参数时效率高于传入指定变量；</li><li>定义和声明处都可以给出函数形参的默认值；</li><li>函数形参默认值只能出现一次，无论是否相等，也无论是定义还是声明。</li></ol><a class=post-dummy-target id=形参默认值顺序--调用效率></a><h3>形参默认值顺序 & 调用效率</h3><p>错误写法：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【C++基础】04 - C++基础知识总结 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/c-%E5%9F%BA%E7%A1%8003-%E7%90%86%E8%A7%A3c-%E4%BB%A3%E7%A0%81%E7%9A%84%E7%BC%96%E8%AF%91%E5%92%8C%E9%93%BE%E6%8E%A5%E5%8E%9F%E7%90%86/><link rel=canonical href=https://xushun1221.github.io/2022/c-%E5%9F%BA%E7%A1%8004-c-%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86%E6%80%BB%E7%BB%93/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【C++基础】04 - C++基础知识总结"><meta name=twitter:description content="本篇总结C++OOP之外的基础知识。 形参带默认值的函数 默认参数应该从右向左给出，调用时从左向右给出参数，如未指定某个参数则从此向右的参数使用"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【C\x2b\x2b基础】04 - C\x2b\x2b基础知识总结","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/c-%E5%9F%BA%E7%A1%8004-c-%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86%E6%80%BB%E7%BB%93\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"C\x2b\x2b, Linux","wordcount":4263,"url":"https:\/\/xushun1221.github.io\/2022\/c-%E5%9F%BA%E7%A1%8004-c-%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86%E6%80%BB%E7%BB%93\/","datePublished":"2022-08-04T00:00:00\x2b00:00","dateModified":"2022-08-04T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【C++基础】04 - C++基础知识总结</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-08-04>2022-08-04</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 4263 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#形参带默认值的函数>形参带默认值的函数</a><ul><li><a href=#形参默认值顺序--调用效率>形参默认值顺序 & 调用效率</a></li><li><a href=#定义和声明处给出形参默认值>定义和声明处给出形参默认值</a></li></ul></li><li><a href=#inline内联函数>inline内联函数</a></li><li><a href=#函数重载>函数重载</a><ul><li><a href=#函数重载是什么>函数重载是什么？</a></li><li><a href=#为什么c支持函数重载而c语言不支持>为什么C++支持函数重载，而C语言不支持？</a></li><li><a href=#重载的作用域问题>重载的作用域问题</a></li><li><a href=#多态和函数重载的关系>多态和函数重载的关系</a></li><li><a href=#c和c如何互相调用>C++和C如何互相调用</a><ul><li><a href=#c调用c代码>C++调用C代码</a></li><li><a href=#c调用c代码-1>C调用C++代码</a></li><li><a href=#__cplusplus-宏>__cplusplus 宏</a></li></ul></li></ul></li><li><a href=#const指针引用-全面总结>const、指针、引用 全面总结</a><ul><li><a href=#const在c和c中的区别>const在C和C++中的区别</a><ul><li><a href=#c-const-特性>C const 特性</a></li><li><a href=#c-const-特性-1>C++ const 特性</a></li></ul></li><li><a href=#const和一二级多级指针的结合使用>const和一、二级（多级）指针的结合使用</a><ul><li><a href=#const和一级指针的结合>const和一级指针的结合</a></li></ul></li></ul></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#形参带默认值的函数>形参带默认值的函数</a><ul><li><a href=#形参默认值顺序--调用效率>形参默认值顺序 & 调用效率</a></li><li><a href=#定义和声明处给出形参默认值>定义和声明处给出形参默认值</a></li></ul></li><li><a href=#inline内联函数>inline内联函数</a></li><li><a href=#函数重载>函数重载</a><ul><li><a href=#函数重载是什么>函数重载是什么？</a></li><li><a href=#为什么c支持函数重载而c语言不支持>为什么C++支持函数重载，而C语言不支持？</a></li><li><a href=#重载的作用域问题>重载的作用域问题</a></li><li><a href=#多态和函数重载的关系>多态和函数重载的关系</a></li><li><a href=#c和c如何互相调用>C++和C如何互相调用</a><ul><li><a href=#c调用c代码>C++调用C代码</a></li><li><a href=#c调用c代码-1>C调用C++代码</a></li><li><a href=#__cplusplus-宏>__cplusplus 宏</a></li></ul></li></ul></li><li><a href=#const指针引用-全面总结>const、指针、引用 全面总结</a><ul><li><a href=#const在c和c中的区别>const在C和C++中的区别</a><ul><li><a href=#c-const-特性>C const 特性</a></li><li><a href=#c-const-特性-1>C++ const 特性</a></li></ul></li><li><a href=#const和一二级多级指针的结合使用>const和一、二级（多级）指针的结合使用</a><ul><li><a href=#const和一级指针的结合>const和一级指针的结合</a></li></ul></li></ul></li></ul></nav></div></details></div><div class=post-content><p>本篇总结C++OOP之外的基础知识。</p><a class=post-dummy-target id=形参带默认值的函数></a><h2>形参带默认值的函数</h2><ol><li>默认参数应该从右向左给出，调用时从左向右给出参数，如未指定某个参数则从此向右的参数使用默认参数；</li><li>调用效率问题，使用默认参数时效率高于传入指定变量；</li><li>定义和声明处都可以给出函数形参的默认值；</li><li>函数形参默认值只能出现一次，无论是否相等，也无论是定义还是声明。</li></ol><a class=post-dummy-target id=形参默认值顺序--调用效率></a><h3>形参默认值顺序 & 调用效率</h3><p>错误写法：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2
 </span><span class=lnt>3
 </span><span class=lnt>4
@@ -200,7 +200,220 @@
 <span class=cm>/*
 </span><span class=cm>...
 </span><span class=cm>*/</span>
-</code></pre></td></tr></table></div></div><a class=post-dummy-target id=inline内联函数></a><h2>inline内联函数</h2></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=inline内联函数></a><h2>inline内联函数</h2><p>众所周知，普通函数在调用时，都有一个标准的函数调用过程：参数压栈、函数栈帧开辟、函数过程执行、函数栈帧回退，除了函数过程的执行，其他的操作都是<strong>函数调用的开销</strong>，如果函数过程执行的指令很少，甚至少于函数调用所需的开销，那么在函数调用时，大量的时间都用来进行函数过程之外的操作，函数调用的效率就很低。<strong>inline内联函数</strong>就是解决这个问题的。</p><p>例如下面的代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span><span class=lnt>9
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=kr>inline</span> <span class=kt>int</span> <span class=nf>sum</span><span class=p>(</span><span class=kt>int</span> <span class=n>x</span><span class=p>,</span> <span class=kt>int</span> <span class=n>y</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>return</span> <span class=n>x</span> <span class=o>+</span> <span class=n>y</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>a</span> <span class=o>=</span> <span class=mi>10</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>b</span> <span class=o>=</span> <span class=mi>20</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>ret</span> <span class=o>=</span> <span class=n>sum</span><span class=p>(</span><span class=n>a</span><span class=p>,</span> <span class=n>b</span><span class=p>)</span><span class=p>;</span> <span class=c1>// int ret = a + b; // 内联
+</span><span class=c1></span>    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>将函数定义为inline内联函数，在<strong>编译过程中</strong>，编译到函数调用点时，编译器会直接将函数代码展开。这样，在代码运行到此处时，就不会执行调用函数的开销（参数压栈、开辟栈帧、回退栈帧），而是直接执行函数的操作。</p><p>如果编译器将内联函数展开，那么符号表中就不会生成该函数的符号了。</p><p>还有以下几点需要注意：</p><ol><li><strong>递归函数</strong>不可以内联；</li><li><code>inline</code>只是<strong>建议</strong>编译器将该函数处理为内联函数，并不是所有定义为inline内联的函数都会被编译器处理为内联函数，这取决于编译器的实现；</li><li>非递归函数也不一定可以内联；</li><li>编译器不会在debug版本上使用内联。</li></ol><p>内联函数和普通函数的区别是什么？</p><ol><li>普通函数调用有标准的函数调用开销，而内联函数在编译阶段在函数调用点将函数展开，省去了函数调用开销；</li><li>如果一个函数大量被调用且函数的内容非常简单，建议设置为内联函数；</li><li>如果内联函数内联成功，该函数不会在符号表中产生符号。</li></ol><a class=post-dummy-target id=函数重载></a><h2>函数重载</h2><a class=post-dummy-target id=函数重载是什么></a><h3>函数重载是什么？</h3><ol><li>一组函数，其中<strong>函数名相同</strong>，参数列表的<strong>参数个数或类型不同</strong>，那么这一组函数就是：重载函数。函数名都相同，在<strong>编译阶段</strong>，编译器根据实参的类型来选择重载的版本。</li><li>函数重载是在<strong>同一个作用域</strong>下的概念。</li><li>函数名和参数都相同，但是返回值不同，<strong>不能</strong>重载。</li></ol><a class=post-dummy-target id=为什么c支持函数重载而c语言不支持></a><h3>为什么C++支持函数重载，而C语言不支持？</h3><p>原因在于，C++编译器在产生函数符号的时候，其<strong>函数符号</strong>是<strong>函数名和参数列表</strong>组成的（虽然多个函数名称相同，但是参数列表不同，则产生不同的函数符号）。</p><p>而在C中，编译器只根据<strong>函数名</strong>来生成函数符号，所以多个函数名相同的函数在链接时会出现符号重定义错误。</p><a class=post-dummy-target id=重载的作用域问题></a><h3>重载的作用域问题</h3><p>看下面代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=kt>bool</span> <span class=nf>compare</span><span class=p>(</span><span class=kt>int</span> <span class=n>a</span><span class=p>,</span> <span class=kt>int</span> <span class=n>b</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// 全局作用域下的定义
+</span><span class=c1></span>    <span class=k>return</span> <span class=n>a</span> <span class=o>&gt;</span> <span class=n>b</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=kt>bool</span> <span class=nf>compare</span><span class=p>(</span><span class=kt>double</span> <span class=n>a</span><span class=p>,</span> <span class=kt>double</span> <span class=n>b</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// 全局作用域下的定义
+</span><span class=c1></span>    <span class=k>return</span> <span class=n>a</span> <span class=o>&gt;</span> <span class=n>b</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=kt>bool</span> <span class=nf>compare</span><span class=p>(</span><span class=k>const</span> <span class=kt>char</span><span class=o>*</span> <span class=n>a</span><span class=p>,</span> <span class=k>const</span> <span class=kt>char</span><span class=o>*</span> <span class=n>b</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// 全局作用域下的定义
+</span><span class=c1></span>    <span class=k>return</span> <span class=n>strcmp</span><span class=p>(</span><span class=n>a</span><span class=p>,</span> <span class=n>b</span><span class=p>)</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>bool</span> <span class=n>compare</span><span class=p>(</span><span class=kt>int</span> <span class=n>a</span><span class=p>,</span> <span class=kt>int</span> <span class=n>b</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 局部声明
+</span><span class=c1></span>    <span class=n>compare</span><span class=p>(</span><span class=mi>10</span><span class=p>,</span> <span class=mi>20</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>compare</span><span class=p>(</span><span class=mf>10.0</span><span class=p>,</span> <span class=mf>20.0</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>compare</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>aaa</span><span class=s>&#34;</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>bbb</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>  <span class=c1>// 出错
+</span><span class=c1></span>    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>如果<code>main</code>函数内的函数声明不加上，可以成功编译，加上之后，编译出错，提示字符指针不能转换为整型。</p><p>原因在于，在<code>main</code>函数内部声明了<code>compare</code>函数，这个声明会屏蔽掉外面的定义，所以在<code>main</code>内，所有的<code>compare</code>调用都使用内部声明的版本，<code>compare("aaa", "bbb");</code>和它不匹配，所以出错。</p><p>所以得到一个结论，函数重载是在<strong>同一个作用域</strong>下的概念，在不同作用域中的函数定义（声明）谈不上函数重载。</p><a class=post-dummy-target id=多态和函数重载的关系></a><h3>多态和函数重载的关系</h3><p>多态包括静态多态（编译阶段）和动态多态（运行阶段）。<br>函数重载是静态多态。</p><a class=post-dummy-target id=c和c如何互相调用></a><h3>C++和C如何互相调用</h3><a class=post-dummy-target id=c调用c代码></a><h4>C++调用C代码</h4><p>如果我们在一个C++项目中，需要使用某个C的函数，如何调用呢？<br><code>04test.c</code>：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=kt>int</span> <span class=nf>sum</span><span class=p>(</span><span class=kt>int</span> <span class=n>a</span><span class=p>,</span> <span class=kt>int</span> <span class=n>b</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>return</span> <span class=n>a</span> <span class=o>+</span> <span class=n>b</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p><code>04cpp.cpp</code>：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=kt>int</span> <span class=nf>sum</span><span class=p>(</span><span class=kt>int</span> <span class=n>a</span><span class=p>,</span> <span class=kt>int</span> <span class=n>b</span><span class=p>)</span><span class=p>;</span>  <span class=c1>// 错误写法
+</span><span class=c1></span><span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>ret</span> <span class=o>=</span> <span class=n>sum</span><span class=p>(</span><span class=mi>10</span><span class=p>,</span> <span class=mi>20</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>编译会报错，无法解析的外部符号，找不到<code>sum</code>函数的符号。<br>原因在于，<code>sum</code>函数在<code>.c</code>文件中编译时生成的符号和在<code>.cpp</code>文件中生成的符号不同，导致连接时，无法找到<code>sum</code>符号的定义，导致符号解析错误。</p><p>解决方法，在<code>.cpp</code>文件中使用<code>extern "C"</code>修饰C函数的声明，表明该函数使用C语言，在生成它的符号时使用C规则生成，连接时就可以在<code>04test.o</code>文件中找到它的符号。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=k>extern</span> <span class=sa></span><span class=s>&#34;</span><span class=s>C</span><span class=s>&#34;</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=nf>sum</span><span class=p>(</span><span class=kt>int</span> <span class=n>a</span><span class=p>,</span> <span class=kt>int</span> <span class=n>b</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p><em>注意，<code>extern</code>只在C++中可用。</em></p><a class=post-dummy-target id=c调用c代码-1></a><h4>C调用C++代码</h4><p>如果我们在一个C项目中，需要使用某个C++的函数，如何调用呢？
+<code>04test.cpp</code>：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=kt>int</span> <span class=nf>sum</span><span class=p>(</span><span class=kt>int</span> <span class=n>a</span><span class=p>,</span> <span class=kt>int</span> <span class=n>b</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>return</span> <span class=n>a</span> <span class=o>+</span> <span class=n>b</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p><code>04c.c</code>：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=kt>int</span> <span class=nf>sum</span><span class=p>(</span><span class=kt>int</span> <span class=n>a</span><span class=p>,</span> <span class=kt>int</span> <span class=n>b</span><span class=p>)</span><span class=p>;</span>  <span class=c1>// 错误写法
+</span><span class=c1></span><span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>ret</span> <span class=o>=</span> <span class=n>sum</span><span class=p>(</span><span class=mi>10</span><span class=p>,</span> <span class=mi>20</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>编译会报错，无法解析的外部符号，找不到<code>sum</code>的符号。<br>原因同上。</p><p>解决方法，在<code>.cpp</code>文件中使用<code>extern "C"</code>修饰函数定义，表明使用C规则生成符号即可。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=k>extern</span> <span class=sa></span><span class=s>&#34;</span><span class=s>C</span><span class=s>&#34;</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=nf>sum</span><span class=p>(</span><span class=kt>int</span> <span class=n>a</span><span class=p>,</span> <span class=kt>int</span> <span class=n>b</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>return</span> <span class=n>a</span> <span class=o>+</span> <span class=n>b</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=__cplusplus-宏></a><h4>__cplusplus 宏</h4><p>在C、C++混合编写的项目中，经常使用<code>__cplusplus</code>宏来适应不同的编译器。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span><span class=lnt>9
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>ifdef __cplusplus</span><span class=cp>
+</span><span class=cp></span><span class=k>extern</span> <span class=sa></span><span class=s>&#34;</span><span class=s>C</span><span class=s>&#34;</span> <span class=p>{</span>
+<span class=cp>#</span><span class=cp>endif</span><span class=cp>
+</span><span class=cp></span>    <span class=kt>int</span> <span class=n>sum</span><span class=p>(</span><span class=kt>int</span> <span class=n>a</span><span class=p>,</span> <span class=kt>int</span> <span class=n>b</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>return</span> <span class=n>a</span> <span class=o>+</span> <span class=n>b</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=cp>#</span><span class=cp>ifdef __cplusplus</span><span class=cp>
+</span><span class=cp></span><span class=p>}</span>
+<span class=cp>#</span><span class=cp>endif</span><span class=cp>
+</span></code></pre></td></tr></table></div></div><p>只有在C++编译器中，<code>__cplusplus</code>宏才会被定义。如果使用C++编译器编译，则会用<code>extern "C"</code>来修饰函数定义，而使用C编译器编译时，直接忽略<code>extern</code>语句。都可以生成C接口的函数。</p><a class=post-dummy-target id=const指针引用-全面总结></a><h2>const、指针、引用 全面总结</h2><a class=post-dummy-target id=const在c和c中的区别></a><h3>const在C和C++中的区别</h3><p><code>const</code>的初步理解：<code>const</code>修饰的变量，在初始化完成后，其值不能被修改（不能再次作为左值）。</p><p>C和C++中<code>const</code>的区别是：<code>const</code>编译方式的不同。</p><ul><li>在C中，<code>const</code>修饰的变量就是当作一个普通变量来编译生成指令，仅仅不能被作为左值修改。</li><li>在C++中，在编译阶段中，凡是出现<code>const</code>变量的地方，都被该<code>const</code>变量的初始值替换了。</li></ul><a class=post-dummy-target id=c-const-特性></a><h4>C const 特性</h4><ol><li><code>const</code>修饰的变量，可以不初始化；</li><li><code>const</code>修饰的变量，不是常量，是<strong>常变量</strong>，它和变量唯一的区别在于，它不可以作为左值了；</li><li><code>const</code>修饰的变量，可以修改其内存；</li><li><code>const</code>只是在语法上限制了对变量的修改，但是依然可以改变其内存，它的本质依然是变量。</li></ol><p>示例代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-c data-lang=c><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;stdio.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>const</span> <span class=kt>int</span> <span class=n>a</span> <span class=o>=</span> <span class=mi>20</span><span class=p>;</span>
+    <span class=c1>// int array[a] = {}; // 错误写法 const变量不能作为常量使用
+</span><span class=c1></span>    <span class=kt>int</span><span class=o>*</span> <span class=n>p</span> <span class=o>=</span> <span class=p>(</span><span class=kt>int</span><span class=o>*</span><span class=p>)</span><span class=o>&amp;</span><span class=n>a</span><span class=p>;</span>
+    <span class=o>*</span><span class=n>p</span> <span class=o>=</span> <span class=mi>30</span><span class=p>;</span>
+    <span class=n>printf</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>%d %d %d </span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>a</span><span class=p>,</span> <span class=o>*</span><span class=n>p</span><span class=p>,</span> <span class=o>*</span><span class=p>(</span><span class=o>&amp;</span><span class=n>a</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=c1>// 运行结果为： 30 30 30
+</span><span class=c1></span><span class=c1>// 因为a的内存被修改为30
+</span></code></pre></td></tr></table></div></div><a class=post-dummy-target id=c-const-特性-1></a><h4>C++ const 特性</h4><p>初始值是<strong>立即数</strong>的情况（<code>const int a = 20;</code>）：</p><ol><li><code>const</code>修饰的变量，<strong>必须初始化</strong>；</li><li><code>const</code>修饰的变量，可以看作<strong>常量</strong>，可以用作定义数组的长度；</li><li>代码中<code>const</code>变量处被替换为其初始值（编译阶段），这也是C++中<code>const</code>变量必须初始化的原因；</li><li><code>const</code>修饰的变量，仍然可以改变其内存，同样不可以作为左值修改。</li></ol><p>示例代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>const</span> <span class=kt>int</span> <span class=n>a</span> <span class=o>=</span> <span class=mi>20</span><span class=p>;</span> <span class=c1>// const修饰的变量必须初始化
+</span><span class=c1></span>    <span class=kt>int</span> <span class=n>array</span><span class=p>[</span><span class=n>a</span><span class=p>]</span> <span class=o>=</span> <span class=p>{</span><span class=p>}</span><span class=p>;</span> <span class=c1>// const是常量 可以定义数组
+</span><span class=c1></span>    <span class=kt>int</span><span class=o>*</span> <span class=n>p</span> <span class=o>=</span> <span class=p>(</span><span class=kt>int</span><span class=o>*</span><span class=p>)</span><span class=o>&amp;</span><span class=n>a</span><span class=p>;</span>
+    <span class=o>*</span><span class=n>p</span> <span class=o>=</span> <span class=mi>30</span><span class=p>;</span> <span class=c1>// 这里确实改了a的内存内容
+</span><span class=c1></span>    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>a</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> </span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=o>*</span><span class=n>p</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> </span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=o>*</span><span class=p>(</span><span class=o>&amp;</span><span class=n>a</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+    <span class=c1>// 这里的a直接被替换为const变量初始值 所以仍是20
+</span><span class=c1></span>    <span class=c1>// *p取的是a内存中的值 所以是30 *(&amp;a)同理
+</span><span class=c1></span>    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=c1>// 运行结果： 20 30 30
+</span></code></pre></td></tr></table></div></div><p>初始值<strong>不是立即数</strong>的情况（<code>int b = 30; const int a = b;</code>）：</p><ol><li>使用其他变量初始化的<code>const</code>变量，不是<strong>常量</strong>，退化为<strong>常变量</strong>；</li><li>这种情况下，和C中一模一样，除了不能作为左值，其他和普通变量一样。</li></ol><p>示例代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+	<span class=kt>int</span> <span class=n>b</span> <span class=o>=</span> <span class=mi>20</span><span class=p>;</span>
+    <span class=k>const</span> <span class=kt>int</span> <span class=n>a</span> <span class=o>=</span> <span class=n>b</span><span class=p>;</span> <span class=c1>// 用变量初始化const变量
+</span><span class=c1></span>    <span class=c1>// int array[a] = {}; // 常变量不可以初始化数组了
+</span><span class=c1></span>    <span class=kt>int</span><span class=o>*</span> <span class=n>p</span> <span class=o>=</span> <span class=p>(</span><span class=kt>int</span><span class=o>*</span><span class=p>)</span><span class=o>&amp;</span><span class=n>a</span><span class=p>;</span>
+    <span class=o>*</span><span class=n>p</span> <span class=o>=</span> <span class=mi>30</span><span class=p>;</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>a</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> </span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=o>*</span><span class=n>p</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> </span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=o>*</span><span class=p>(</span><span class=o>&amp;</span><span class=n>a</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+    <span class=c1>// a也不在会被替换为初始值 而是使用其内存中的值
+</span><span class=c1></span>    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+
+    <span class=c1>// 运行结果： 30 30 30
+</span><span class=c1></span><span class=p>}</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=const和一二级多级指针的结合使用></a><h3>const和一、二级（多级）指针的结合使用</h3><p>使用<code>const</code>常量值需要注意的两点：</p><ol><li><code>const</code>常量不能再作为左值（直接修改常量的值）；</li><li>不能把<code>const</code>常量的地址泄露给一个普通的指针或者引用变量（间接修改常量的值）。</li></ol><p>以上两点是编译器不允许的操作。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>const</span> <span class=kt>int</span> <span class=n>a</span> <span class=o>=</span> <span class=mi>10</span><span class=p>;</span>
+    <span class=c1>// a = 20;      // 直接修改const变量 错误
+</span><span class=c1></span>    <span class=c1>// int* p = &amp;a; // 普通指针获得const变量地址 错误
+</span><span class=c1></span>                    <span class=c1>// &amp;a 是 const int* 类型 不能转为 int*
+</span><span class=c1></span>    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=const和一级指针的结合></a><h4>const和一级指针的结合</h4><p>注意，C++语法规范：<code>const</code>修饰的是离它最近的类型。</p><p><code>const</code>和一级指针结合的情况：</p><ol><li><code>const int* p</code></li><li><code>int const* p</code></li><li><code>int* const p</code></li><li><code>const int* const p</code></li></ol></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
 <span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
 <span>2022-08-04</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
 <span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fc-%25E5%259F%25BA%25E7%25A1%258004-c-%25E5%259F%25BA%25E7%25A1%2580%25E7%259F%25A5%25E8%25AF%2586%25E6%2580%25BB%25E7%25BB%2593%2f&text=%e3%80%90C%2b%2b%e5%9f%ba%e7%a1%80%e3%80%9104%20-%20C%2b%2b%e5%9f%ba%e7%a1%80%e7%9f%a5%e8%af%86%e6%80%bb%e7%bb%93&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2fc-%25E5%259F%25BA%25E7%25A1%258004-c-%25E5%259F%25BA%25E7%25A1%2580%25E7%259F%25A5%25E8%25AF%2586%25E6%2580%25BB%25E7%25BB%2593%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fc-%25E5%259F%25BA%25E7%25A1%258004-c-%25E5%259F%25BA%25E7%25A1%2580%25E7%259F%25A5%25E8%25AF%2586%25E6%2580%25BB%25E7%25BB%2593%2f&title=%e3%80%90C%2b%2b%e5%9f%ba%e7%a1%80%e3%80%9104%20-%20C%2b%2b%e5%9f%ba%e7%a1%80%e7%9f%a5%e8%af%86%e6%80%bb%e7%bb%93" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/c++/><i class="fas fa-tag fa-fw"></i>&nbsp;C++</a>&nbsp;
