@@ -345,20 +345,147 @@ int main() {
 
 ## 类的各种成员及区别
 
+### 普通成员方法
+- 属于类的作用域；
+- 必须由对象进行调用，原因是在编译阶段，成员方法的参数列表会添加一个指向该类对象的指针形参，调用该成员方法的对象地址作为实参入栈；
+- 可以任意访问对象的私有成员变量；（先不考虑保护的成员变量）
+
+
+### 静态成员变量
+- 用`static`进行修饰；
+- 在类内进行**声明**（`static int _count;`），在类外进行**定义和初始化**（`int Test::_count = 0;`）；
+- 所有该类的对象共用一个静态变量，不占用对象的内存；（相当于一个落在类的作用域中的全局变量）
+- 对静态成员变量的访问，最好使用静态成员方法。
+
+示例代码：  
+```C++
+#include <iostream>
+using namespace std;
+
+class Test {
+private:
+	static int _count; // 声明  静态int类型用于记录初始化过的Test对象个数
+	int _a;
+public:
+	Test(int a = 0) : _a(a) { ++ _count; }
+	static int count() { return _count; }
+	// int count() { return _count; }
+	// 这种写法是不合适的 原因是
+	// 普通成员方法 编译时会在参数列表中添加调用对象的指针
+	// 但是 Test::count(); 并不需要特定对象进行调用 所以错误
+	// 可以使用 test.count(); 方式调用
+};
+// 定义 静态成员变量 必须要在类外 进行定义并初始化
+int Test::_count = 0;
+
+int main()
+{
+	Test a, b, c;
+	cout << Test::count() << endl;
+	return 0;
+}
+```
+
+### 静态成员方法
+- 用`static`修饰，属于类的作用域；
+- 调用静态成员方法，不需要依赖于对象，可以直接使用类名调用（`Test::count();`）；
+- 静态成员方法，在编译时，参数列表中不会添加指向对象的`this`指针，这是它不需要依赖于对象的原因；（和普通成员方法的本质区别）
+- 静态成员方法不能访问普通的成员变量，应该用于访问其他静态的成员变量（方法）。
 
 
 
+### 常成员方法 - const
+考虑下面的代码：  
+```C++
+#include <iostream>
+using namespace std;
 
+class Test {
+private:
+	static int _count;
+	int _a;
+public:
+	Test(int a = 0) : _a(a) { ++ _count; }
+	static int count() { return _count; }
+	void show() const { cout << a << endl; } // 常对象只能调用常成员方法 由const修饰
+	// void show() { cout << a << endl; }
+	// 使用const对象调用这种方法就错误了
+};
+int Test::_count = 0;
 
+int main()
+{
+	Test a, b, c;
+	cout << Test::count() << endl;
+	const Test t;
+	t.show();
+	return 0;
+}
+```
 
+如果我们使用一个常对象，能否调用普通成员方法呢？  
+答案是，不能。分析如下：
+
+如果我们使用常对象（`const Test t;`）来调用普通成员方法（`t.show()`），实际上是这样调用的：`Test::show(&t)`，实参`&t`的类型为`const Test*`，而`Test::show()`的形参类型为`Test*`，用`Test*`的指针来接收`const Test*`的值是不允许的。
+
+所以，常对象只能调用常成员方法（`void show() const;`），常成员方法，在编译时，形参列表中添加的指针类型为`const Test* this`，和常对象地址类型相同。同时，普通对象地址类型`Test*`可以被`const Test* this`接收，所以普通对象也可调用常成员方法。
+
+结论：  
+- 常对象只能调用常成员方法；
+- 普通对象也可以调用常成员方法；
+- 对对象成员不进行修改的方法，尽量都使用常成员方法。
 
 
 
 ## 指向类成员的指针
 
+示例代码：  
+```C++
+#include <iostream>
+using namespace std;
 
+class Test {
+public:
+	void func() { cout << "Test::func" << endl; }
+	static void static_func() { cout << "Test::static_func" << endl; }
+	int a;
+	static int b;
+};
+int Test::b;
 
-
+int main()
+{
+	Test t1;
+	Test* t2 = new Test();
+// 指向成员变量的指针
+	// int* p = &Test::a; 
+	// 错误 int* 无法接收 int Test::*
+	// 需要指定类作用域
+	int Test::* p = &Test::a;
+	
+	// *p = 20;
+	// 错误 对成员指针的解引用操作 必须依赖对象
+	t1.*p = 20;
+	t2->*p = 30;
+	
+	int* p1 = &Test::b; // 不需要指定类作用域
+	*p1 = 40; // 静态成员变量不依赖对象
+// 指向成员方法的指针
+	// void(*pfunc)() = &Test::func;
+	// 错误 指向成员方法的指针需要指定类作用域
+	void(Test::*pfunc)() = &Test::func;
+	
+	// (*pfunc)();
+	// 错误 普通成员方法 必须依赖对象
+	(t1.*pfunc)();
+	(t2->*pfunc)();
+	
+	void(*p1func)() = &Test::static_func; // 不需要指定类作用域
+	(*p1func)(); // 不依赖对象
+	delete t2;
+	return 0;
+}
+```
 
 
 
