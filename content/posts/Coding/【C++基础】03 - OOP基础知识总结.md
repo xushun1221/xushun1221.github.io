@@ -1,7 +1,7 @@
 ---
 title: 【C++基础】03 - OOP基础知识总结
 date: 2022-08-08
-tags: [C++, Linux]
+tags: [C++]
 categories: [Coding]
 ---
 
