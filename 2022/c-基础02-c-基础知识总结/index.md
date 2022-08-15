@@ -645,7 +645,7 @@ int main() {
     return 0;
 }
 ```
-- `new  delete`是C++的运算符；
+- `new  delete`是C++的操作符；
 - `new`不仅可以分配内存，还可以进行初始化操作；
 - 分配内存失败时，通过抛出`bad_alloc`类型异常来判断的；
 - `delete[]`用来释放数组内存。

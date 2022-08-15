@@ -1,6 +1,6 @@
-<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【C++基础】05 - 运算符重载、迭代器iterator | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/c-%E5%9F%BA%E7%A1%8004-%E6%A8%A1%E6%9D%BF%E7%BC%96%E7%A8%8B%E5%88%86%E9%85%8D%E5%99%A8allocator/><link rel=canonical href=https://xushun1221.github.io/2022/c-%E5%9F%BA%E7%A1%8005-%E8%BF%90%E7%AE%97%E7%AC%A6%E9%87%8D%E8%BD%BD%E8%BF%AD%E4%BB%A3%E5%99%A8iterator/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【C++基础】05 - 运算符重载、迭代器iterator"><meta name=twitter:description content="运算符重载的意义在于，使得对象的运算表现得和编译器内置的类型一样。例如： 1 2 3 4 template<typename T> T sum(T a, T b) { return a + b; // a.+(b); } 如果T是内置类型，a + b可以直"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【C\x2b\x2b基础】05 - 运算符重载、迭代器iterator","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/c-%E5%9F%BA%E7%A1%8005-%E8%BF%90%E7%AE%97%E7%AC%A6%E9%87%8D%E8%BD%BD%E8%BF%AD%E4%BB%A3%E5%99%A8iterator\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"C\x2b\x2b, STL","wordcount":1669,"url":"https:\/\/xushun1221.github.io\/2022\/c-%E5%9F%BA%E7%A1%8005-%E8%BF%90%E7%AE%97%E7%AC%A6%E9%87%8D%E8%BD%BD%E8%BF%AD%E4%BB%A3%E5%99%A8iterator\/","datePublished":"2022-08-12T00:00:00\x2b00:00","dateModified":"2022-08-12T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【C++基础】05 - 运算符重载、迭代器iterator</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-08-12>2022-08-12</time>&nbsp;
-<i class="fas fa-pencil-alt fa-fw"></i>about 1669 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#实现-complex-类>实现 complex 类</a></li><li><a href=#实现-string-类>实现 string 类</a></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
-<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#实现-complex-类>实现 complex 类</a></li><li><a href=#实现-string-类>实现 string 类</a></li></ul></nav></div></details></div><div class=post-content><p>运算符重载的意义在于，使得对象的运算表现得和编译器内置的类型一样。例如：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【C++基础】05 - 运算符重载、迭代器iterator | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/c-%E5%9F%BA%E7%A1%8004-%E6%A8%A1%E6%9D%BF%E7%BC%96%E7%A8%8B%E5%88%86%E9%85%8D%E5%99%A8allocator/><link rel=canonical href=https://xushun1221.github.io/2022/c-%E5%9F%BA%E7%A1%8005-%E8%BF%90%E7%AE%97%E7%AC%A6%E9%87%8D%E8%BD%BD%E8%BF%AD%E4%BB%A3%E5%99%A8iterator/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【C++基础】05 - 运算符重载、迭代器iterator"><meta name=twitter:description content="运算符重载的意义在于，使得对象的运算表现得和编译器内置的类型一样。例如： 1 2 3 4 template<typename T> T sum(T a, T b) { return a + b; // a.+(b); } 如果T是内置类型，a + b可以直"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【C\x2b\x2b基础】05 - 运算符重载、迭代器iterator","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/c-%E5%9F%BA%E7%A1%8005-%E8%BF%90%E7%AE%97%E7%AC%A6%E9%87%8D%E8%BD%BD%E8%BF%AD%E4%BB%A3%E5%99%A8iterator\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"C\x2b\x2b, STL","wordcount":4725,"url":"https:\/\/xushun1221.github.io\/2022\/c-%E5%9F%BA%E7%A1%8005-%E8%BF%90%E7%AE%97%E7%AC%A6%E9%87%8D%E8%BD%BD%E8%BF%AD%E4%BB%A3%E5%99%A8iterator\/","datePublished":"2022-08-12T00:00:00\x2b00:00","dateModified":"2022-08-12T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【C++基础】05 - 运算符重载、迭代器iterator</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-08-12>2022-08-12</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 4725 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#实现-complex-类>实现 complex 类</a></li><li><a href=#实现-string-类>实现 string 类</a></li><li><a href=#string-的迭代器-iterator>string 的迭代器 iterator</a><ul><li><a href=#容器的迭代器-iterator>容器的迭代器 iterator</a></li><li><a href=#实现迭代器>实现迭代器</a></li></ul></li><li><a href=#vector-的迭代器-iterator>vector 的迭代器 iterator</a></li><li><a href=#容器迭代器的失效问题>容器迭代器的失效问题</a><ul><li><a href=#什么是迭代器的失效>什么是迭代器的失效</a></li><li><a href=#如何解决迭代器失效>如何解决迭代器失效</a></li><li><a href=#迭代器失效原理vector实现>迭代器失效原理（vector实现）</a></li></ul></li><li><a href=#深入理解-new-和-delete-的原理>深入理解 new 和 delete 的原理</a><ul><li><a href=#new-delete-和-malloc-free>new delete 和 malloc free</a></li><li><a href=#new>new</a></li></ul></li><li><a href=#new-delete-重载实现的对象池应用>new delete 重载实现的对象池应用</a></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#实现-complex-类>实现 complex 类</a></li><li><a href=#实现-string-类>实现 string 类</a></li><li><a href=#string-的迭代器-iterator>string 的迭代器 iterator</a><ul><li><a href=#容器的迭代器-iterator>容器的迭代器 iterator</a></li><li><a href=#实现迭代器>实现迭代器</a></li></ul></li><li><a href=#vector-的迭代器-iterator>vector 的迭代器 iterator</a></li><li><a href=#容器迭代器的失效问题>容器迭代器的失效问题</a><ul><li><a href=#什么是迭代器的失效>什么是迭代器的失效</a></li><li><a href=#如何解决迭代器失效>如何解决迭代器失效</a></li><li><a href=#迭代器失效原理vector实现>迭代器失效原理（vector实现）</a></li></ul></li><li><a href=#深入理解-new-和-delete-的原理>深入理解 new 和 delete 的原理</a><ul><li><a href=#new-delete-和-malloc-free>new delete 和 malloc free</a></li><li><a href=#new>new</a></li></ul></li><li><a href=#new-delete-重载实现的对象池应用>new delete 重载实现的对象池应用</a></li></ul></nav></div></details></div><div class=post-content><p>运算符重载的意义在于，使得对象的运算表现得和编译器内置的类型一样。例如：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2
 </span><span class=lnt>3
 </span><span class=lnt>4
@@ -99,7 +99,7 @@
 </span><span class=lnt>89
 </span><span class=lnt>90
 </span><span class=lnt>91
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
 </span><span class=cp></span>
 <span class=k>class</span> <span class=nc>complex</span> <span class=p>{</span>
 <span class=k>public</span><span class=o>:</span>
@@ -277,8 +277,10 @@
 </span><span class=lnt>85
 </span><span class=lnt>86
 </span><span class=lnt>87
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
-</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;cstring&gt;</span><span class=cp>
+</span><span class=lnt>88
+</span><span class=lnt>89
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;cstring&gt;</span><span class=cp>
 </span><span class=cp></span><span class=k>class</span> <span class=nc>string</span> <span class=p>{</span>
 <span class=k>public</span><span class=o>:</span>
     <span class=n>string</span><span class=p>(</span><span class=k>const</span> <span class=kt>char</span><span class=o>*</span> <span class=n>pstr</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>)</span> <span class=p>{</span>
@@ -330,12 +332,14 @@
     <span class=n>strcat</span><span class=p>(</span><span class=n>ptmp</span><span class=p>,</span> <span class=n>rhs</span><span class=p>.</span><span class=n>_pstr</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 含&#39;\0&#39;
 </span><span class=c1></span>    <span class=c1>// return string(ptmp); // 不能直接返回 ptmp 指向的内存泄露了！
 </span><span class=c1></span>    <span class=n>string</span> <span class=nf>stmp</span><span class=p>(</span><span class=n>ptmp</span><span class=p>)</span><span class=p>;</span>
-    <span class=c1>// 这样写是正确的 但是在这个过程中又分配了一次相同的空间
-</span><span class=c1></span>    <span class=c1>// 效率非常低 c++的迭代器iterator就是用来解决这个问题的
-</span><span class=c1></span>    <span class=c1>// 下一节来解决这个问题
-</span><span class=c1></span>    <span class=k>delete</span><span class=p>[</span><span class=p>]</span> <span class=n>ptmp</span><span class=p>;</span>
-    <span class=k>return</span> <span class=n>stmp</span><span class=p>;</span>
-<span class=p>}</span>
+    <span class=c1>// 这样写是正确的 但是在构造过程中又分配了一次相同的空间
+</span><span class=c1></span>    <span class=k>delete</span><span class=p>[</span><span class=p>]</span> <span class=n>ptmp</span><span class=p>;</span> <span class=c1>// 回收了内存
+</span><span class=c1></span>    <span class=k>return</span> <span class=n>stmp</span><span class=p>;</span>   <span class=c1>// 函数结束后 stmp 又被析构
+</span><span class=c1></span>    <span class=c1>// 要返回stmp就一定会产生临时对象
+</span><span class=c1></span>    <span class=c1>// 临时对象的构造和析构又会进行大量的内存操作
+</span><span class=c1></span>    <span class=c1>// 效率非常低
+</span><span class=c1></span>    <span class=c1>// 后面来解决这个问题
+</span><span class=c1></span><span class=p>}</span>
 
 <span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
     <span class=n>string</span> <span class=n>str1</span><span class=p>;</span> <span class=c1>// 默认构造
@@ -364,7 +368,657 @@
 </span><span class=c1></span>    
     <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
 <span class=p>}</span>
-</code></pre></td></tr></table></div></div></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=string-的迭代器-iterator></a><h2>string 的迭代器 iterator</h2><a class=post-dummy-target id=容器的迭代器-iterator></a><h3>容器的迭代器 iterator</h3><p>迭代器示例：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string&gt;</span><span class=cp>
+</span><span class=cp></span><span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>str1</span> <span class=o>=</span> <span class=sa></span><span class=s>&#34;</span><span class=s>hello</span><span class=s>&#34;</span><span class=p>;</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=o>:</span><span class=o>:</span><span class=n>iterator</span> <span class=n>it</span> <span class=o>=</span> <span class=n>str1</span><span class=p>.</span><span class=n>begin</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=c1>// iterator 是 string 的内部类
+</span><span class=c1></span>    <span class=c1>// begin() 返回的是容器的首元素
+</span><span class=c1></span>    <span class=k>while</span> <span class=p>(</span><span class=n>it</span> <span class=o>!</span><span class=o>=</span> <span class=n>str1</span><span class=p>.</span><span class=n>end</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// end() 是容器最后元素的后继
+</span><span class=c1></span>        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=o>*</span><span class=n>it</span><span class=p>;</span> <span class=c1>// 解引用访问容器底层数据
+</span><span class=c1></span>        <span class=o>+</span><span class=o>+</span> <span class=n>it</span><span class=p>;</span> <span class=c1>// 跳到下一个位置
+</span><span class=c1></span>    <span class=p>}</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>通过上面的示例可以看到迭代器的特性：</p><ul><li>迭代器可以<strong>透明地</strong>遍历容器内部的元素；</li><li>每一种容器都有自己的数据结构，要用对应的迭代器，所以将迭代器设计为内部类型；</li><li>都有<code>begin() end()</code>方法，分别返回容器首元素和末尾的后继位置的迭代器；</li><li><code>++</code>重载，将迭代器指向后一个位置；</li><li><code>*</code>重载，访问迭代器指向的元素的值。</li></ul><p>注意，不同容器的迭代器是不可以进行比较运算的。</p><a class=post-dummy-target id=实现迭代器></a><h3>实现迭代器</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span><span class=lnt>59
+</span><span class=lnt>60
+</span><span class=lnt>61
+</span><span class=lnt>62
+</span><span class=lnt>63
+</span><span class=lnt>64
+</span><span class=lnt>65
+</span><span class=lnt>66
+</span><span class=lnt>67
+</span><span class=lnt>68
+</span><span class=lnt>69
+</span><span class=lnt>70
+</span><span class=lnt>71
+</span><span class=lnt>72
+</span><span class=lnt>73
+</span><span class=lnt>74
+</span><span class=lnt>75
+</span><span class=lnt>76
+</span><span class=lnt>77
+</span><span class=lnt>78
+</span><span class=lnt>79
+</span><span class=lnt>80
+</span><span class=lnt>81
+</span><span class=lnt>82
+</span><span class=lnt>83
+</span><span class=lnt>84
+</span><span class=lnt>85
+</span><span class=lnt>86
+</span><span class=lnt>87
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;cstring&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>class</span> <span class=nc>string</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>string</span><span class=p>(</span><span class=k>const</span> <span class=kt>char</span><span class=o>*</span> <span class=n>pstr</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>pstr</span> <span class=o>!</span><span class=o>=</span> <span class=k>nullptr</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>_pstr</span> <span class=o>=</span> <span class=k>new</span> <span class=kt>char</span><span class=p>[</span><span class=n>strlen</span><span class=p>(</span><span class=n>pstr</span><span class=p>)</span> <span class=o>+</span> <span class=mi>1</span><span class=p>]</span><span class=p>;</span>
+            <span class=n>strcpy</span><span class=p>(</span><span class=n>_pstr</span><span class=p>,</span> <span class=n>pstr</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+            <span class=n>_pstr</span> <span class=o>=</span> <span class=k>new</span> <span class=kt>char</span><span class=p>[</span><span class=mi>1</span><span class=p>]</span><span class=p>;</span>
+            <span class=o>*</span><span class=n>_pstr</span> <span class=o>=</span> <span class=sa></span><span class=sc>&#39;</span><span class=sc>\0</span><span class=sc>&#39;</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=o>~</span><span class=n>string</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>delete</span><span class=p>[</span><span class=p>]</span> <span class=n>_pstr</span><span class=p>;</span>
+        <span class=n>_pstr</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>string</span> <span class=p>(</span><span class=k>const</span> <span class=n>string</span><span class=o>&amp;</span> <span class=n>str</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>_pstr</span> <span class=o>=</span> <span class=k>new</span> <span class=kt>char</span><span class=p>[</span><span class=n>strlen</span><span class=p>(</span><span class=n>str</span><span class=p>.</span><span class=n>_pstr</span><span class=p>)</span> <span class=o>+</span> <span class=mi>1</span><span class=p>]</span><span class=p>;</span>
+        <span class=n>strcpy</span><span class=p>(</span><span class=n>_pstr</span><span class=p>,</span> <span class=n>str</span><span class=p>.</span><span class=n>_pstr</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>string</span><span class=o>&amp;</span> <span class=k>operator</span><span class=o>=</span><span class=p>(</span><span class=k>const</span> <span class=n>string</span><span class=o>&amp;</span> <span class=n>str</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>if</span> <span class=p>(</span><span class=k>this</span> <span class=o>=</span><span class=o>=</span> <span class=o>&amp;</span><span class=n>str</span><span class=p>)</span> <span class=p>{</span>
+            <span class=k>return</span> <span class=o>*</span><span class=k>this</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=k>delete</span><span class=p>[</span><span class=p>]</span> <span class=n>_pstr</span><span class=p>;</span>
+        <span class=n>_pstr</span> <span class=o>=</span> <span class=k>new</span> <span class=kt>char</span><span class=p>[</span><span class=n>strlen</span><span class=p>(</span><span class=n>str</span><span class=p>.</span><span class=n>_pstr</span><span class=p>)</span> <span class=o>+</span> <span class=mi>1</span><span class=p>]</span><span class=p>;</span>
+        <span class=n>strcpy</span><span class=p>(</span><span class=n>_pstr</span><span class=p>,</span> <span class=n>str</span><span class=p>.</span><span class=n>_pstr</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>return</span> <span class=o>*</span><span class=k>this</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=kt>bool</span> <span class=k>operator</span><span class=o>&gt;</span><span class=p>(</span><span class=k>const</span> <span class=n>string</span><span class=o>&amp;</span> <span class=n>str</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=nf>strcmp</span><span class=p>(</span><span class=n>_pstr</span><span class=p>,</span> <span class=n>str</span><span class=p>.</span><span class=n>_pstr</span><span class=p>)</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>;</span> <span class=p>}</span>
+    <span class=kt>bool</span> <span class=k>operator</span><span class=o>&lt;</span><span class=p>(</span><span class=k>const</span> <span class=n>string</span><span class=o>&amp;</span> <span class=n>str</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=nf>strcmp</span><span class=p>(</span><span class=n>_pstr</span><span class=p>,</span> <span class=n>str</span><span class=p>.</span><span class=n>_pstr</span><span class=p>)</span> <span class=o>&lt;</span> <span class=mi>0</span><span class=p>;</span> <span class=p>}</span>
+    <span class=kt>bool</span> <span class=k>operator</span><span class=o>=</span><span class=o>=</span><span class=p>(</span><span class=k>const</span> <span class=n>string</span><span class=o>&amp;</span> <span class=n>str</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=nf>strcmp</span><span class=p>(</span><span class=n>_pstr</span><span class=p>,</span> <span class=n>str</span><span class=p>.</span><span class=n>_pstr</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=p>}</span>
+    <span class=kt>int</span> <span class=nf>length</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=n>strlen</span><span class=p>(</span><span class=n>_pstr</span><span class=p>)</span><span class=p>;</span> <span class=p>}</span>
+    <span class=kt>char</span><span class=o>&amp;</span> <span class=k>operator</span><span class=p>[</span><span class=p>]</span><span class=p>(</span><span class=k>const</span> <span class=kt>int</span> <span class=n>index</span><span class=p>)</span> <span class=p>{</span> <span class=k>return</span> <span class=n>_pstr</span><span class=p>[</span><span class=n>index</span><span class=p>]</span><span class=p>;</span> <span class=p>}</span>
+    <span class=k>const</span> <span class=kt>char</span><span class=o>&amp;</span> <span class=k>operator</span><span class=p>[</span><span class=p>]</span><span class=p>(</span><span class=k>const</span> <span class=kt>int</span> <span class=n>index</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=n>_pstr</span><span class=p>[</span><span class=n>index</span><span class=p>]</span><span class=p>;</span> <span class=p>}</span>
+    <span class=k>const</span> <span class=kt>char</span><span class=o>*</span> <span class=nf>c_str</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=n>_pstr</span><span class=p>;</span> <span class=p>}</span>
+    <span class=k>friend</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>ostream</span><span class=o>&amp;</span> <span class=k>operator</span><span class=o>&lt;</span><span class=o>&lt;</span><span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>ostream</span><span class=o>&amp;</span> <span class=n>out</span><span class=p>,</span> <span class=k>const</span> <span class=n>string</span><span class=o>&amp;</span> <span class=n>str</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>friend</span> <span class=n>string</span> <span class=k>operator</span><span class=o>+</span><span class=p>(</span><span class=k>const</span> <span class=n>string</span><span class=o>&amp;</span> <span class=n>lhs</span><span class=p>,</span> <span class=k>const</span> <span class=n>string</span><span class=o>&amp;</span> <span class=n>rhs</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 给string类提供迭代器的实现
+</span><span class=c1></span>    <span class=k>class</span> <span class=nc>iterator</span> <span class=p>{</span>
+    <span class=k>public</span><span class=o>:</span>
+        <span class=n>iterator</span><span class=p>(</span><span class=kt>char</span><span class=o>*</span> <span class=n>p</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>)</span> <span class=o>:</span> <span class=n>_p</span><span class=p>(</span><span class=n>p</span><span class=p>)</span> <span class=p>{</span><span class=p>}</span>
+        <span class=kt>bool</span> <span class=k>operator</span><span class=o>!</span><span class=o>=</span><span class=p>(</span><span class=k>const</span> <span class=n>iterator</span><span class=o>&amp;</span> <span class=n>it</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=n>_p</span> <span class=o>!</span><span class=o>=</span> <span class=n>it</span><span class=p>.</span><span class=n>_p</span><span class=p>;</span> <span class=p>}</span> <span class=c1>// 迭代器不相等就是底层指针不相等
+</span><span class=c1></span>        <span class=kt>void</span> <span class=k>operator</span><span class=o>+</span><span class=o>+</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=o>+</span><span class=o>+</span> <span class=n>_p</span><span class=p>;</span> <span class=p>}</span> <span class=c1>// 前置++
+</span><span class=c1></span>        <span class=kt>char</span><span class=o>&amp;</span> <span class=k>operator</span><span class=o>*</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=k>return</span> <span class=o>*</span><span class=n>_p</span><span class=p>;</span> <span class=p>}</span> <span class=c1>// 迭代器解引用
+</span><span class=c1></span>    <span class=k>private</span><span class=o>:</span>
+        <span class=kt>char</span><span class=o>*</span> <span class=n>_p</span><span class=p>;</span>
+    <span class=p>}</span><span class=p>;</span>
+    <span class=n>iterator</span> <span class=nf>begin</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// 返回指向容器首元素的迭代器
+</span><span class=c1></span>        <span class=k>return</span> <span class=n>iterator</span><span class=p>(</span><span class=n>_pstr</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 构造迭代器 指向首元素
+</span><span class=c1></span>    <span class=p>}</span>
+    <span class=n>iterator</span> <span class=nf>end</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// 返回指向容器末尾元素后继的迭代器
+</span><span class=c1></span>        <span class=k>return</span> <span class=n>iterator</span><span class=p>(</span><span class=n>_pstr</span> <span class=o>+</span> <span class=n>length</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=k>private</span><span class=o>:</span>
+    <span class=kt>char</span><span class=o>*</span> <span class=n>_pstr</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+<span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>ostream</span><span class=o>&amp;</span> <span class=k>operator</span><span class=o>&lt;</span><span class=o>&lt;</span><span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>ostream</span><span class=o>&amp;</span> <span class=n>out</span><span class=p>,</span> <span class=k>const</span> <span class=n>string</span><span class=o>&amp;</span> <span class=n>str</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>out</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>str</span><span class=p>.</span><span class=n>_pstr</span><span class=p>;</span>
+    <span class=k>return</span> <span class=n>out</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=n>string</span> <span class=k>operator</span><span class=o>+</span><span class=p>(</span><span class=k>const</span> <span class=n>string</span><span class=o>&amp;</span> <span class=n>lhs</span><span class=p>,</span> <span class=k>const</span> <span class=n>string</span><span class=o>&amp;</span> <span class=n>rhs</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>char</span><span class=o>*</span> <span class=n>ptmp</span> <span class=o>=</span> <span class=k>new</span> <span class=kt>char</span><span class=p>[</span><span class=n>strlen</span><span class=p>(</span><span class=n>lhs</span><span class=p>.</span><span class=n>_pstr</span><span class=p>)</span> <span class=o>+</span> <span class=n>strlen</span><span class=p>(</span><span class=n>rhs</span><span class=p>.</span><span class=n>_pstr</span><span class=p>)</span> <span class=o>+</span> <span class=mi>1</span><span class=p>]</span><span class=p>;</span>
+    <span class=n>strcpy</span><span class=p>(</span><span class=n>ptmp</span><span class=p>,</span> <span class=n>lhs</span><span class=p>.</span><span class=n>_pstr</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>strcat</span><span class=p>(</span><span class=n>ptmp</span><span class=p>,</span> <span class=n>rhs</span><span class=p>.</span><span class=n>_pstr</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>string</span> <span class=nf>stmp</span><span class=p>(</span><span class=n>ptmp</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>delete</span><span class=p>[</span><span class=p>]</span> <span class=n>ptmp</span><span class=p>;</span>
+    <span class=k>return</span> <span class=n>stmp</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+
+    <span class=n>string</span> <span class=n>str1</span> <span class=o>=</span> <span class=sa></span><span class=s>&#34;</span><span class=s>hello</span><span class=s>&#34;</span><span class=p>;</span>
+    <span class=c1>// string::iterator it = str1.begin();
+</span><span class=c1></span>    <span class=k>auto</span> <span class=n>it</span> <span class=o>=</span> <span class=n>str1</span><span class=p>.</span><span class=n>begin</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>while</span> <span class=p>(</span><span class=n>it</span> <span class=o>!</span><span class=o>=</span> <span class=n>str1</span><span class=p>.</span><span class=n>end</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=o>*</span><span class=n>it</span><span class=p>;</span>
+        <span class=o>+</span><span class=o>+</span> <span class=n>it</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+    <span class=c1>// c++11 foreach 遍历容器的元素 底层通过迭代器遍历
+</span><span class=c1></span>    <span class=k>for</span> <span class=p>(</span><span class=kt>char</span> <span class=nl>ch</span> <span class=p>:</span> <span class=n>str1</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// 依赖于 begin() 和 end()
+</span><span class=c1></span>        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>ch</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=vector-的迭代器-iterator></a><h2>vector 的迭代器 iterator</h2><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=c1>// ... public
+</span><span class=c1></span><span class=k>class</span> <span class=nc>iterator</span> <span class=p>{</span> <span class=c1>// vector的迭代器实现
+</span><span class=c1></span><span class=k>public</span><span class=o>:</span> <span class=c1>// 经典四方法
+</span><span class=c1></span>    <span class=n>iterator</span><span class=p>(</span><span class=n>T</span><span class=o>*</span> <span class=n>p</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>)</span> <span class=o>:</span> <span class=n>_p</span><span class=p>(</span><span class=n>p</span><span class=p>)</span> <span class=p>{</span><span class=p>}</span>
+    <span class=kt>bool</span> <span class=k>operator</span><span class=o>!</span><span class=o>=</span><span class=p>(</span><span class=k>const</span> <span class=n>iterator</span><span class=o>&amp;</span> <span class=n>it</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=n>_p</span> <span class=o>!</span><span class=o>=</span> <span class=n>it</span><span class=p>.</span><span class=n>_p</span><span class=p>;</span> <span class=p>}</span>
+    <span class=kt>void</span> <span class=k>operator</span><span class=o>+</span><span class=o>+</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=o>+</span><span class=o>+</span> <span class=n>_p</span><span class=p>;</span> <span class=p>}</span>
+    <span class=n>T</span><span class=o>&amp;</span> <span class=k>operator</span><span class=o>*</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=k>return</span> <span class=o>*</span><span class=n>_p</span><span class=p>;</span> <span class=p>}</span>
+<span class=k>private</span><span class=o>:</span>
+    <span class=n>T</span><span class=o>*</span> <span class=n>_p</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+<span class=n>iterator</span> <span class=nf>begin</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=k>return</span> <span class=n>iterator</span><span class=p>(</span><span class=n>_first</span><span class=p>)</span><span class=p>;</span> <span class=p>}</span>
+<span class=n>iterator</span> <span class=nf>end</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=k>return</span> <span class=n>iterator</span><span class=p>(</span><span class=n>_last</span><span class=p>)</span><span class=p>;</span> <span class=p>}</span>
+<span class=c1>// ...
+</span></code></pre></td></tr></table></div></div><a class=post-dummy-target id=容器迭代器的失效问题></a><h2>容器迭代器的失效问题</h2><a class=post-dummy-target id=什么是迭代器的失效></a><h3>什么是迭代器的失效</h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;vector&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+	<span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span> <span class=n>vec</span> <span class=o>=</span> <span class=p>{</span><span class=mi>0</span><span class=p>,</span> <span class=mi>1</span><span class=p>,</span> <span class=mi>2</span><span class=p>,</span> <span class=mi>3</span><span class=p>,</span> <span class=mi>4</span><span class=p>,</span> <span class=mi>5</span><span class=p>,</span> <span class=mi>6</span><span class=p>,</span> <span class=mi>7</span><span class=p>,</span> <span class=mi>8</span><span class=p>,</span> <span class=mi>9</span><span class=p>}</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span><span class=k>auto</span> <span class=n>it</span> <span class=o>=</span> <span class=n>vec</span><span class=p>.</span><span class=n>begin</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=n>it</span> <span class=o>!</span><span class=o>=</span> <span class=n>vec</span><span class=p>.</span><span class=n>end</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>it</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>if</span> <span class=p>(</span><span class=o>*</span><span class=n>it</span> <span class=o>&gt;</span> <span class=mi>4</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>vec</span><span class=p>.</span><span class=n>erase</span><span class=p>(</span><span class=n>it</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 迭代器失效
+</span><span class=c1></span>        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=k>for</span> <span class=p>(</span><span class=k>auto</span> <span class=nl>i</span> <span class=p>:</span> <span class=n>vec</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>i</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> </span><span class=s>&#34;</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+	<span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>编译运行上述代码，运行时会出错。原因是，在<code>vec.erase(it)</code>之后，<code>erase</code>将<code>it</code>指向的元素删除了，同时，也导致了从<code>it</code>指向的位置开始到<code>vec.end()</code>的所有迭代器全部失效了，再次对<code>it</code>进行运算是非法的。</p><p>使用<code>vec.insert(it, val)</code>也会出现相同的问题，在<code>it</code>位置插入元素后，从<code>it</code>指向位置到<code>vec.end()</code>的所有迭代器全部失效了，不可以再次对它们进行运算。</p><p>同样，当<code>vector</code>扩容后，所有指向原来的<code>vector</code>的迭代器也会全部失效。</p><p>这就是<strong>迭代器的失效问题</strong>。</p><p>总结：</p><ol><li><code>erase</code>，删除元素，导致当前位置到末尾位置所有迭代器失效；</li><li><code>insert</code>，插入元素，导致当前位置到末尾位置所有迭代器失效；</li><li>导致容器扩容的操作，原来容器的所有迭代器全部失效。</li></ol><a class=post-dummy-target id=如何解决迭代器失效></a><h3>如何解决迭代器失效</h3><p>解决方法：对插入（删除）点的迭代器进行更新。</p><p>示例：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;vector&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+	<span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span> <span class=n>vec</span> <span class=o>=</span> <span class=p>{</span><span class=mi>0</span><span class=p>,</span> <span class=mi>1</span><span class=p>,</span> <span class=mi>2</span><span class=p>,</span> <span class=mi>3</span><span class=p>,</span> <span class=mi>4</span><span class=p>,</span> <span class=mi>5</span><span class=p>,</span> <span class=mi>6</span><span class=p>,</span> <span class=mi>7</span><span class=p>,</span> <span class=mi>8</span><span class=p>,</span> <span class=mi>9</span><span class=p>}</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span><span class=k>auto</span> <span class=n>it</span> <span class=o>=</span> <span class=n>vec</span><span class=p>.</span><span class=n>begin</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=n>it</span> <span class=o>!</span><span class=o>=</span> <span class=n>vec</span><span class=p>.</span><span class=n>end</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=p>)</span> <span class=p>{</span> <span class=c1>// 不可以 ++ it
+</span><span class=c1></span>        <span class=k>if</span> <span class=p>(</span><span class=o>*</span><span class=n>it</span> <span class=o>&gt;</span> <span class=mi>4</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>it</span> <span class=o>=</span> <span class=n>vec</span><span class=p>.</span><span class=n>erase</span><span class=p>(</span><span class=n>it</span><span class=p>)</span><span class=p>;</span>
+            <span class=c1>// 删除操作导致 指向当前位置的 it 失效
+</span><span class=c1></span>            <span class=c1>// erase 会返回一个指向当前位置的合法的迭代器
+</span><span class=c1></span>            <span class=c1>// 用返回的迭代器更新 it 即可
+</span><span class=c1></span>        <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+            <span class=o>+</span><span class=o>+</span> <span class=n>it</span><span class=p>;</span> <span class=c1>// 不删除的情况下 迭代器向后移动
+</span><span class=c1></span>        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=k>for</span> <span class=p>(</span><span class=k>auto</span> <span class=nl>i</span> <span class=p>:</span> <span class=n>vec</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>i</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> </span><span class=s>&#34;</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+	<span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>可以正确运行。</p><a class=post-dummy-target id=迭代器失效原理vector实现></a><h3>迭代器失效原理（vector实现）</h3><p>在之前写的<code>vector</code>的基础上添加迭代器失效的功能，写了一个简单的实现。</p><p>实现的原理是：</p><ol><li>在迭代器的成员中添加一个指向容器对象的指针，如果该指针为<code>nullptr</code>表明迭代器失效；</li><li>在容器的成员中添加一个管理容器对象的全部迭代器的链表，生成指向该容器对象的迭代器时（构造时），将其挂入该链表中；</li><li>在容器的成员中添加一个<code>verify(first, last)</code>私有成员方法，每当操作导致迭代器失效时（下面完善了<code>pop_back()</code>方法），调用该方法清理失效的迭代器；</li><li>对迭代器进行运算时，需要检查迭代器的有效性；</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>  1
+</span><span class=lnt>  2
+</span><span class=lnt>  3
+</span><span class=lnt>  4
+</span><span class=lnt>  5
+</span><span class=lnt>  6
+</span><span class=lnt>  7
+</span><span class=lnt>  8
+</span><span class=lnt>  9
+</span><span class=lnt> 10
+</span><span class=lnt> 11
+</span><span class=lnt> 12
+</span><span class=lnt> 13
+</span><span class=lnt> 14
+</span><span class=lnt> 15
+</span><span class=lnt> 16
+</span><span class=lnt> 17
+</span><span class=lnt> 18
+</span><span class=lnt> 19
+</span><span class=lnt> 20
+</span><span class=lnt> 21
+</span><span class=lnt> 22
+</span><span class=lnt> 23
+</span><span class=lnt> 24
+</span><span class=lnt> 25
+</span><span class=lnt> 26
+</span><span class=lnt> 27
+</span><span class=lnt> 28
+</span><span class=lnt> 29
+</span><span class=lnt> 30
+</span><span class=lnt> 31
+</span><span class=lnt> 32
+</span><span class=lnt> 33
+</span><span class=lnt> 34
+</span><span class=lnt> 35
+</span><span class=lnt> 36
+</span><span class=lnt> 37
+</span><span class=lnt> 38
+</span><span class=lnt> 39
+</span><span class=lnt> 40
+</span><span class=lnt> 41
+</span><span class=lnt> 42
+</span><span class=lnt> 43
+</span><span class=lnt> 44
+</span><span class=lnt> 45
+</span><span class=lnt> 46
+</span><span class=lnt> 47
+</span><span class=lnt> 48
+</span><span class=lnt> 49
+</span><span class=lnt> 50
+</span><span class=lnt> 51
+</span><span class=lnt> 52
+</span><span class=lnt> 53
+</span><span class=lnt> 54
+</span><span class=lnt> 55
+</span><span class=lnt> 56
+</span><span class=lnt> 57
+</span><span class=lnt> 58
+</span><span class=lnt> 59
+</span><span class=lnt> 60
+</span><span class=lnt> 61
+</span><span class=lnt> 62
+</span><span class=lnt> 63
+</span><span class=lnt> 64
+</span><span class=lnt> 65
+</span><span class=lnt> 66
+</span><span class=lnt> 67
+</span><span class=lnt> 68
+</span><span class=lnt> 69
+</span><span class=lnt> 70
+</span><span class=lnt> 71
+</span><span class=lnt> 72
+</span><span class=lnt> 73
+</span><span class=lnt> 74
+</span><span class=lnt> 75
+</span><span class=lnt> 76
+</span><span class=lnt> 77
+</span><span class=lnt> 78
+</span><span class=lnt> 79
+</span><span class=lnt> 80
+</span><span class=lnt> 81
+</span><span class=lnt> 82
+</span><span class=lnt> 83
+</span><span class=lnt> 84
+</span><span class=lnt> 85
+</span><span class=lnt> 86
+</span><span class=lnt> 87
+</span><span class=lnt> 88
+</span><span class=lnt> 89
+</span><span class=lnt> 90
+</span><span class=lnt> 91
+</span><span class=lnt> 92
+</span><span class=lnt> 93
+</span><span class=lnt> 94
+</span><span class=lnt> 95
+</span><span class=lnt> 96
+</span><span class=lnt> 97
+</span><span class=lnt> 98
+</span><span class=lnt> 99
+</span><span class=lnt>100
+</span><span class=lnt>101
+</span><span class=lnt>102
+</span><span class=lnt>103
+</span><span class=lnt>104
+</span><span class=lnt>105
+</span><span class=lnt>106
+</span><span class=lnt>107
+</span><span class=lnt>108
+</span><span class=lnt>109
+</span><span class=lnt>110
+</span><span class=lnt>111
+</span><span class=lnt>112
+</span><span class=lnt>113
+</span><span class=lnt>114
+</span><span class=lnt>115
+</span><span class=lnt>116
+</span><span class=lnt>117
+</span><span class=lnt>118
+</span><span class=lnt>119
+</span><span class=lnt>120
+</span><span class=lnt>121
+</span><span class=lnt>122
+</span><span class=lnt>123
+</span><span class=lnt>124
+</span><span class=lnt>125
+</span><span class=lnt>126
+</span><span class=lnt>127
+</span><span class=lnt>128
+</span><span class=lnt>129
+</span><span class=lnt>130
+</span><span class=lnt>131
+</span><span class=lnt>132
+</span><span class=lnt>133
+</span><span class=lnt>134
+</span><span class=lnt>135
+</span><span class=lnt>136
+</span><span class=lnt>137
+</span><span class=lnt>138
+</span><span class=lnt>139
+</span><span class=lnt>140
+</span><span class=lnt>141
+</span><span class=lnt>142
+</span><span class=lnt>143
+</span><span class=lnt>144
+</span><span class=lnt>145
+</span><span class=lnt>146
+</span><span class=lnt>147
+</span><span class=lnt>148
+</span><span class=lnt>149
+</span><span class=lnt>150
+</span><span class=lnt>151
+</span><span class=lnt>152
+</span><span class=lnt>153
+</span><span class=lnt>154
+</span><span class=lnt>155
+</span><span class=lnt>156
+</span><span class=lnt>157
+</span><span class=lnt>158
+</span><span class=lnt>159
+</span><span class=lnt>160
+</span><span class=lnt>161
+</span><span class=lnt>162
+</span><span class=lnt>163
+</span><span class=lnt>164
+</span><span class=lnt>165
+</span><span class=lnt>166
+</span><span class=lnt>167
+</span><span class=lnt>168
+</span><span class=lnt>169
+</span><span class=lnt>170
+</span><span class=lnt>171
+</span><span class=lnt>172
+</span><span class=lnt>173
+</span><span class=lnt>174
+</span><span class=lnt>175
+</span><span class=lnt>176
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;allocator.hpp&#34;</span><span class=cp>
+</span><span class=cp></span>
+<span class=k>template</span><span class=o>&lt;</span><span class=k>typename</span> <span class=n>T</span><span class=p>,</span> <span class=k>typename</span> <span class=n>Alloc</span> <span class=o>=</span> <span class=n>allocator</span><span class=o>&lt;</span><span class=n>T</span><span class=o>&gt;</span><span class=o>&gt;</span>
+<span class=k>class</span> <span class=nc>vector</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>vector</span><span class=p>(</span><span class=kt>int</span> <span class=n>size</span> <span class=o>=</span> <span class=mi>10</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>_first</span> <span class=o>=</span> <span class=n>_allocator</span><span class=p>.</span><span class=n>allocate</span><span class=p>(</span><span class=n>size</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>_last</span> <span class=o>=</span> <span class=n>_first</span><span class=p>;</span>
+        <span class=n>_end</span> <span class=o>=</span> <span class=n>_first</span> <span class=o>+</span> <span class=n>size</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=o>~</span><span class=n>vector</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>for</span> <span class=p>(</span><span class=n>T</span><span class=o>*</span> <span class=n>p</span> <span class=o>=</span> <span class=n>_first</span><span class=p>;</span> <span class=n>p</span> <span class=o>!</span><span class=o>=</span> <span class=n>_last</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>p</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>_allocator</span><span class=p>.</span><span class=n>destroy</span><span class=p>(</span><span class=n>p</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=n>_allocator</span><span class=p>.</span><span class=n>deallocate</span><span class=p>(</span><span class=n>_first</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>_first</span> <span class=o>=</span> <span class=n>_last</span> <span class=o>=</span> <span class=n>_end</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>vector</span><span class=p>(</span><span class=k>const</span> <span class=n>vector</span><span class=o>&lt;</span><span class=n>T</span><span class=o>&gt;</span><span class=o>&amp;</span> <span class=n>rhs</span><span class=p>)</span> <span class=p>{</span>
+        <span class=kt>int</span> <span class=n>size</span> <span class=o>=</span> <span class=n>rhs</span><span class=p>.</span><span class=n>_end</span> <span class=o>-</span> <span class=n>rhs</span><span class=p>.</span><span class=n>_first</span><span class=p>;</span>
+        <span class=n>_first</span> <span class=o>=</span> <span class=n>_allocator</span><span class=p>.</span><span class=n>allocate</span><span class=p>(</span><span class=n>size</span><span class=p>)</span><span class=p>;</span>
+        <span class=kt>int</span> <span class=n>len</span> <span class=o>=</span> <span class=n>rhs</span><span class=p>.</span><span class=n>_last</span> <span class=o>-</span> <span class=n>rhs</span><span class=p>.</span><span class=n>_first</span><span class=p>;</span>
+        <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>len</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>_allocator</span><span class=p>.</span><span class=n>construct</span><span class=p>(</span><span class=n>_first</span> <span class=o>+</span> <span class=n>i</span><span class=p>,</span> <span class=n>rhs</span><span class=p>.</span><span class=n>_first</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=n>_last</span> <span class=o>=</span> <span class=n>_first</span> <span class=o>+</span> <span class=n>len</span><span class=p>;</span>
+        <span class=n>_end</span> <span class=o>=</span> <span class=n>_first</span> <span class=o>+</span> <span class=n>size</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>vector</span><span class=o>&lt;</span><span class=n>T</span><span class=o>&gt;</span><span class=o>&amp;</span> <span class=k>operator</span><span class=o>=</span><span class=p>(</span><span class=k>const</span> <span class=n>vector</span><span class=o>&lt;</span><span class=n>T</span><span class=o>&gt;</span><span class=o>&amp;</span> <span class=n>rhs</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>if</span> <span class=p>(</span><span class=k>this</span> <span class=o>=</span><span class=o>=</span> <span class=o>&amp;</span><span class=n>rhs</span><span class=p>)</span> <span class=p>{</span>
+            <span class=k>return</span> <span class=o>*</span><span class=k>this</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=k>for</span> <span class=p>(</span><span class=n>T</span><span class=o>*</span> <span class=n>p</span> <span class=o>=</span> <span class=n>_first</span><span class=p>;</span> <span class=n>p</span> <span class=o>!</span><span class=o>=</span> <span class=n>_last</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>p</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>_allocator</span><span class=p>.</span><span class=n>destroy</span><span class=p>(</span><span class=n>p</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=n>_allocator</span><span class=p>.</span><span class=n>deallocate</span><span class=p>(</span><span class=n>_first</span><span class=p>)</span><span class=p>;</span>
+        <span class=kt>int</span> <span class=n>size</span> <span class=o>=</span> <span class=n>rhs</span><span class=p>.</span><span class=n>_end</span> <span class=o>-</span> <span class=n>rhs</span><span class=p>.</span><span class=n>_first</span><span class=p>;</span>
+        <span class=n>_first</span> <span class=o>=</span> <span class=n>_allocator</span><span class=p>.</span><span class=n>allocate</span><span class=p>(</span><span class=n>size</span><span class=p>)</span><span class=p>;</span>
+        <span class=kt>int</span> <span class=n>len</span> <span class=o>=</span> <span class=n>rhs</span><span class=p>.</span><span class=n>_last</span> <span class=o>-</span> <span class=n>rhs</span><span class=p>.</span><span class=n>_first</span><span class=p>;</span>
+        <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>len</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>_allocator</span><span class=p>.</span><span class=n>construct</span><span class=p>(</span><span class=n>_first</span> <span class=o>+</span> <span class=n>i</span><span class=p>,</span> <span class=n>rhs</span><span class=p>.</span><span class=n>_first</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=n>_last</span> <span class=o>=</span> <span class=n>_first</span> <span class=o>+</span> <span class=n>len</span><span class=p>;</span>
+        <span class=n>_end</span> <span class=o>=</span> <span class=n>_first</span> <span class=o>+</span> <span class=n>size</span><span class=p>;</span>
+        <span class=k>return</span> <span class=o>*</span><span class=k>this</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=kt>bool</span> <span class=nf>full</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=n>_last</span> <span class=o>=</span><span class=o>=</span> <span class=n>_end</span><span class=p>;</span> <span class=p>}</span>
+    <span class=kt>bool</span> <span class=nf>empty</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=n>_first</span> <span class=o>=</span><span class=o>=</span> <span class=n>_last</span><span class=p>;</span> <span class=p>}</span>
+    <span class=kt>int</span> <span class=nf>size</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=n>_last</span> <span class=o>-</span> <span class=n>_first</span><span class=p>;</span> <span class=p>}</span>
+    <span class=kt>void</span> <span class=nf>push_back</span><span class=p>(</span><span class=k>const</span> <span class=n>T</span><span class=o>&amp;</span> <span class=n>val</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>full</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>expand</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=n>_allocator</span><span class=p>.</span><span class=n>construct</span><span class=p>(</span><span class=n>_last</span><span class=p>,</span> <span class=n>val</span><span class=p>)</span><span class=p>;</span>
+        <span class=o>+</span><span class=o>+</span> <span class=n>_last</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=kt>void</span> <span class=nf>pop_back</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// 简单修改一下
+</span><span class=c1></span>        <span class=k>if</span> <span class=p>(</span><span class=o>!</span><span class=n>empty</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>verify</span><span class=p>(</span><span class=n>_last</span> <span class=o>-</span> <span class=mi>1</span><span class=p>,</span> <span class=n>_last</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 将最后一个元素弹出 则两个最后的位置上的迭代器失效
+</span><span class=c1></span>            <span class=o>-</span><span class=o>-</span> <span class=n>_last</span><span class=p>;</span>
+            <span class=n>_allocator</span><span class=p>.</span><span class=n>destroy</span><span class=p>(</span><span class=n>_last</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=n>T</span> <span class=nf>back</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span>
+        <span class=k>return</span> <span class=o>*</span><span class=p>(</span><span class=n>_last</span> <span class=o>-</span> <span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>T</span><span class=o>&amp;</span> <span class=k>operator</span><span class=p>[</span><span class=p>]</span><span class=p>(</span><span class=kt>int</span> <span class=n>index</span><span class=p>)</span> <span class=p>{</span> <span class=k>return</span> <span class=n>_first</span><span class=p>[</span><span class=n>index</span><span class=p>]</span><span class=p>;</span> <span class=p>}</span>
+<span class=k>private</span><span class=o>:</span>
+    <span class=kt>void</span> <span class=n>expand</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+        <span class=kt>int</span> <span class=n>size</span> <span class=o>=</span> <span class=n>_end</span> <span class=o>-</span> <span class=n>_first</span><span class=p>;</span>
+        <span class=n>T</span><span class=o>*</span> <span class=n>ptmp</span> <span class=o>=</span> <span class=n>_allocator</span><span class=p>.</span><span class=n>allocate</span><span class=p>(</span><span class=n>size</span> <span class=o>*</span> <span class=mi>2</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=n>size</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>_allocator</span><span class=p>.</span><span class=n>construct</span><span class=p>(</span><span class=n>ptmp</span> <span class=o>+</span> <span class=n>i</span><span class=p>,</span> <span class=n>_first</span><span class=p>[</span><span class=n>i</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=k>for</span> <span class=p>(</span><span class=n>T</span><span class=o>*</span> <span class=n>p</span> <span class=o>=</span> <span class=n>_first</span><span class=p>;</span> <span class=n>p</span> <span class=o>!</span><span class=o>=</span> <span class=n>_last</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>p</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>_allocator</span><span class=p>.</span><span class=n>destroy</span><span class=p>(</span><span class=n>p</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=n>_allocator</span><span class=p>.</span><span class=n>deallocate</span><span class=p>(</span><span class=n>_first</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>_first</span> <span class=o>=</span> <span class=n>ptmp</span><span class=p>;</span>
+        <span class=n>_last</span> <span class=o>=</span> <span class=n>_first</span> <span class=o>+</span> <span class=n>size</span><span class=p>;</span>
+        <span class=n>_end</span> <span class=o>=</span> <span class=n>_first</span> <span class=o>+</span> <span class=n>size</span> <span class=o>*</span> <span class=mi>2</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=k>class</span> <span class=nc>iterator</span> <span class=p>{</span>
+        <span class=c1>// 允许 vector&lt;T, Alloc&gt; 访问 iterator 的私有成员
+</span><span class=c1></span>        <span class=k>friend</span> <span class=k>class</span> <span class=nc>vector</span><span class=o>&lt;</span><span class=n>T</span><span class=p>,</span> <span class=n>Alloc</span><span class=o>&gt;</span><span class=p>;</span>
+    <span class=k>public</span><span class=o>:</span>
+        <span class=c1>// iterator(T* p = nullptr) : _p(p) {}
+</span><span class=c1></span>        <span class=n>iterator</span><span class=p>(</span><span class=n>vector</span><span class=o>&lt;</span><span class=n>T</span><span class=p>,</span> <span class=n>Alloc</span><span class=o>&gt;</span><span class=o>*</span> <span class=n>pvec</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>,</span> <span class=n>T</span><span class=o>*</span> <span class=n>p</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>)</span>
+            <span class=o>:</span> <span class=n>_pvec</span><span class=p>(</span><span class=n>pvec</span><span class=p>)</span> <span class=c1>// pvec 表明指向的容器对象
+</span><span class=c1></span>            <span class=p>,</span> <span class=n>_p</span><span class=p>(</span><span class=n>p</span><span class=p>)</span>
+        <span class=p>{</span>
+            <span class=c1>// 创建一个 iterator_base 节点 并头插法插到 容器对象的迭代器链表中
+</span><span class=c1></span>            <span class=n>iterator_base</span><span class=o>*</span> <span class=n>itb</span> <span class=o>=</span> <span class=k>new</span> <span class=n>iterator_base</span><span class=p>(</span><span class=k>this</span><span class=p>,</span> <span class=n>_pvec</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_head</span><span class=p>.</span><span class=n>_next</span><span class=p>)</span><span class=p>;</span>
+            <span class=n>_pvec</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_head</span><span class=p>.</span><span class=n>_next</span> <span class=o>=</span> <span class=n>itb</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=c1>// bool operator!=(const iterator&amp; it) const { return _p != it._p; }
+</span><span class=c1></span>        <span class=kt>bool</span> <span class=k>operator</span><span class=o>!</span><span class=o>=</span><span class=p>(</span><span class=k>const</span> <span class=n>iterator</span><span class=o>&amp;</span> <span class=n>it</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span>
+            <span class=c1>// 检测迭代器的有效性
+</span><span class=c1></span>            <span class=c1>// 当前迭代器指向的容器对象指针为空 或 容器对象指针和 it 不同
+</span><span class=c1></span>            <span class=c1>// 说明失效了
+</span><span class=c1></span>            <span class=k>if</span> <span class=p>(</span><span class=n>_pvec</span> <span class=o>=</span><span class=o>=</span> <span class=k>nullptr</span> <span class=o>|</span><span class=o>|</span> <span class=n>_pvec</span> <span class=o>!</span><span class=o>=</span> <span class=n>it</span><span class=p>.</span><span class=n>_pvec</span><span class=p>)</span> <span class=p>{</span>
+                <span class=k>throw</span> <span class=sa></span><span class=s>&#34;</span><span class=s>iterator incompatable!</span><span class=s>&#34;</span><span class=p>;</span>
+            <span class=p>}</span>
+            <span class=k>return</span> <span class=n>_p</span> <span class=o>!</span><span class=o>=</span> <span class=n>it</span><span class=p>.</span><span class=n>_p</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=c1>// void operator++() { ++ _p; }
+</span><span class=c1></span>        <span class=kt>void</span> <span class=k>operator</span><span class=o>+</span><span class=o>+</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+            <span class=c1>// 检测迭代器的有效性
+</span><span class=c1></span>            <span class=k>if</span> <span class=p>(</span><span class=n>_pvec</span> <span class=o>=</span><span class=o>=</span> <span class=k>nullptr</span><span class=p>)</span> <span class=p>{</span>
+                <span class=k>throw</span> <span class=sa></span><span class=s>&#34;</span><span class=s>iterator invalid!</span><span class=s>&#34;</span><span class=p>;</span>
+            <span class=p>}</span>
+            <span class=o>+</span><span class=o>+</span> <span class=n>_p</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=c1>// T&amp; operator*() { return *_p; }
+</span><span class=c1></span>        <span class=n>T</span><span class=o>&amp;</span> <span class=k>operator</span><span class=o>*</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+            <span class=c1>// 检测迭代器的有效性
+</span><span class=c1></span>            <span class=k>if</span> <span class=p>(</span><span class=n>_pvec</span> <span class=o>=</span><span class=o>=</span> <span class=k>nullptr</span><span class=p>)</span> <span class=p>{</span>
+                <span class=k>throw</span> <span class=sa></span><span class=s>&#34;</span><span class=s>iterator invalid!</span><span class=s>&#34;</span><span class=p>;</span>
+            <span class=p>}</span>
+            <span class=k>return</span> <span class=o>*</span><span class=n>_p</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=k>private</span><span class=o>:</span>
+        <span class=n>T</span><span class=o>*</span> <span class=n>_p</span><span class=p>;</span>
+        <span class=n>vector</span><span class=o>&lt;</span><span class=n>T</span><span class=p>,</span> <span class=n>Alloc</span><span class=o>&gt;</span><span class=o>*</span> <span class=n>_pvec</span><span class=p>;</span> <span class=c1>// 当前的迭代器是哪个容器对象的迭代器
+</span><span class=c1></span>    <span class=p>}</span><span class=p>;</span>
+    <span class=c1>// iterator begin() { return iterator(_first); }
+</span><span class=c1></span>    <span class=c1>// iterator end() { return iterator(_last); }
+</span><span class=c1></span>    <span class=n>iterator</span> <span class=nf>begin</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=k>return</span> <span class=n>iterator</span><span class=p>(</span><span class=k>this</span><span class=p>,</span> <span class=n>_first</span><span class=p>)</span><span class=p>;</span> <span class=p>}</span> <span class=c1>// 构造函数更新了
+</span><span class=c1></span>    <span class=n>iterator</span> <span class=nf>end</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=k>return</span> <span class=n>iterator</span><span class=p>(</span><span class=k>this</span><span class=p>,</span> <span class=n>_last</span><span class=p>)</span><span class=p>;</span> <span class=p>}</span>
+    
+<span class=k>private</span><span class=o>:</span>
+    <span class=c1>// 管理容器对象的所有迭代器的链表
+</span><span class=c1></span>    <span class=k>struct</span> <span class=nc>iterator_base</span> <span class=p>{</span>
+        <span class=n>iterator_base</span><span class=p>(</span><span class=n>iterator</span><span class=o>*</span> <span class=n>c</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>,</span> <span class=n>iterator_base</span><span class=o>*</span> <span class=n>n</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>)</span> <span class=o>:</span> <span class=n>_cur</span><span class=p>(</span><span class=n>c</span><span class=p>)</span><span class=p>,</span> <span class=n>_next</span><span class=p>(</span><span class=n>n</span><span class=p>)</span> <span class=p>{</span><span class=p>}</span>
+        <span class=n>iterator</span><span class=o>*</span> <span class=n>_cur</span><span class=p>;</span>
+        <span class=n>iterator_base</span><span class=o>*</span> <span class=n>_next</span><span class=p>;</span>
+    <span class=p>}</span><span class=p>;</span>
+    <span class=c1>// 链表头
+</span><span class=c1></span>    <span class=n>iterator_base</span> <span class=n>_head</span><span class=p>;</span> <span class=c1>// 链表的释放还没写
+</span><span class=c1></span>    <span class=c1>// 检测迭代器是否失效
+</span><span class=c1></span>    <span class=kt>void</span> <span class=nf>verify</span><span class=p>(</span><span class=n>T</span><span class=o>*</span> <span class=n>first</span><span class=p>,</span> <span class=n>T</span><span class=o>*</span> <span class=n>last</span><span class=p>)</span> <span class=p>{</span>
+        <span class=c1>// 遍历指向该容器对象的所有迭代器
+</span><span class=c1></span>        <span class=c1>// 让在 first 和 last 之间的迭代器失效
+</span><span class=c1></span>        <span class=n>iterator_base</span><span class=o>*</span> <span class=n>pre</span> <span class=o>=</span> <span class=o>&amp;</span><span class=k>this</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_head</span><span class=p>;</span>
+        <span class=n>iterator_base</span><span class=o>*</span> <span class=n>it</span> <span class=o>=</span> <span class=k>this</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_head</span><span class=p>.</span><span class=n>_next</span><span class=p>;</span>
+        <span class=k>while</span> <span class=p>(</span><span class=n>it</span> <span class=o>!</span><span class=o>=</span> <span class=k>nullptr</span><span class=p>)</span> <span class=p>{</span>
+            <span class=k>if</span> <span class=p>(</span><span class=n>it</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_cur</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_p</span> <span class=o>&gt;</span><span class=o>=</span> <span class=n>first</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>it</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_cur</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_p</span> <span class=o>&lt;</span><span class=o>=</span> <span class=n>last</span><span class=p>)</span> <span class=p>{</span>
+                <span class=n>it</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_cur</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_pvec</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>;</span> <span class=c1>// 迭代器失效 指向空对象
+</span><span class=c1></span>                <span class=n>pre</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_next</span> <span class=o>=</span> <span class=n>it</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_next</span><span class=p>;</span> <span class=c1>// 从链表上删除
+</span><span class=c1></span>                <span class=k>delete</span> <span class=n>it</span><span class=p>;</span>
+                <span class=n>it</span> <span class=o>=</span> <span class=n>pre</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_next</span><span class=p>;</span>
+            <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+                <span class=n>pre</span> <span class=o>=</span> <span class=n>it</span><span class=p>;</span>
+                <span class=n>it</span> <span class=o>=</span> <span class=n>it</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_next</span><span class=p>;</span>
+            <span class=p>}</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+<span class=k>private</span><span class=o>:</span>
+    <span class=n>T</span><span class=o>*</span> <span class=n>_first</span><span class=p>;</span>
+    <span class=n>T</span><span class=o>*</span> <span class=n>_last</span><span class=p>;</span>
+    <span class=n>T</span><span class=o>*</span> <span class=n>_end</span><span class=p>;</span>
+    <span class=n>Alloc</span> <span class=n>_allocator</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span> <span class=n>vec</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=mi>10</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>vec</span><span class=p>.</span><span class=n>push_back</span><span class=p>(</span><span class=n>rand</span><span class=p>(</span><span class=p>)</span> <span class=o>%</span> <span class=mi>100</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>auto</span> <span class=n>it1</span> <span class=o>=</span> <span class=n>vec</span><span class=p>.</span><span class=n>end</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>vec</span><span class=p>.</span><span class=n>pop_back</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=c1>// verify(_last-1, _last);
+</span><span class=c1></span>    <span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=o>:</span><span class=o>:</span><span class=n>iterator</span> <span class=n>it2</span> <span class=o>=</span> <span class=n>vec</span><span class=p>.</span><span class=n>end</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=p>(</span><span class=n>it1</span> <span class=o>!</span><span class=o>=</span> <span class=n>it2</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=深入理解-new-和-delete-的原理></a><h2>深入理解 new 和 delete 的原理</h2><a class=post-dummy-target id=new-delete-和-malloc-free></a><h3>new delete 和 malloc free</h3><p>回顾一下它们的区别，<code>new delete</code>：</p><ol><li><code>malloc</code>按字节分配内存空间，返回值为<code>void*</code>；<code>new</code>分配时需要指定类型，返回指定类型的指针；</li><li><code>malloc</code>只负责分配内存空间；<code>new</code>不仅分配内存空间，同时进行数据的初始化；</li><li><code>malloc</code>分配内存失败返回<code>nullptr</code>空指针；<code>new</code>分配失败时会抛出<code>bad_alloc</code>类型的异常。</li></ol><p><code>free delete</code>：</p><ol><li><code>free</code>仅释放内存；<code>delete</code>释放内存时也调用析构函数。</li></ol><a class=post-dummy-target id=new></a><h3>new</h3><a class=post-dummy-target id=new-delete-重载实现的对象池应用></a><h2>new delete 重载实现的对象池应用</h2></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
 <span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
 <span>2022-08-12</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
 <span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fc-%25E5%259F%25BA%25E7%25A1%258005-%25E8%25BF%2590%25E7%25AE%2597%25E7%25AC%25A6%25E9%2587%258D%25E8%25BD%25BD%25E8%25BF%25AD%25E4%25BB%25A3%25E5%2599%25A8iterator%2f&text=%e3%80%90C%2b%2b%e5%9f%ba%e7%a1%80%e3%80%9105%20-%20%e8%bf%90%e7%ae%97%e7%ac%a6%e9%87%8d%e8%bd%bd%e3%80%81%e8%bf%ad%e4%bb%a3%e5%99%a8iterator&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2fc-%25E5%259F%25BA%25E7%25A1%258005-%25E8%25BF%2590%25E7%25AE%2597%25E7%25AC%25A6%25E9%2587%258D%25E8%25BD%25BD%25E8%25BF%25AD%25E4%25BB%25A3%25E5%2599%25A8iterator%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fc-%25E5%259F%25BA%25E7%25A1%258005-%25E8%25BF%2590%25E7%25AE%2597%25E7%25AC%25A6%25E9%2587%258D%25E8%25BD%25BD%25E8%25BF%25AD%25E4%25BB%25A3%25E5%2599%25A8iterator%2f&title=%e3%80%90C%2b%2b%e5%9f%ba%e7%a1%80%e3%80%9105%20-%20%e8%bf%90%e7%ae%97%e7%ac%a6%e9%87%8d%e8%bd%bd%e3%80%81%e8%bf%ad%e4%bb%a3%e5%99%a8iterator" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/c++/><i class="fas fa-tag fa-fw"></i>&nbsp;C++</a>&nbsp;
