@@ -1,5 +1,5 @@
 ---
-title: 【C++基础】05 - 运算符重载、迭代器iterator
+title: 【C++基础】05 - 运算符重载、迭代器iterator、operator new
 date: 2022-08-12
 tags: [C++, STL]
 categories: [Coding]
@@ -617,13 +617,190 @@ int main() {
 `free  delete`：  
 1. `free`仅释放内存；`delete`释放内存时也调用析构函数。
 
-### new
+### new operator 和 operator new
+
+当我们使用类似这样的语句：`Test t = new Test;`，这里的`new`是C++提供的一个操作符，它**总会**做两件事情：  
+1. 为指定类型的对象分配内存；
+2. 调用对象的构造函数初始化内存中的对象（如果是一个对象）。
+
+`new operator`（操作符）通过调用一个函数来分配内存，这个函数就是全局的`::operator new`。它通常这样定义：  
+```C++
+void* operator new(size_t size) {
+    void* p = malloc(size);
+    if (p == nullptr) {
+        throw bad_alloc(); // 内存分配失败会抛出异常
+    }
+    return p;
+}
+```
+
+当然我们也可以提供我们重载的版本，此时就不会使用C++提供的版本，例如：  
+```C++
+#include <iostream>
+void* operator new(size_t size) {
+    std::cout << "my operator new" << std::endl;
+    void* p = malloc(size);
+    if (p == nullptr) {
+        throw std::bad_alloc();
+    }
+    return p;
+}
+void operator delete(void* ptr) {
+    std::cout << "my operator delete" << std::endl;
+    free(ptr);
+}
+class Test {
+public:
+    Test() { std::cout << "Test()" << std::endl; }
+    ~Test() { std::cout << "~Test()" << std::endl; }
+};
+int main() {
+    Test* t = new Test;
+    delete t;
+    return 0;
+}
+/* 输出
+xushun@xushun-virtual-machine:~/cppmiddle$ ./a.out 
+my operator new
+Test()
+~Test()
+my operator delete
+*/
+```
+
+### delete operator 和 operator delete
+
+`delete`的情况和`new`类似，`delete`同样是C++提供的操作符，它也总会做两件事情：  
+1. 调用对象的析构函数（如果是一个对象）；
+2. 释放对象使用的内存。
+
+`delete operator`（操作符）通过调用一个函数来释放内存，这个函数就是全局的`::operator delete`。它通常这样定义：  
+```C++
+void operator delete(void* ptr) {
+    free(ptr);
+}
+```
+
+### operator new[] 和 operator delete[]
+类似的，`new[] delete[]`操作符依赖`operator new[]`和`operator delete[]`来分配内存：  
+```C++
+void* operator new[](size_t size) {
+    void* p = malloc(size);
+    if (p == nullptr) {
+        throw std::bad_alloc();
+    }
+    return p;
+}
+void operator delete[](void* ptr) {
+    free(ptr);
+}
+```
 
 
+### 为什么 new delete 和 new[] delete[] 不能混用
 
+测试时，可以使用`valgrind`工具来检测内存泄漏。
+
+> `valgrind --leak-check=full ./a.out`
+
+#### 内置类型
+对于编译器内置的类型，如`int double`，**可以**混用`new delete[]`和`new[] delete`。
+
+原因是，编译器内置类型没有构造和析构的工作，而在内存分配时，`operator new`和`operator new[]`，`operator delete`和`operator delete[]`并没有区别。所以分配和释放内存时，都不会出错。
+
+但不推荐这样的写法。
+
+#### 带有析构函数的类类型
+对于带有析构函数的类类型（编译器默认提供的析构不做任何事情，不算），为了能够正确的进行析构，在`Test* p = new Test[100]`的时候，会在内存块起始位置（`[p] - 0x08`）多开辟8个字节，用于记录对象的个数以便析构；而在`delete[] p`时，会从`[p] - 0x08`位置读取对象的个数，然后对每个对象（`p + i * sizeof(Test)`）进行析构，析构完成后再`free(p - 0x08)`从起始位置释放内存空间。
+
+> 对于编译器内置类型和不带析构函数的类类型，`new[]`分配内存时，不会多分配8字节以记录对象数量，那么`delete[]`时如何确定对象数量呢？  
+> 我猜，是系统调用做的。`free`时，只要传入起始地址，系统内核就会将之前分配的一块内存释放掉。而如果传入的地址不是内核之前分配的某一块内存的起始地址，就会报错。
+
+测试：  
+```C++
+#include <iostream>
+void* operator new(size_t size) {
+    void* p = malloc(size);
+    if (p == nullptr) {
+        throw std::bad_alloc();
+    }
+    std::cout << "operator new:      " << p << std::endl;
+    return p;
+}
+void operator delete(void* ptr) {
+    std::cout << "operator delete:   " << ptr << std::endl;
+    free(ptr);
+}
+void* operator new[](size_t size) {
+    void* p = malloc(size);
+    if (p == nullptr) {
+        throw std::bad_alloc();
+    }
+    std::cout << "operator new[]:    " << p << std::endl;
+    return p;
+}
+void operator delete[](void* ptr) {
+    std::cout << "operator delete[]: " << ptr << std::endl;
+    free(ptr);
+}
+
+class Test {
+public:
+    Test() { std::cout << "Test()" << std::endl; }
+    ~Test() { std::cout << "~Test()" << std::endl; }
+private:
+    int a;
+};
+
+int main() {
+    int* p1 = new int[5];
+    std::cout << "access addr: " << p1 << std::endl;
+    delete[] p1;
+    std::cout << "------------------------------------------" << std::endl;
+
+    int* p2 = new int[5];
+    std::cout << "access addr: " << p2 << std::endl;
+    delete p2;
+    std::cout << "------------------------------------------" << std::endl;
+
+    int* p3 = new int;
+    std::cout << "access addr: " << p3 << std::endl;
+    delete[] p3;
+    std::cout << "------------------------------------------" << std::endl;
+
+    int* p4 = new int;
+    std::cout << "access addr: " << p4 << std::endl;
+    delete p4;
+    std::cout << "------------------------------------------" << std::endl;
+
+    Test* t1 = new Test[5];
+    std::cout << "access addr: " << t1 << std::endl;
+    delete[] t1;
+    std::cout << "------------------------------------------" << std::endl;
+
+    Test* t2 = new Test[5];
+    std::cout << "access addr: " << t2 << std::endl;
+    delete t2;
+    std::cout << "------------------------------------------" << std::endl;
+
+    Test* t3 = new Test;
+    std::cout << "access addr: " << t3 << std::endl;
+    delete t3;
+    std::cout << "------------------------------------------" << std::endl;
+
+    Test* t4 = new Test;
+    std::cout << "access addr: " << t4 << std::endl;
+    delete[] t4;
+    std::cout << "------------------------------------------" << std::endl;
+
+    return 0;
+}
+```
 
 
 
 
 ## new delete 重载实现的对象池应用
+
+
 
