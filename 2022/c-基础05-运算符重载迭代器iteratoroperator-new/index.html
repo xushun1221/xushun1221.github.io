@@ -1,5 +1,5 @@
-<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【C++基础】05 - 运算符重载、迭代器iterator、operator new | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/c-%E5%9F%BA%E7%A1%8004-%E6%A8%A1%E6%9D%BF%E7%BC%96%E7%A8%8B%E5%88%86%E9%85%8D%E5%99%A8allocator/><link rel=canonical href=https://xushun1221.github.io/2022/c-%E5%9F%BA%E7%A1%8005-%E8%BF%90%E7%AE%97%E7%AC%A6%E9%87%8D%E8%BD%BD%E8%BF%AD%E4%BB%A3%E5%99%A8iteratoroperator-new/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【C++基础】05 - 运算符重载、迭代器iterator、operator new"><meta name=twitter:description content="运算符重载的意义在于，使得对象的运算表现得和编译器内置的类型一样。例如： 1 2 3 4 template<typename T> T sum(T a, T b) { return a + b; // a.+(b); } 如果T是内置类型，a + b可以直"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【C\x2b\x2b基础】05 - 运算符重载、迭代器iterator、operator new","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/c-%E5%9F%BA%E7%A1%8005-%E8%BF%90%E7%AE%97%E7%AC%A6%E9%87%8D%E8%BD%BD%E8%BF%AD%E4%BB%A3%E5%99%A8iteratoroperator-new\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"C\x2b\x2b, STL","wordcount":6273,"url":"https:\/\/xushun1221.github.io\/2022\/c-%E5%9F%BA%E7%A1%8005-%E8%BF%90%E7%AE%97%E7%AC%A6%E9%87%8D%E8%BD%BD%E8%BF%AD%E4%BB%A3%E5%99%A8iteratoroperator-new\/","datePublished":"2022-08-12T00:00:00\x2b00:00","dateModified":"2022-08-12T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【C++基础】05 - 运算符重载、迭代器iterator、operator new</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-08-12>2022-08-12</time>&nbsp;
-<i class="fas fa-pencil-alt fa-fw"></i>about 6273 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#实现-complex-类>实现 complex 类</a></li><li><a href=#实现-string-类>实现 string 类</a></li><li><a href=#string-的迭代器-iterator>string 的迭代器 iterator</a><ul><li><a href=#容器的迭代器-iterator>容器的迭代器 iterator</a></li><li><a href=#实现迭代器>实现迭代器</a></li></ul></li><li><a href=#vector-的迭代器-iterator>vector 的迭代器 iterator</a></li><li><a href=#容器迭代器的失效问题>容器迭代器的失效问题</a><ul><li><a href=#什么是迭代器的失效>什么是迭代器的失效</a></li><li><a href=#如何解决迭代器失效>如何解决迭代器失效</a></li><li><a href=#迭代器失效原理vector实现>迭代器失效原理（vector实现）</a></li></ul></li><li><a href=#深入理解-new-和-delete-的原理>深入理解 new 和 delete 的原理</a><ul><li><a href=#new-delete-和-malloc-free>new delete 和 malloc free</a></li><li><a href=#new-operator-和-operator-new>new operator 和 operator new</a></li><li><a href=#delete-operator-和-operator-delete>delete operator 和 operator delete</a></li><li><a href=#operator-new-和-operator-delete>operator new[] 和 operator delete[]</a></li><li><a href=#为什么-new-delete-和-new-delete-不能混用>为什么 new delete 和 new[] delete[] 不能混用</a><ul><li><a href=#内置类型>内置类型</a></li><li><a href=#带有析构函数的类类型>带有析构函数的类类型</a></li></ul></li></ul></li><li><a href=#new-delete-重载实现的对象池应用>new delete 重载实现的对象池应用</a></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【C++基础】05 - 运算符重载、迭代器iterator、operator new | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/c-%E5%9F%BA%E7%A1%8004-%E6%A8%A1%E6%9D%BF%E7%BC%96%E7%A8%8B%E5%88%86%E9%85%8D%E5%99%A8allocator/><link rel=canonical href=https://xushun1221.github.io/2022/c-%E5%9F%BA%E7%A1%8005-%E8%BF%90%E7%AE%97%E7%AC%A6%E9%87%8D%E8%BD%BD%E8%BF%AD%E4%BB%A3%E5%99%A8iteratoroperator-new/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【C++基础】05 - 运算符重载、迭代器iterator、operator new"><meta name=twitter:description content="运算符重载的意义在于，使得对象的运算表现得和编译器内置的类型一样。例如： 1 2 3 4 template<typename T> T sum(T a, T b) { return a + b; // a.+(b); } 如果T是内置类型，a + b可以直"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【C\x2b\x2b基础】05 - 运算符重载、迭代器iterator、operator new","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/c-%E5%9F%BA%E7%A1%8005-%E8%BF%90%E7%AE%97%E7%AC%A6%E9%87%8D%E8%BD%BD%E8%BF%AD%E4%BB%A3%E5%99%A8iteratoroperator-new\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"C\x2b\x2b, STL","wordcount":7467,"url":"https:\/\/xushun1221.github.io\/2022\/c-%E5%9F%BA%E7%A1%8005-%E8%BF%90%E7%AE%97%E7%AC%A6%E9%87%8D%E8%BD%BD%E8%BF%AD%E4%BB%A3%E5%99%A8iteratoroperator-new\/","datePublished":"2022-08-12T00:00:00\x2b00:00","dateModified":"2022-08-12T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【C++基础】05 - 运算符重载、迭代器iterator、operator new</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-08-12>2022-08-12</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 7467 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#实现-complex-类>实现 complex 类</a></li><li><a href=#实现-string-类>实现 string 类</a></li><li><a href=#string-的迭代器-iterator>string 的迭代器 iterator</a><ul><li><a href=#容器的迭代器-iterator>容器的迭代器 iterator</a></li><li><a href=#实现迭代器>实现迭代器</a></li></ul></li><li><a href=#vector-的迭代器-iterator>vector 的迭代器 iterator</a></li><li><a href=#容器迭代器的失效问题>容器迭代器的失效问题</a><ul><li><a href=#什么是迭代器的失效>什么是迭代器的失效</a></li><li><a href=#如何解决迭代器失效>如何解决迭代器失效</a></li><li><a href=#迭代器失效原理vector实现>迭代器失效原理（vector实现）</a></li></ul></li><li><a href=#深入理解-new-和-delete-的原理>深入理解 new 和 delete 的原理</a><ul><li><a href=#new-delete-和-malloc-free>new delete 和 malloc free</a></li><li><a href=#new-operator-和-operator-new>new operator 和 operator new</a></li><li><a href=#delete-operator-和-operator-delete>delete operator 和 operator delete</a></li><li><a href=#operator-new-和-operator-delete>operator new[] 和 operator delete[]</a></li><li><a href=#为什么-new-delete-和-new-delete-不能混用>为什么 new delete 和 new[] delete[] 不能混用</a><ul><li><a href=#内置类型>内置类型</a></li><li><a href=#带有析构函数的类类型>带有析构函数的类类型</a></li></ul></li></ul></li><li><a href=#new-delete-重载实现的对象池应用>new delete 重载实现的对象池应用</a></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
 <span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#实现-complex-类>实现 complex 类</a></li><li><a href=#实现-string-类>实现 string 类</a></li><li><a href=#string-的迭代器-iterator>string 的迭代器 iterator</a><ul><li><a href=#容器的迭代器-iterator>容器的迭代器 iterator</a></li><li><a href=#实现迭代器>实现迭代器</a></li></ul></li><li><a href=#vector-的迭代器-iterator>vector 的迭代器 iterator</a></li><li><a href=#容器迭代器的失效问题>容器迭代器的失效问题</a><ul><li><a href=#什么是迭代器的失效>什么是迭代器的失效</a></li><li><a href=#如何解决迭代器失效>如何解决迭代器失效</a></li><li><a href=#迭代器失效原理vector实现>迭代器失效原理（vector实现）</a></li></ul></li><li><a href=#深入理解-new-和-delete-的原理>深入理解 new 和 delete 的原理</a><ul><li><a href=#new-delete-和-malloc-free>new delete 和 malloc free</a></li><li><a href=#new-operator-和-operator-new>new operator 和 operator new</a></li><li><a href=#delete-operator-和-operator-delete>delete operator 和 operator delete</a></li><li><a href=#operator-new-和-operator-delete>operator new[] 和 operator delete[]</a></li><li><a href=#为什么-new-delete-和-new-delete-不能混用>为什么 new delete 和 new[] delete[] 不能混用</a><ul><li><a href=#内置类型>内置类型</a></li><li><a href=#带有析构函数的类类型>带有析构函数的类类型</a></li></ul></li></ul></li><li><a href=#new-delete-重载实现的对象池应用>new delete 重载实现的对象池应用</a></li></ul></nav></div></details></div><div class=post-content><p>运算符重载的意义在于，使得对象的运算表现得和编译器内置的类型一样。例如：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2
 </span><span class=lnt>3
@@ -1272,7 +1272,283 @@
 
     <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
 <span class=p>}</span>
-</code></pre></td></tr></table></div></div><a class=post-dummy-target id=new-delete-重载实现的对象池应用></a><h2>new delete 重载实现的对象池应用</h2></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=new-delete-重载实现的对象池应用></a><h2>new delete 重载实现的对象池应用</h2><p>运算符重载分为<strong>成员方法</strong>和<strong>全局方法</strong>，上节我们将<code>operator new</code>等的全局方法进行了重载，全局的<code>operator new</code>都会使用我们的定义。我们当然也可以将其重载为某个类的成员方法，指定该类使用。</p><p>简单写个队列：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>template</span> <span class=o>&lt;</span><span class=k>typename</span> <span class=n>T</span><span class=o>&gt;</span>
+<span class=k>class</span> <span class=nc>Queue</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>Queue</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>_front</span> <span class=o>=</span> <span class=n>_rear</span> <span class=o>=</span> <span class=k>new</span> <span class=n>QueueItem</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=o>~</span><span class=n>Queue</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>QueueItem</span><span class=o>*</span> <span class=n>cur</span> <span class=o>=</span> <span class=n>_front</span><span class=p>;</span>
+        <span class=n>QueueItem</span><span class=o>*</span> <span class=n>t</span><span class=p>;</span>
+        <span class=k>while</span> <span class=p>(</span><span class=n>cur</span> <span class=o>!</span><span class=o>=</span> <span class=k>nullptr</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>t</span> <span class=o>=</span> <span class=n>cur</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_next</span><span class=p>;</span>
+            <span class=k>delete</span> <span class=n>cur</span><span class=p>;</span>
+            <span class=n>cur</span> <span class=o>=</span> <span class=n>t</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=kt>bool</span> <span class=nf>empty</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=n>_front</span> <span class=o>=</span><span class=o>=</span> <span class=n>_rear</span><span class=p>;</span> <span class=p>}</span>
+    <span class=kt>void</span> <span class=nf>push_back</span><span class=p>(</span><span class=k>const</span> <span class=n>T</span><span class=o>&amp;</span> <span class=n>val</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// 入队
+</span><span class=c1></span>        <span class=n>QueueItem</span><span class=o>*</span> <span class=n>item</span> <span class=o>=</span> <span class=k>new</span> <span class=n>QueueItem</span><span class=p>(</span><span class=n>val</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>_rear</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_next</span> <span class=o>=</span> <span class=n>item</span><span class=p>;</span>
+        <span class=n>_rear</span> <span class=o>=</span> <span class=n>item</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=kt>void</span> <span class=nf>pop_front</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// 出队
+</span><span class=c1></span>        <span class=n>QueueItem</span><span class=o>*</span> <span class=n>first</span> <span class=o>=</span> <span class=n>_front</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_next</span><span class=p>;</span>
+        <span class=n>_front</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_next</span> <span class=o>=</span> <span class=n>first</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_next</span><span class=p>;</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>_front</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_next</span> <span class=o>=</span><span class=o>=</span> <span class=k>nullptr</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>_rear</span> <span class=o>=</span> <span class=n>_front</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=k>delete</span> <span class=n>first</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>T</span> <span class=nf>top</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=c1>// 获得队头元素
+</span><span class=c1></span>        <span class=k>return</span> <span class=n>_front</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_next</span><span class=p>.</span><span class=n>data</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=k>private</span><span class=o>:</span>
+    <span class=k>struct</span> <span class=nc>QueueItem</span> <span class=p>{</span>
+        <span class=n>QueueItem</span><span class=p>(</span><span class=n>T</span> <span class=n>data</span> <span class=o>=</span> <span class=n>T</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=o>:</span> <span class=n>_data</span><span class=p>(</span><span class=n>data</span><span class=p>)</span><span class=p>,</span> <span class=n>_next</span><span class=p>(</span><span class=k>nullptr</span><span class=p>)</span> <span class=p>{</span><span class=p>}</span>
+        <span class=n>T</span> <span class=n>_data</span><span class=p>;</span>
+        <span class=n>QueueItem</span><span class=o>*</span> <span class=n>_next</span><span class=p>;</span>
+    <span class=p>}</span><span class=p>;</span>
+    <span class=n>QueueItem</span><span class=o>*</span> <span class=n>_front</span><span class=p>;</span> <span class=c1>// 头节点 后继节点为第一个有效元素
+</span><span class=c1></span>    <span class=n>QueueItem</span><span class=o>*</span> <span class=n>_rear</span><span class=p>;</span>  <span class=c1>// 尾节点
+</span><span class=c1></span><span class=p>}</span><span class=p>;</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>Queue</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span> <span class=n>q</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=mi>10000000</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>q</span><span class=p>.</span><span class=n>push_back</span><span class=p>(</span><span class=n>i</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>q</span><span class=p>.</span><span class=n>pop_front</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=p>(</span><span class=n>q</span><span class=p>.</span><span class=n>empty</span><span class=p>(</span><span class=p>)</span> <span class=o>?</span> <span class=sa></span><span class=s>&#34;</span><span class=s>empty</span><span class=s>&#34;</span> <span class=o>:</span> <span class=sa></span><span class=s>&#34;</span><span class=s>not empty</span><span class=s>&#34;</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>上面的代码看起来没什么问题，但是在短时间内，进行了千万次的入队、出队操作，对应着非常频繁的内存分配和释放，效率非常低。</p><p>考虑这样的方法，设计一个<strong>对象池</strong>，起始时，申请一大块内存，可以存放很多对象，<code>operator new</code>申请内存时，从对象池中获得一块内存而不是再向系统申请，<code>operator delete</code>释放内存时，不直接将内存归还给内核，而是归还给对象池。当不需要内存时，再将整个对象池释放。这样就能避免大量频繁的内存操作。</p><p>实现：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span><span class=lnt>59
+</span><span class=lnt>60
+</span><span class=lnt>61
+</span><span class=lnt>62
+</span><span class=lnt>63
+</span><span class=lnt>64
+</span><span class=lnt>65
+</span><span class=lnt>66
+</span><span class=lnt>67
+</span><span class=lnt>68
+</span><span class=lnt>69
+</span><span class=lnt>70
+</span><span class=lnt>71
+</span><span class=lnt>72
+</span><span class=lnt>73
+</span><span class=lnt>74
+</span><span class=lnt>75
+</span><span class=lnt>76
+</span><span class=lnt>77
+</span><span class=lnt>78
+</span><span class=lnt>79
+</span><span class=lnt>80
+</span><span class=lnt>81
+</span><span class=lnt>82
+</span><span class=lnt>83
+</span><span class=lnt>84
+</span><span class=lnt>85
+</span><span class=lnt>86
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=k>template</span> <span class=o>&lt;</span><span class=k>typename</span> <span class=n>T</span><span class=o>&gt;</span>
+<span class=k>class</span> <span class=nc>Queue</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>Queue</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>_front</span> <span class=o>=</span> <span class=n>_rear</span> <span class=o>=</span> <span class=k>new</span> <span class=n>QueueItem</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=o>~</span><span class=n>Queue</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>QueueItem</span><span class=o>*</span> <span class=n>cur</span> <span class=o>=</span> <span class=n>_front</span><span class=p>;</span>
+        <span class=n>QueueItem</span><span class=o>*</span> <span class=n>t</span><span class=p>;</span>
+        <span class=k>while</span> <span class=p>(</span><span class=n>cur</span> <span class=o>!</span><span class=o>=</span> <span class=k>nullptr</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>t</span> <span class=o>=</span> <span class=n>cur</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_next</span><span class=p>;</span>
+            <span class=k>delete</span> <span class=n>cur</span><span class=p>;</span>
+            <span class=n>cur</span> <span class=o>=</span> <span class=n>t</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=kt>bool</span> <span class=nf>empty</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=n>_front</span> <span class=o>=</span><span class=o>=</span> <span class=n>_rear</span><span class=p>;</span> <span class=p>}</span>
+    <span class=kt>void</span> <span class=nf>push_back</span><span class=p>(</span><span class=k>const</span> <span class=n>T</span><span class=o>&amp;</span> <span class=n>val</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>QueueItem</span><span class=o>*</span> <span class=n>item</span> <span class=o>=</span> <span class=k>new</span> <span class=n>QueueItem</span><span class=p>(</span><span class=n>val</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>_rear</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_next</span> <span class=o>=</span> <span class=n>item</span><span class=p>;</span>
+        <span class=n>_rear</span> <span class=o>=</span> <span class=n>item</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=kt>void</span> <span class=nf>pop_front</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>QueueItem</span><span class=o>*</span> <span class=n>first</span> <span class=o>=</span> <span class=n>_front</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_next</span><span class=p>;</span>
+        <span class=n>_front</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_next</span> <span class=o>=</span> <span class=n>first</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_next</span><span class=p>;</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>_front</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_next</span> <span class=o>=</span><span class=o>=</span> <span class=k>nullptr</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>_rear</span> <span class=o>=</span> <span class=n>_front</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=k>delete</span> <span class=n>first</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>T</span> <span class=nf>top</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span>
+        <span class=k>return</span> <span class=n>_front</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_next</span><span class=p>.</span><span class=n>data</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=k>private</span><span class=o>:</span>
+    <span class=k>struct</span> <span class=nc>QueueItem</span> <span class=p>{</span>
+        <span class=c1>// 为QueueItem提供自定义的operator new 和 operator delete
+</span><span class=c1></span>        <span class=kt>void</span><span class=o>*</span> <span class=k>operator</span> <span class=nf>new</span><span class=p>(</span><span class=n>size_t</span> <span class=n>size</span><span class=p>)</span> <span class=p>{</span> <span class=c1>// 编译器会将其默认处理为static静态函数
+</span><span class=c1></span>            <span class=k>if</span> <span class=p>(</span><span class=n>_itempool</span> <span class=o>=</span><span class=o>=</span> <span class=k>nullptr</span><span class=p>)</span> <span class=p>{</span>
+                <span class=c1>// 如果内存池尚未分配（或对象池满） 按字节开辟
+</span><span class=c1></span>                <span class=n>_itempool</span> <span class=o>=</span> <span class=p>(</span><span class=n>QueueItem</span><span class=o>*</span><span class=p>)</span><span class=k>new</span> <span class=kt>char</span><span class=p>[</span><span class=n>POOL_ITEM_SIZE</span> <span class=o>*</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>QueueItem</span><span class=p>)</span><span class=p>]</span><span class=p>;</span>
+                <span class=c1>// 对象池也是链表 初始时连接起来 最后元素指向nullptr
+</span><span class=c1></span>                <span class=c1>// _itempool 指向链表头 待分配内存节点
+</span><span class=c1></span>                <span class=n>QueueItem</span><span class=o>*</span> <span class=n>p</span> <span class=o>=</span> <span class=n>_itempool</span><span class=p>;</span>
+                <span class=k>for</span> <span class=p>(</span> <span class=p>;</span> <span class=n>p</span> <span class=o>&lt;</span> <span class=n>_itempool</span> <span class=o>+</span> <span class=n>POOL_ITEM_SIZE</span> <span class=o>-</span> <span class=mi>1</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>p</span><span class=p>)</span> <span class=p>{</span>
+                    <span class=n>p</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_next</span> <span class=o>=</span> <span class=n>p</span> <span class=o>+</span> <span class=mi>1</span><span class=p>;</span>
+                <span class=p>}</span>
+                <span class=n>p</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_next</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>;</span>
+                <span class=c1>// 对象池建立完成
+</span><span class=c1></span>            <span class=p>}</span>
+            <span class=c1>// 对象池已经存在 分配链表头节点
+</span><span class=c1></span>            <span class=n>QueueItem</span><span class=o>*</span> <span class=n>p</span> <span class=o>=</span> <span class=n>_itempool</span><span class=p>;</span>
+            <span class=n>_itempool</span> <span class=o>=</span> <span class=n>_itempool</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_next</span><span class=p>;</span>
+            <span class=k>return</span> <span class=n>p</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=kt>void</span> <span class=k>operator</span> <span class=nf>delete</span><span class=p>(</span><span class=kt>void</span><span class=o>*</span> <span class=n>ptr</span><span class=p>)</span> <span class=p>{</span>
+            <span class=c1>// 归还内存时 只需要将归还的节点挂在对象池的链表头即可
+</span><span class=c1></span>            <span class=n>QueueItem</span><span class=o>*</span> <span class=n>p</span> <span class=o>=</span> <span class=p>(</span><span class=n>QueueItem</span><span class=o>*</span><span class=p>)</span><span class=n>ptr</span><span class=p>;</span>
+            <span class=n>p</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_next</span> <span class=o>=</span> <span class=n>_itempool</span><span class=p>;</span>
+            <span class=n>_itempool</span> <span class=o>=</span> <span class=n>p</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=k>static</span> <span class=k>const</span> <span class=kt>int</span> <span class=n>POOL_ITEM_SIZE</span><span class=p>;</span> <span class=c1>// 对象池中对象个数
+</span><span class=c1></span>        <span class=k>static</span> <span class=n>QueueItem</span><span class=o>*</span> <span class=n>_itempool</span><span class=p>;</span> <span class=c1>// 指向对象池链表的首个节点(未分配内存)
+</span><span class=c1></span>        <span class=n>QueueItem</span><span class=p>(</span><span class=n>T</span> <span class=n>data</span> <span class=o>=</span> <span class=n>T</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=o>:</span> <span class=n>_data</span><span class=p>(</span><span class=n>data</span><span class=p>)</span><span class=p>,</span> <span class=n>_next</span><span class=p>(</span><span class=k>nullptr</span><span class=p>)</span> <span class=p>{</span><span class=p>}</span>
+        <span class=n>T</span> <span class=n>_data</span><span class=p>;</span>
+        <span class=n>QueueItem</span><span class=o>*</span> <span class=n>_next</span><span class=p>;</span>
+    <span class=p>}</span><span class=p>;</span>
+    <span class=n>QueueItem</span><span class=o>*</span> <span class=n>_front</span><span class=p>;</span>
+    <span class=n>QueueItem</span><span class=o>*</span> <span class=n>_rear</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+
+<span class=c1>// 类定义外初始化静态成员变量
+</span><span class=c1></span><span class=k>template</span> <span class=o>&lt;</span><span class=k>typename</span> <span class=n>T</span><span class=o>&gt;</span>
+<span class=k>const</span> <span class=kt>int</span> <span class=n>Queue</span><span class=o>&lt;</span><span class=n>T</span><span class=o>&gt;</span><span class=o>:</span><span class=o>:</span><span class=n>QueueItem</span><span class=o>:</span><span class=o>:</span><span class=n>POOL_ITEM_SIZE</span> <span class=o>=</span> <span class=mi>10000</span><span class=p>;</span>
+<span class=k>template</span> <span class=o>&lt;</span><span class=k>typename</span> <span class=n>T</span><span class=o>&gt;</span>
+<span class=k>typename</span> <span class=n>Queue</span><span class=o>&lt;</span><span class=n>T</span><span class=o>&gt;</span><span class=o>:</span><span class=o>:</span><span class=n>QueueItem</span><span class=o>*</span> <span class=n>Queue</span><span class=o>&lt;</span><span class=n>T</span><span class=o>&gt;</span><span class=o>:</span><span class=o>:</span><span class=n>QueueItem</span><span class=o>:</span><span class=o>:</span><span class=n>_itempool</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>;</span> <span class=c1>// typename 表示这是个类型名
+</span><span class=c1></span>
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>Queue</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span> <span class=n>q</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=mi>100000</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>q</span><span class=p>.</span><span class=n>push_back</span><span class=p>(</span><span class=n>i</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>q</span><span class=p>.</span><span class=n>pop_front</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=p>(</span><span class=n>q</span><span class=p>.</span><span class=n>empty</span><span class=p>(</span><span class=p>)</span> <span class=o>?</span> <span class=sa></span><span class=s>&#34;</span><span class=s>empty</span><span class=s>&#34;</span> <span class=o>:</span> <span class=sa></span><span class=s>&#34;</span><span class=s>not empty</span><span class=s>&#34;</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>上面实现了一个简单的对象池 ，可以提高内存操作的效率，但是它还不能正确的释放内存，会导致内存泄漏，这里主要是体会重载<code>operator new</code>和<code>operator delete</code>的作用，后面再谈内存释放的方法。</p></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
 <span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
 <span>2022-08-12</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
 <span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fc-%25E5%259F%25BA%25E7%25A1%258005-%25E8%25BF%2590%25E7%25AE%2597%25E7%25AC%25A6%25E9%2587%258D%25E8%25BD%25BD%25E8%25BF%25AD%25E4%25BB%25A3%25E5%2599%25A8iteratoroperator-new%2f&text=%e3%80%90C%2b%2b%e5%9f%ba%e7%a1%80%e3%80%9105%20-%20%e8%bf%90%e7%ae%97%e7%ac%a6%e9%87%8d%e8%bd%bd%e3%80%81%e8%bf%ad%e4%bb%a3%e5%99%a8iterator%e3%80%81operator%20new&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2fc-%25E5%259F%25BA%25E7%25A1%258005-%25E8%25BF%2590%25E7%25AE%2597%25E7%25AC%25A6%25E9%2587%258D%25E8%25BD%25BD%25E8%25BF%25AD%25E4%25BB%25A3%25E5%2599%25A8iteratoroperator-new%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fc-%25E5%259F%25BA%25E7%25A1%258005-%25E8%25BF%2590%25E7%25AE%2597%25E7%25AC%25A6%25E9%2587%258D%25E8%25BD%25BD%25E8%25BF%25AD%25E4%25BB%25A3%25E5%2599%25A8iteratoroperator-new%2f&title=%e3%80%90C%2b%2b%e5%9f%ba%e7%a1%80%e3%80%9105%20-%20%e8%bf%90%e7%ae%97%e7%ac%a6%e9%87%8d%e8%bd%bd%e3%80%81%e8%bf%ad%e4%bb%a3%e5%99%a8iterator%e3%80%81operator%20new" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/c++/><i class="fas fa-tag fa-fw"></i>&nbsp;C++</a>&nbsp;

@@ -795,8 +795,163 @@ int main() {
 
 
 
-
 ## new delete 重载实现的对象池应用
+
+运算符重载分为**成员方法**和**全局方法**，上节我们将`operator new`等的全局方法进行了重载，全局的`operator new`都会使用我们的定义。我们当然也可以将其重载为某个类的成员方法，指定该类使用。
+
+简单写个队列：  
+```C++
+#include <iostream>
+template <typename T>
+class Queue {
+public:
+    Queue() {
+        _front = _rear = new QueueItem();
+    }
+    ~Queue() {
+        QueueItem* cur = _front;
+        QueueItem* t;
+        while (cur != nullptr) {
+            t = cur->_next;
+            delete cur;
+            cur = t;
+        }
+    }
+    bool empty() const { return _front == _rear; }
+    void push_back(const T& val) { // 入队
+        QueueItem* item = new QueueItem(val);
+        _rear->_next = item;
+        _rear = item;
+    }
+    void pop_front() { // 出队
+        QueueItem* first = _front->_next;
+        _front->_next = first->_next;
+        if (_front->_next == nullptr) {
+            _rear = _front;
+        }
+        delete first;
+    }
+    T top() const { // 获得队头元素
+        return _front->_next.data;
+    }
+private:
+    struct QueueItem {
+        QueueItem(T data = T()) : _data(data), _next(nullptr) {}
+        T _data;
+        QueueItem* _next;
+    };
+    QueueItem* _front; // 头节点 后继节点为第一个有效元素
+    QueueItem* _rear;  // 尾节点
+};
+
+int main() {
+    Queue<int> q;
+    for (int i = 0; i < 10000000; ++ i) {
+        q.push_back(i);
+        q.pop_front();
+    }
+    std::cout << (q.empty() ? "empty" : "not empty") << std::endl;
+    return 0;
+}
+```
+
+上面的代码看起来没什么问题，但是在短时间内，进行了千万次的入队、出队操作，对应着非常频繁的内存分配和释放，效率非常低。
+
+考虑这样的方法，设计一个**对象池**，起始时，申请一大块内存，可以存放很多对象，`operator new`申请内存时，从对象池中获得一块内存而不是再向系统申请，`operator delete`释放内存时，不直接将内存归还给内核，而是归还给对象池。当不需要内存时，再将整个对象池释放。这样就能避免大量频繁的内存操作。
+
+实现：  
+```C++
+#include <iostream>
+
+template <typename T>
+class Queue {
+public:
+    Queue() {
+        _front = _rear = new QueueItem();
+    }
+    ~Queue() {
+        QueueItem* cur = _front;
+        QueueItem* t;
+        while (cur != nullptr) {
+            t = cur->_next;
+            delete cur;
+            cur = t;
+        }
+    }
+    bool empty() const { return _front == _rear; }
+    void push_back(const T& val) {
+        QueueItem* item = new QueueItem(val);
+        _rear->_next = item;
+        _rear = item;
+    }
+    void pop_front() {
+        QueueItem* first = _front->_next;
+        _front->_next = first->_next;
+        if (_front->_next == nullptr) {
+            _rear = _front;
+        }
+        delete first;
+    }
+    T top() const {
+        return _front->_next.data;
+    }
+private:
+    struct QueueItem {
+        // 为QueueItem提供自定义的operator new 和 operator delete
+        void* operator new(size_t size) { // 编译器会将其默认处理为static静态函数
+            if (_itempool == nullptr) {
+                // 如果内存池尚未分配（或对象池满） 按字节开辟
+                _itempool = (QueueItem*)new char[POOL_ITEM_SIZE * sizeof(QueueItem)];
+                // 对象池也是链表 初始时连接起来 最后元素指向nullptr
+                // _itempool 指向链表头 待分配内存节点
+                QueueItem* p = _itempool;
+                for ( ; p < _itempool + POOL_ITEM_SIZE - 1; ++ p) {
+                    p->_next = p + 1;
+                }
+                p->_next = nullptr;
+                // 对象池建立完成
+            }
+            // 对象池已经存在 分配链表头节点
+            QueueItem* p = _itempool;
+            _itempool = _itempool->_next;
+            return p;
+        }
+        void operator delete(void* ptr) {
+            // 归还内存时 只需要将归还的节点挂在对象池的链表头即可
+            QueueItem* p = (QueueItem*)ptr;
+            p->_next = _itempool;
+            _itempool = p;
+        }
+        static const int POOL_ITEM_SIZE; // 对象池中对象个数
+        static QueueItem* _itempool; // 指向对象池链表的首个节点(未分配内存)
+        QueueItem(T data = T()) : _data(data), _next(nullptr) {}
+        T _data;
+        QueueItem* _next;
+    };
+    QueueItem* _front;
+    QueueItem* _rear;
+};
+
+// 类定义外初始化静态成员变量
+template <typename T>
+const int Queue<T>::QueueItem::POOL_ITEM_SIZE = 10000;
+template <typename T>
+typename Queue<T>::QueueItem* Queue<T>::QueueItem::_itempool = nullptr; // typename 表示这是个类型名
+
+int main() {
+    Queue<int> q;
+    for (int i = 0; i < 100000; ++ i) {
+        q.push_back(i);
+        q.pop_front();
+    }
+    std::cout << (q.empty() ? "empty" : "not empty") << std::endl;
+    return 0;
+}
+```
+
+上面实现了一个简单的对象池 ，可以提高内存操作的效率，但是它还不能正确的释放内存，会导致内存泄漏，这里主要是体会重载`operator new`和`operator delete`的作用，后面再谈内存释放的方法。
+
+
 
 
 
