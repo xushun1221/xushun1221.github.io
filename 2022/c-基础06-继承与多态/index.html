@@ -1,0 +1,398 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【C++基础】06 - 继承与多态 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/c-%E5%9F%BA%E7%A1%8005-%E8%BF%90%E7%AE%97%E7%AC%A6%E9%87%8D%E8%BD%BD%E8%BF%AD%E4%BB%A3%E5%99%A8iteratoroperator-new/><link rel=canonical href=https://xushun1221.github.io/2022/c-%E5%9F%BA%E7%A1%8006-%E7%BB%A7%E6%89%BF%E4%B8%8E%E5%A4%9A%E6%80%81/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【C++基础】06 - 继承与多态"><meta name=twitter:description content="继承的本质和原理 继承的本质：代码的复用 类和类之间的关系： 组合：a part of 继承：a kind of 三种继承方式下，派生类对基类成员的访问限定情况： 继承方式 基类"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【C\x2b\x2b基础】06 - 继承与多态","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/c-%E5%9F%BA%E7%A1%8006-%E7%BB%A7%E6%89%BF%E4%B8%8E%E5%A4%9A%E6%80%81\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"C\x2b\x2b, STL","wordcount":4659,"url":"https:\/\/xushun1221.github.io\/2022\/c-%E5%9F%BA%E7%A1%8006-%E7%BB%A7%E6%89%BF%E4%B8%8E%E5%A4%9A%E6%80%81\/","datePublished":"2022-08-20T00:00:00\x2b00:00","dateModified":"2022-08-20T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【C++基础】06 - 继承与多态</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-08-20>2022-08-20</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 4659 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#继承的本质和原理>继承的本质和原理</a></li><li><a href=#派生类的构造析构过程>派生类的构造、析构过程</a></li><li><a href=#重载隐藏覆盖>重载、隐藏、覆盖</a><ul><li><a href=#重载和隐藏>重载和隐藏</a></li><li><a href=#基类和派生类的转换指针引用>基类和派生类的转换、指针（引用）</a></li></ul></li><li><a href=#虚函数静态绑定动态绑定覆盖>虚函数、静态绑定、动态绑定、覆盖</a><ul><li><a href=#静态绑定>静态绑定</a></li><li><a href=#虚函数动态绑定覆盖>虚函数、动态绑定、覆盖</a><ul><li><a href=#vftable虚函数表rttivptr虚函数指针>vftable虚函数表、RTTI、vptr虚函数指针</a></li><li><a href=#虚函数的覆盖>虚函数的覆盖</a></li><li><a href=#动态绑定>动态绑定</a></li></ul></li></ul></li><li><a href=#虚析构函数>虚析构函数</a></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#继承的本质和原理>继承的本质和原理</a></li><li><a href=#派生类的构造析构过程>派生类的构造、析构过程</a></li><li><a href=#重载隐藏覆盖>重载、隐藏、覆盖</a><ul><li><a href=#重载和隐藏>重载和隐藏</a></li><li><a href=#基类和派生类的转换指针引用>基类和派生类的转换、指针（引用）</a></li></ul></li><li><a href=#虚函数静态绑定动态绑定覆盖>虚函数、静态绑定、动态绑定、覆盖</a><ul><li><a href=#静态绑定>静态绑定</a></li><li><a href=#虚函数动态绑定覆盖>虚函数、动态绑定、覆盖</a><ul><li><a href=#vftable虚函数表rttivptr虚函数指针>vftable虚函数表、RTTI、vptr虚函数指针</a></li><li><a href=#虚函数的覆盖>虚函数的覆盖</a></li><li><a href=#动态绑定>动态绑定</a></li></ul></li></ul></li><li><a href=#虚析构函数>虚析构函数</a></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=继承的本质和原理></a><h2>继承的本质和原理</h2><p>继承的本质：代码的复用</p><p>类和类之间的关系：</p><ol><li>组合：a part of</li><li>继承：a kind of</li></ol><p>三种继承方式下，派生类对基类成员的访问限定情况：</p><table><thead><tr><th>继承方式</th><th>基类的访问限定</th><th>派生类的访问限定(Y/N)</th><th>外部的访问限定(Y/N)</th></tr></thead><tbody><tr><td>public</td><td>public</td><td>public(Y)</td><td>Y</td></tr><tr><td></td><td>protected</td><td>protected(Y)</td><td>N</td></tr><tr><td></td><td>private</td><td>不可见的(N)</td><td>N</td></tr><tr><td>protected</td><td>public</td><td>protected(Y)</td><td>N</td></tr><tr><td></td><td>protected</td><td>protected(Y)</td><td>N</td></tr><tr><td></td><td>private</td><td>不可见的(N)</td><td>N</td></tr><tr><td>private</td><td>public</td><td>private(Y)</td><td>N</td></tr><tr><td></td><td>protected</td><td>private(Y)</td><td>N</td></tr><tr><td></td><td>private</td><td>不可见的(N)</td><td>N</td></tr></tbody></table><ul><li>公有继承（public）下<ul><li>基类的public和protected成员在派生类中还是public和protected成员；</li><li>基类的private成员在派生类中不可见。</li></ul></li><li>保护继承（protected）下<ul><li>基类的public和protected成员在派生类中都为protected；</li><li>基类的private成员在派生类中不可见。</li></ul></li><li>私有继承（private）下<ul><li>基类public和protected成员在派生类中都为private；</li><li>基类的private成员在派生类中不可见。</li></ul></li></ul><p>总结：</p><ul><li>派生类对基类成员的访问权限，不会超过继承方式；</li><li>外部只能访问对象的public成员；</li><li>继承结构中，派生类可以从基类继承来private成员，但是不可直接访问；</li><li>protected和private成员的区别？<ul><li>在基类中定义的成员，想被派生类访问，但不想被外部访问，就在基类中将其限定为protected；</li><li>如果不想成员被派生类和外部访问，就在基类中将其定义为private。</li></ul></li></ul><p>其他注意点：</p><ul><li>如果某个类继承自某个派生类，它的访问限定情况由它的直接基类决定；</li><li>默认的继承方式，由派生类的定义方式决定<ul><li>使用class定义，默认继承方式为private（class定义类，内部成员的默认限定符也是private）</li><li>使用struct定义，默认继承方式为public（struct定义类，内部成员的默认限定符也是public）</li></ul></li></ul><a class=post-dummy-target id=派生类的构造析构过程></a><h2>派生类的构造、析构过程</h2><p>派生类可以从基类继承所有的成员（变量和方法），除了构造函数和析构函数。</p><ul><li>派生类的构造和析构函数，负责初始化和清理派生类部分的成员；</li><li>派生类从基类继承来的成员，由基类的构造和析构函数负责；</li><li>派生类通过调用基类的构造函数来初始化基类部分的成员；</li><li>基类的析构函数无需手动调用。</li></ul><p>派生类对象的构造和析构过程如下：</p><ol><li>派生类调用基类的构造函数，初始化从基类继承来的成员；</li><li>调用派生类自己的构造函数，初始化自己特有的成员；</li><li>&mldr;派生类对象作用域到期&mldr;</li><li>调用派生类的析构函数，释放派生类成员占用的资源；</li><li>调用基类的析构函数，释放派生类内存中，从基类继承来的成员占用的资源。</li></ol><p>示例：　　</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>class</span> <span class=nc>Base</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>Base</span><span class=p>(</span><span class=kt>int</span> <span class=n>data</span><span class=p>)</span> <span class=o>:</span> <span class=n>a</span><span class=p>(</span><span class=n>data</span><span class=p>)</span> <span class=p>{</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>Base() &amp;a:</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=o>&amp;</span><span class=n>a</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+    <span class=o>~</span><span class=n>Base</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>~Base()</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+<span class=k>protected</span><span class=o>:</span>
+    <span class=kt>int</span> <span class=n>a</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+<span class=k>class</span> <span class=nc>Derive</span> <span class=o>:</span> <span class=k>public</span> <span class=n>Base</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=c1>// Derive(int data) : a(data), b(data) {} 错误写法 不能在构造函数中给基类成员初始化
+</span><span class=c1></span>    <span class=n>Derive</span><span class=p>(</span><span class=kt>int</span> <span class=n>data</span><span class=p>)</span> <span class=o>:</span> <span class=n>Base</span><span class=p>(</span><span class=n>data</span><span class=p>)</span><span class=p>,</span> <span class=n>b</span><span class=p>(</span><span class=n>data</span><span class=p>)</span> <span class=p>{</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>Derive() &amp;b:</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=o>&amp;</span><span class=n>b</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+    <span class=o>~</span><span class=n>Derive</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>~Derive()</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+<span class=k>private</span><span class=o>:</span>
+    <span class=kt>int</span> <span class=n>b</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>Derive</span> <span class=n>test</span><span class=p>(</span><span class=mi>10</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=cm>/* 输出
+</span><span class=cm>xushun@xushun-virtual-machine:~/cppmiddle$ ./a.out 
+</span><span class=cm>Base() &amp;a:0x7ffcf2a82310
+</span><span class=cm>Derive() &amp;b:0x7ffcf2a82314
+</span><span class=cm>~Derive()
+</span><span class=cm>~Base()
+</span><span class=cm>*/</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=重载隐藏覆盖></a><h2>重载、隐藏、覆盖</h2><p>这一节讲重载和隐藏，覆盖的内容在下一节虚函数中。</p><a class=post-dummy-target id=重载和隐藏></a><h3>重载和隐藏</h3><p>先说结论：</p><ul><li>重载关系：一组函数重载的前提是，它们在<strong>同一个作用域中</strong>，且<strong>函数名相同</strong>，参数列表不同。这里的作用域说的是在同一个类中。</li><li>隐藏关系（作用域的隐藏）：在继承结构中，派生类的成员，会把基类的同名成员隐藏。</li></ul><p>示例：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>class</span> <span class=nc>Base</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>Base</span><span class=p>(</span><span class=kt>int</span> <span class=n>data</span> <span class=o>=</span> <span class=mi>10</span><span class=p>)</span> <span class=o>:</span> <span class=n>a</span><span class=p>(</span><span class=n>data</span><span class=p>)</span> <span class=p>{</span><span class=p>}</span>
+    <span class=kt>void</span> <span class=nf>show</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>Base::show()</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+    <span class=kt>void</span> <span class=nf>show</span><span class=p>(</span><span class=kt>int</span><span class=p>)</span> <span class=p>{</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>Base::show(int)</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+<span class=k>protected</span><span class=o>:</span>
+    <span class=kt>int</span> <span class=n>a</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+<span class=k>class</span> <span class=nc>Derive</span> <span class=o>:</span> <span class=k>public</span> <span class=n>Base</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>Derive</span><span class=p>(</span><span class=kt>int</span> <span class=n>data</span> <span class=o>=</span> <span class=mi>10</span><span class=p>)</span> <span class=o>:</span> <span class=n>Base</span><span class=p>(</span><span class=n>data</span><span class=p>)</span><span class=p>,</span> <span class=n>b</span><span class=p>(</span><span class=n>data</span><span class=p>)</span> <span class=p>{</span><span class=p>}</span>
+    <span class=kt>void</span> <span class=nf>show</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>Derive::show()</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span> <span class=p>}</span> <span class=c1>// #1
+</span><span class=c1></span>    <span class=kt>void</span> <span class=nf>show</span><span class=p>(</span><span class=kt>int</span><span class=p>)</span> <span class=p>{</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>Derive::show(int)</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span> <span class=p>}</span> <span class=c1>// #2
+</span><span class=c1></span><span class=k>private</span><span class=o>:</span>
+    <span class=kt>int</span> <span class=n>b</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>Derive</span> <span class=n>test</span><span class=p>;</span>
+    <span class=n>test</span><span class=p>.</span><span class=n>show</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>test</span><span class=p>.</span><span class=n>show</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>test</span><span class=p>.</span><span class=n>Base</span><span class=o>:</span><span class=o>:</span><span class=n>show</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>test</span><span class=p>.</span><span class=n>Base</span><span class=o>:</span><span class=o>:</span><span class=n>show</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>观察上面的代码。</p><p>存在两个重载关系：</p><ol><li><code>Base::show()</code>和<code>Base::show(int)</code>是重载关系，它们同属于<code>Base::</code>，函数名相同，参数列表不同；</li><li><code>Derive::show()</code>和<code>Derive::show(int)</code>是重载关系，它们同属于<code>Derive::</code>，函数名相同，参数列表不同；</li></ol><p>注释掉<code>#1#2</code>两行，输出为：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-fallback data-lang=fallback>Base::show()
+Base::show(int)
+Base::show()
+Base::show(int)
+</code></pre></td></tr></table></div></div><p><code>Derive::</code>中没有<code>show()</code>和<code>show(int)</code>，所以从<code>Base::</code>中寻找。</p><p>只注释掉<code>#2</code>，无法通过编译，输出为：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-fallback data-lang=fallback>inherit.cpp: In function ‘int main()’:
+inherit.cpp:22:16: error: no matching function for call to ‘Derive::show(int)’
+     test.show(0);
+                ^
+inherit.cpp:13:10: note: candidate: ‘void Derive::show()’
+     void show() { std::cout &lt;&lt; &#34;Derive::show()&#34; &lt;&lt; std::endl; } // #1
+          ^~~~
+inherit.cpp:13:10: note:   candidate expects 0 arguments, 1 provided
+</code></pre></td></tr></table></div></div><p>错误提示说明，<code>Derive::show()</code>隐藏掉了<code>Base::show()</code>和<code>Base::show(int)</code>，所以<code>test.show(int)</code>时不会在<code>Base::</code>中寻找，同时注释掉了<code>#2</code>，所以找不到该函数的定义。如果只注释掉<code>#1</code>，情况相同，<code>Derive::show(int)</code>会隐藏<code>Derive::</code>中同名的两个函数（参数列表不同也会被隐藏）。</p><p>不注释代码，输出：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-fallback data-lang=fallback>Derive::show()
+Derive::show(int)
+Base::show()
+Base::show(int)
+</code></pre></td></tr></table></div></div><p>不指定作用域的话，优先使用派生类作用域中的成员，隐藏了基类的成员，如果在派生类中没有，才会取寻找基类中继承的成员。如果要使用基类被派生类隐藏的成员，需要使用作用域运算符<code>Base::</code>指定。</p><a class=post-dummy-target id=基类和派生类的转换指针引用></a><h3>基类和派生类的转换、指针（引用）</h3><blockquote><p>我们把继承结构说成从上（基类）到下（派生类）的结构。</p></blockquote><p>结论：<br>在继承结构中进行上下类型的转换（基类 &lt;->派生类），默认只支持从下到上的转换（基类 &lt;- 派生类）</p><p>示例：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>class</span> <span class=nc>Base</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>Base</span><span class=p>(</span><span class=kt>int</span> <span class=n>data</span> <span class=o>=</span> <span class=mi>10</span><span class=p>)</span> <span class=o>:</span> <span class=n>a</span><span class=p>(</span><span class=n>data</span><span class=p>)</span> <span class=p>{</span><span class=p>}</span>
+<span class=k>protected</span><span class=o>:</span>
+    <span class=kt>int</span> <span class=n>a</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+<span class=k>class</span> <span class=nc>Derive</span> <span class=o>:</span> <span class=k>public</span> <span class=n>Base</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>Derive</span><span class=p>(</span><span class=kt>int</span> <span class=n>data</span> <span class=o>=</span> <span class=mi>10</span><span class=p>)</span> <span class=o>:</span> <span class=n>Base</span><span class=p>(</span><span class=n>data</span><span class=p>)</span><span class=p>,</span> <span class=n>b</span><span class=p>(</span><span class=n>data</span><span class=p>)</span> <span class=p>{</span><span class=p>}</span>
+<span class=k>private</span><span class=o>:</span>
+    <span class=kt>int</span> <span class=n>b</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>Base</span> <span class=n>b</span><span class=p>;</span>
+    <span class=n>Derive</span> <span class=n>d</span><span class=p>;</span>
+    <span class=c1>// 基类对象 &lt;- 派生类对象  从下到上 Y
+</span><span class=c1></span>    <span class=n>b</span> <span class=o>=</span> <span class=n>d</span><span class=p>;</span>
+    <span class=c1>// 派生类对象 &lt;- 基类对象  从上到下 N
+</span><span class=c1></span>    <span class=c1>//d = b;
+</span><span class=c1></span>    <span class=c1>// 基类指针（引用） &lt;- 派生类指针  从下到上 Y
+</span><span class=c1></span>    <span class=n>Base</span><span class=o>*</span> <span class=n>pb</span> <span class=o>=</span> <span class=o>&amp;</span><span class=n>d</span><span class=p>;</span>
+    <span class=c1>// 派生类指针（引用） &lt;- 基类指针  从下到上 N
+</span><span class=c1></span>    <span class=c1>//Derive* pd = &amp;b;
+</span><span class=c1></span>    <span class=c1>// 派生类指针不能指向一个基类对象 
+</span><span class=c1></span>    <span class=c1>// 因为派生类的内存空间大于基类 派生类指针指向基类对象
+</span><span class=c1></span>    <span class=c1>// 会造成内存的非法访问
+</span><span class=c1></span>    <span class=n>Derive</span><span class=o>*</span> <span class=n>pd</span> <span class=o>=</span> <span class=p>(</span><span class=n>Derive</span><span class=o>*</span><span class=p>)</span><span class=o>&amp;</span><span class=n>b</span><span class=p>;</span> <span class=c1>// 这样很危险!
+</span><span class=c1></span>    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=虚函数静态绑定动态绑定覆盖></a><h2>虚函数、静态绑定、动态绑定、覆盖</h2><p>静态绑定是<strong>编译时期</strong>的函数调用，调用的是普通函数。<br>动态绑定是<strong>运行时期</strong>的函数调用，且调用的一定是<strong>虚函数</strong>。</p><a class=post-dummy-target id=静态绑定></a><h3>静态绑定</h3><p>示例1：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;typeinfo&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>class</span> <span class=nc>Base</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>Base</span><span class=p>(</span><span class=kt>int</span> <span class=n>data</span> <span class=o>=</span> <span class=mi>10</span><span class=p>)</span> <span class=o>:</span> <span class=n>a</span><span class=p>(</span><span class=n>data</span><span class=p>)</span> <span class=p>{</span><span class=p>}</span>
+    <span class=kt>void</span> <span class=nf>show</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>Base::show()</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+    <span class=kt>void</span> <span class=nf>show</span><span class=p>(</span><span class=kt>int</span><span class=p>)</span> <span class=p>{</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>Base::show(int)</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+<span class=k>protected</span><span class=o>:</span>
+    <span class=kt>int</span> <span class=n>a</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+<span class=k>class</span> <span class=nc>Derive</span> <span class=o>:</span> <span class=k>public</span> <span class=n>Base</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>Derive</span><span class=p>(</span><span class=kt>int</span> <span class=n>data</span> <span class=o>=</span> <span class=mi>10</span><span class=p>)</span> <span class=o>:</span> <span class=n>Base</span><span class=p>(</span><span class=n>data</span><span class=p>)</span><span class=p>,</span> <span class=n>b</span><span class=p>(</span><span class=n>data</span><span class=p>)</span> <span class=p>{</span><span class=p>}</span>
+    <span class=kt>void</span> <span class=nf>show</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>Derive::show()</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+<span class=k>private</span><span class=o>:</span>
+    <span class=kt>int</span> <span class=n>b</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>Derive</span> <span class=n>d</span><span class=p>(</span><span class=mi>50</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>Base</span><span class=o>*</span> <span class=n>pb</span> <span class=o>=</span> <span class=o>&amp;</span><span class=n>d</span><span class=p>;</span>
+    <span class=c1>// 静态（编译阶段）绑定（函数调用）
+</span><span class=c1></span>    <span class=n>pb</span><span class=o>-</span><span class=o>&gt;</span><span class=n>show</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 静态绑定 call Base::show()
+</span><span class=c1></span>    <span class=n>pb</span><span class=o>-</span><span class=o>&gt;</span><span class=n>show</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 静态绑定 call Base::show(int)
+</span><span class=c1></span>    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>Base</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>Derive</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=k>typeid</span><span class=p>(</span><span class=n>pb</span><span class=p>)</span><span class=p>.</span><span class=n>name</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=k>typeid</span><span class=p>(</span><span class=o>*</span><span class=n>pb</span><span class=p>)</span><span class=p>.</span><span class=n>name</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=cm>/* 输出
+</span><span class=cm>xushun@xushun-virtual-machine:~/cppmiddle$ ./a.out 
+</span><span class=cm>Base::show()
+</span><span class=cm>Base::show(int)
+</span><span class=cm>4
+</span><span class=cm>8
+</span><span class=cm>P4Base
+</span><span class=cm>4Base
+</span><span class=cm>*/</span>
+</code></pre></td></tr></table></div></div><p>在上面的代码中，我们使用了<code>Base*</code>指针指向一个<code>Derive</code>对象，用指针调用函数，编译器就会在<code>Base::</code>作用域中寻找函数，如果发现不是虚函数，那么直接调用它（<code>call</code>）。这也称<strong>静态绑定</strong>，是在编译阶段进行的函数调用。</p><p>再看内存大小，<code>Base</code>对象中只有一个<code>int</code>成员变量，所以为4字节，<code>Derive</code>对象中有从基类继承来的一个<code>int</code>和自己的一个<code>int</code>，所以8字节。</p><p>再看类型，虽然<code>Base*</code>类型指针指向的是<code>Derive</code>对象，但<code>*pb</code>仍被编译器认定为<code>Base</code>类型。</p><a class=post-dummy-target id=虚函数动态绑定覆盖></a><h3>虚函数、动态绑定、覆盖</h3><p>示例2：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;typeinfo&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>class</span> <span class=nc>Base</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>Base</span><span class=p>(</span><span class=kt>int</span> <span class=n>data</span> <span class=o>=</span> <span class=mi>10</span><span class=p>)</span> <span class=o>:</span> <span class=n>a</span><span class=p>(</span><span class=n>data</span><span class=p>)</span> <span class=p>{</span><span class=p>}</span>
+    <span class=c1>// 定义为虚函数
+</span><span class=c1></span>    <span class=k>virtual</span> <span class=kt>void</span> <span class=nf>show</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>Base::show()</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+    <span class=k>virtual</span> <span class=kt>void</span> <span class=nf>show</span><span class=p>(</span><span class=kt>int</span><span class=p>)</span> <span class=p>{</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>Base::show(int)</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+<span class=k>protected</span><span class=o>:</span>
+    <span class=kt>int</span> <span class=n>a</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+<span class=k>class</span> <span class=nc>Derive</span> <span class=o>:</span> <span class=k>public</span> <span class=n>Base</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>Derive</span><span class=p>(</span><span class=kt>int</span> <span class=n>data</span> <span class=o>=</span> <span class=mi>10</span><span class=p>)</span> <span class=o>:</span> <span class=n>Base</span><span class=p>(</span><span class=n>data</span><span class=p>)</span><span class=p>,</span> <span class=n>b</span><span class=p>(</span><span class=n>data</span><span class=p>)</span> <span class=p>{</span><span class=p>}</span>
+    <span class=c1>// 返回值、函数名、参数列表 都和基类中的虚函数相同
+</span><span class=c1></span>    <span class=c1>// 自动定义为虚函数
+</span><span class=c1></span>    <span class=kt>void</span> <span class=nf>show</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>Derive::show()</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span> <span class=p>}</span> <span class=c1>// 这是一个虚函数 虽然没用virtual修饰
+</span><span class=c1></span>    <span class=c1>// 它覆盖了 Base::show()
+</span><span class=c1></span><span class=k>private</span><span class=o>:</span>
+    <span class=kt>int</span> <span class=n>b</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>Derive</span> <span class=n>d</span><span class=p>(</span><span class=mi>50</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>Base</span><span class=o>*</span> <span class=n>pb</span> <span class=o>=</span> <span class=o>&amp;</span><span class=n>d</span><span class=p>;</span>
+    <span class=n>pb</span><span class=o>-</span><span class=o>&gt;</span><span class=n>show</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 动态（运行阶段）绑定
+</span><span class=c1></span>    <span class=cm>/* 动态绑定 对应的汇编如下
+</span><span class=cm>        mov eax, dword ptr[pb]  // 将 d 虚函数指针 放入 eax
+</span><span class=cm>        mov ecx, dword ptr[eax] // 将 虚函数指针 指向的函数地址Derive::show() 放入 ecx
+</span><span class=cm>        call ecx // 调用虚函数
+</span><span class=cm>    */</span>
+    <span class=n>pb</span><span class=o>-</span><span class=o>&gt;</span><span class=n>show</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 动态绑定
+</span><span class=c1></span>    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>Base</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>Derive</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=k>typeid</span><span class=p>(</span><span class=n>pb</span><span class=p>)</span><span class=p>.</span><span class=n>name</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>  <span class=c1>// pb 还是 Base*
+</span><span class=c1></span>    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=k>typeid</span><span class=p>(</span><span class=o>*</span><span class=n>pb</span><span class=p>)</span><span class=p>.</span><span class=n>name</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span> <span class=c1>// *pb 就变为 Derive
+</span><span class=c1></span>    <span class=c1>// 如果Base没有虚函数 *pb 就会被识别为编译时期的类型 就是 Base
+</span><span class=c1></span>    <span class=c1>// 如果Base有虚函数 *pb 就会被识别为运行时期的类型 就是 RTTI类型 Derive
+</span><span class=c1></span>    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=cm>/* 输出
+</span><span class=cm>xushun@xushun-virtual-machine:~/cppmiddle$ ./a.out 
+</span><span class=cm>Derive::show()
+</span><span class=cm>Base::show(int)
+</span><span class=cm>16
+</span><span class=cm>16
+</span><span class=cm>P4Base
+</span><span class=cm>6Derive
+</span><span class=cm>*/</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=vftable虚函数表rttivptr虚函数指针></a><h4>vftable虚函数表、RTTI、vptr虚函数指针</h4><p>当类中定义了虚函数，那么在<strong>编译阶段</strong>，编译器会为这个类类型产生一个<strong>唯一</strong>的<strong>vftable虚函数表</strong>，虚函数表中主要存储的内容是<strong>RTTI指针（Run-Time Type information）<strong>和</strong>虚函数的地址</strong>，RTTI指针可以理解为一个指向类型字符串常量的指针。当程序运行时，每一张虚函数表都会加载到内存的<code>.rodata</code>只读数据段中。</p><p><code>Base</code>类的vftable虚函数表：（可以使用<code>g++ -fdump-lang-class virtual.cpp</code>命令查看类的内存布局）</p><table><thead><tr><th>地址偏移</th><th>内容</th></tr></thead><tbody><tr><td>0</td><td>0</td></tr><tr><td>8</td><td><code>&RTTI</code> (指向<code>"Base"</code>)</td></tr><tr><td>16</td><td><code>&Base::show()</code> (虚函数的地址)</td></tr><tr><td>24</td><td><code>&Base::show(int)</code></td></tr></tbody></table><p>当类中定义了虚函数，那么由该类实例化的对象，其内存起始位置会多存储一个<strong>vptr虚函数指针</strong>，指向该类对应的vftable虚函数表的虚函数地址起始位置，例如<code>Base</code>类对象的虚函数指针，指向<code>Base</code>类虚函数表偏移16位置。多个对象的虚函数指针，指向<strong>同一个</strong>虚函数表。</p><p>一个<code>Base</code>对象的内存结构：</p><table><thead><tr><th>地址偏移</th><th>内容</th></tr></thead><tbody><tr><td>0</td><td><code>vptr</code>（指向<code>Base</code>虚函数表偏移16位置）</td></tr><tr><td>8</td><td><code>int a</code></td></tr><tr><td>12-16</td><td>内存对齐</td></tr></tbody></table><p>这里也可以看出，一个类的虚函数的个数，不影响实例化对象的内存大小，影响的是虚函数表的大小。</p><a class=post-dummy-target id=虚函数的覆盖></a><h4>虚函数的覆盖</h4><p>如果基类有虚函数，派生类当然会继承基类的虚函数，那么也有虚函数表。如果一个派生类中的方法，和基类继承来的某个方法，<strong>返回值、函数名、参数列表都相同</strong>，而且基类的方法是virtual虚函数，那么派生类的这个方法，编译器会自动处理为虚函数（编译阶段），并且会将派生类的虚函数表中，原来的基类的虚函数，替换为派生类的对应虚函数。这个动作就叫做虚函数的<strong>覆盖</strong>（重写）。</p><p><code>Derive</code>类的虚函数表：</p><table><thead><tr><th>地址偏移</th><th>内容</th></tr></thead><tbody><tr><td>0</td><td>0</td></tr><tr><td>8</td><td><code>&RTTI</code>（指向<code>"Derive"</code>）</td></tr><tr><td>16</td><td><code>&Derive::show()</code> (<code>&Base::show()</code>被覆盖了)</td></tr><tr><td>24</td><td><code>&Base::show(int)</code> (没有重写)</td></tr></tbody></table><p>一个<code>Derive</code>对象的内存结构：</p><table><thead><tr><th>地址偏移</th><th>内容</th></tr></thead><tbody><tr><td>0</td><td><code>vptr</code>（指向<code>Derive</code>虚函数表偏移16位置）</td></tr><tr><td>8</td><td><code>int Base::a</code></td></tr><tr><td>12</td><td><code>int Derive::b</code></td></tr></tbody></table><a class=post-dummy-target id=动态绑定></a><h4>动态绑定</h4><p>参考上面的示例2，当编译到<code>pb->show();</code>时，因为<code>pb</code>是<code>Base*</code>类型的指针，所以进入<code>Base::</code>作用域查看，发现<code>show()</code>是virtual虚函数，就进行<strong>动态绑定</strong>。过程是：通过<code>pb</code>指向的<code>Derive</code>对象<code>d</code>的虚函数指针<code>vptr</code>找到，<code>Derive</code>的虚函数表，获得<code>show()</code>虚函数的地址（因为<code>Base::show()</code>被<code>Derive::show()</code>覆盖，所以得到了<code>Derive::show()</code>的地址），然后<code>call</code>这个地址。</p><p>当编译到<code>pb->show(0);</code>时，进入<code>Base::</code>作用域查看，发现<code>show(int)</code>是虚函数，进行动态绑定，在<code>Derive</code>虚函数表中找到<code>show(int)</code>的地址（没有重写这个函数，所以还是得到了<code>Base::show()</code>的地址），<code>call</code>之。</p><p>动态的含义是，<strong>运行时</strong>进行动态绑定，只有在程序运行时，才会通过虚函数表找到函数，而静态绑定，是在<strong>编译时</strong>就能确定调用的函数。</p><blockquote><p>为什么动态绑定要在运行时确定要调用的函数呢？<br>答：因为，调用虚函数的基类指针，不一定在编译时就能确定指向的对象类型。需要通过对象的vptr虚函数指针，确定对象的类型，并调用正确的虚函数。<br>例如下面的代码，在编译时期，你能看出<code>pb</code>调用的是哪个函数吗？</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span><span class=lnt>9
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=n>Base</span><span class=o>*</span> <span class=n>pb</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>;</span>
+<span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>type</span><span class=p>;</span>
+<span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cin</span> <span class=o>&gt;</span><span class=o>&gt;</span> <span class=n>type</span><span class=p>;</span>
+<span class=k>if</span> <span class=p>(</span><span class=n>type</span> <span class=o>=</span><span class=o>=</span> <span class=sa></span><span class=s>&#34;</span><span class=s>Base</span><span class=s>&#34;</span><span class=p>)</span> <span class=p>{</span>
+  <span class=n>pb</span> <span class=o>=</span> <span class=k>new</span> <span class=n>Base</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+  <span class=n>pb</span> <span class=o>=</span> <span class=k>new</span> <span class=n>Derive</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=n>pb</span><span class=o>-</span><span class=o>&gt;</span><span class=n>show</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+</code></pre></td></tr></table></div></div></blockquote><p>其实<strong>绑定</strong>就是确定对象指针应该调用的函数的过程。调用的函数是普通函数，就进行静态绑定，而调用虚函数就进行动态绑定。</p><a class=post-dummy-target id=虚析构函数></a><h2>虚析构函数</h2></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+<span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
+<span>2022-08-20</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
+<span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fc-%25E5%259F%25BA%25E7%25A1%258006-%25E7%25BB%25A7%25E6%2589%25BF%25E4%25B8%258E%25E5%25A4%259A%25E6%2580%2581%2f&text=%e3%80%90C%2b%2b%e5%9f%ba%e7%a1%80%e3%80%9106%20-%20%e7%bb%a7%e6%89%bf%e4%b8%8e%e5%a4%9a%e6%80%81&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2fc-%25E5%259F%25BA%25E7%25A1%258006-%25E7%25BB%25A7%25E6%2589%25BF%25E4%25B8%258E%25E5%25A4%259A%25E6%2580%2581%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fc-%25E5%259F%25BA%25E7%25A1%258006-%25E7%25BB%25A7%25E6%2589%25BF%25E4%25B8%258E%25E5%25A4%259A%25E6%2580%2581%2f&title=%e3%80%90C%2b%2b%e5%9f%ba%e7%a1%80%e3%80%9106%20-%20%e7%bb%a7%e6%89%bf%e4%b8%8e%e5%a4%9a%e6%80%81" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/c++/><i class="fas fa-tag fa-fw"></i>&nbsp;C++</a>&nbsp;
+</span><span class=tag><a href=https://xushun1221.github.io/tags/stl/><i class="fas fa-tag fa-fw"></i>&nbsp;STL</a>&nbsp;</span></section><section><span><a href=javascript:window.history.back();>Back</a></span>&nbsp;|&nbsp;<span><a href=https://xushun1221.github.io>Home</a></span></section></div><div class=post-nav><a href=https://xushun1221.github.io/2022/c-%E5%9F%BA%E7%A1%8005-%E8%BF%90%E7%AE%97%E7%AC%A6%E9%87%8D%E8%BD%BD%E8%BF%AD%E4%BB%A3%E5%99%A8iteratoroperator-new/ class=prev rel=prev title="【C++基础】05 - 运算符重载、迭代器iterator、operator new"><i class="fas fa-angle-left fa-fw"></i>【C++基础】05 - 运算符重载、迭代器iterator、operator new</a></div><div class=post-comment></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2022</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=https://xushun1221.github.io/about/ target=_blank>xushun</a> | </span>Powered by <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> & <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer">LoveIt</a></div></div></footer></div><a href=# class=dynamic-to-top id=dynamic-to-top data-scroll><span>&nbsp;</span>
+</a><script src=/js/lib/jquery/jquery.slim.min.js></script><script src=/js/lib/lazysizes/lazysizes.min.js></script><script src=/js/lib/smooth-scroll/smooth-scroll.polyfills.min.js></script><script>window.scroll=new SmoothScroll('[data-scroll]',{speed:300,speedAsDuration:true});</script><link rel=stylesheet href=/css/lib/katex/katex.min.css><script src=/js/lib/katex/katex.min.js></script><script defer src=/js/lib/katex/auto-render.min.js></script><link rel=stylesheet href=/css/lib/katex/copy-tex.min.css><script defer src=/js/lib/katex/copy-tex.min.js></script><script defer src=/js/lib/katex/mhchem.min.js></script><script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true},{left:"$",right:"$",display:false},]});});</script><script src=/js/blog.min.js></script></body></html>
