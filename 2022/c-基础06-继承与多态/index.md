@@ -399,3 +399,99 @@ P4Base
 
 ## 虚析构函数
 
+### 哪些函数不能实现为虚函数？
+
+首先明确一个概念，虚函数依赖于什么？  
+1. 虚函数要能产生地址，并存储在vftable虚函数表中；
+2. 对象必须存在，因为实例化对象才有vptr虚函数指针指向虚函数表，才能找到虚函数地址。
+
+构造函数，**不能**实现为虚函数：  
+1. 构造函数执行完成后，对象才产生，所以不能加`virtual`；
+2. 在构造函数中调用的函数，都是**静态绑定**。
+
+static静态成员方法，**不能**实现为虚函数。因为static静态方法不依赖于对象。
+
+### 析构函数可以实现为虚函数
+
+析构函数调用的时候，对象是存在的。
+
+什么时候应该使用虚析构函数呢？看下面的代码：  
+```C++
+#include <iostream>
+class Base {
+public:
+    Base(int data = 10) : a(data) { std::cout << "Base()" << std::endl; }
+    ~Base() { std::cout << "~Base()" << std::endl; }
+    virtual void show() { std::cout << "Base::show()" << std::endl; }
+protected:
+    int a;
+};
+class Derive : public Base {
+public:
+    Derive(int data = 10) : Base(data), b(data) { std::cout << "Derive()" << std::endl; }
+    ~Derive() { std::cout << "~Derive()" << std::endl; }
+    void show() { std::cout << "Derive::show()" << std::endl; }
+private:
+    int b;
+};
+int main() {
+    Base* pb = new Derive(10);
+    pb->show();
+    delete pb;
+    return 0;
+}
+/* 输出
+xushun@xushun-virtual-machine:~/cppmiddle$ ./a.out 
+Base()
+Derive()
+Derive::show()
+~Base()
+*/
+```
+从输出中可以看出，对象构造时，`Base()`和`Derive()`都正确调用了，`pb->show()`也正确调用了覆盖的虚函数`Derive::show()`，但是对象析构时仅调用了基类的析构函数`~Base()`，在此之前应该调用`~Derive()`但是并没有，这就会造成内存泄漏。
+
+`delete pb`只调用了`~Base()`，这个过程是：`pb`是`Base*`类型的指针，编译器进入`Base::`作用域查看，发现`~Base()`是普通函数，所以直接进行静态绑定（`call Base::~Base()`），`~Derive()`没有机会被调用。
+
+如何解决这个问题？将基类的虚构函数定义为虚函数即可：  
+```C++
+#include <iostream>
+class Base {
+public:
+    Base(int data = 10) : a(data) { std::cout << "Base()" << std::endl; }
+    // 虚析构函数
+    virtual ~Base() { std::cout << "~Base()" << std::endl; }
+    virtual void show() { std::cout << "Base::show()" << std::endl; }
+protected:
+    int a;
+};
+class Derive : public Base {
+public:
+    Derive(int data = 10) : Base(data), b(data) { std::cout << "Derive()" << std::endl; }
+    // 虽然函数名不同 但由于基类析构是虚函数 派生类析构自动成为虚函数
+    ~Derive() { std::cout << "~Derive()" << std::endl; }
+    void show() { std::cout << "Derive::show()" << std::endl; }
+private:
+    int b;
+};
+int main() {
+    Base* pb = new Derive(10);
+    pb->show();
+    delete pb;
+    return 0;
+}
+/* 输出
+xushun@xushun-virtual-machine:~/cppmiddle$ ./a.out 
+Base()
+Derive()
+Derive::show()
+~Derive()
+~Base()
+*/
+```
+这样就可以正确调用派生类和基类的析构了。
+
+原理是：`delete pb`时，调用`pb`指向的析构，`pb`是`Base*`，所以编译器进入`Base::`作用域查看，发现`~Base()`析构为虚函数，此时就需要进行**动态绑定**，由于`pb`指向一个`Derive`类型的对象，所以进入`Derive`的虚函数表查看析构，由于`Derive`类同样给出了析构（虽然析构的函数名不同，但是派生类的析构仍然会覆盖基类的虚析构函数），所以调用`Derive::~Derive()`析构。派生类的析构执行完成后，会自动调用基类的析构。
+
+### 何时使用虚析构函数？
+
+基类对象的指针（引用）指向**堆上**`new`出来的派生类对象时，需要使用虚析构函数，因为`delete`基类指针时，调用析构函数必须发生动态绑定，否则会导致派生类的析构无法正确调用。
