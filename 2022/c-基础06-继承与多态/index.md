@@ -327,6 +327,8 @@ P4Base
 
 `Base`类的vftable虚函数表：（可以使用`g++ -fdump-lang-class virtual.cpp`命令查看类的内存布局）
 
+注意，下面的内存布局在不同编译器下的表现很可能不同，仅供参考（在vs编译器上可能虚函数表的第一项是RTTI指针，第二项是0）
+
 |地址偏移|内容|
 |---|---|
 |0|0|
@@ -567,4 +569,107 @@ int main() {
 
 ## 抽象类
 
+什么是抽象类，抽象类和普通类有什么区别，一般把什么类设计为抽象类。这是要明白的问题。
 
+定义类，是为了抽象一个实体的类型。而**抽象类**并不是为了抽象某个实体类型（可以理解为了抽象某一类实体的共同类型，设计为**基类**），它给所有的派生类保留了统一的覆盖（重写）接口，称为**纯虚函数**。拥有纯虚函数的类，就是抽象类。
+
+抽象类不能实例化对象，但是可以定义抽象类指针和引用。
+
+示例：  
+```C++
+#include <iostream>
+using namespace std;
+class Car {
+public:
+	Car(string name, double oil) : _name(name), _oil(oil) {}
+	double getLeftMiles() { 
+		return _oil * getMilesPerGallon(); // 动态绑定
+	}
+protected:
+	string _name;
+	double _oil; // 剩多少油
+    // 每加仑油跑多少miles 每个车子都不同
+	virtual double getMilesPerGallon() = 0; // 纯虚函数
+};
+class Audi : public Car {
+public:
+	Audi(string name = "Audi", double oil = 10.0) : Car(name, oil) {}
+protected:
+	double getMilesPerGallon() { return 20.0; } // 重写
+};
+class BMW : public Car {
+public:
+	BMW(string name = "BMW", double oil = 10.0) : Car(name, oil) {}
+protected:
+	double getMilesPerGallon() { return 19.0; } // 重写
+};
+void showCarLeftMiles(Car& car) {
+	cout << car.getLeftMiles() << endl; // 静态绑定
+}
+int main() {
+	Audi a;
+	BMW b;
+	showCarLeftMiles(a);
+	showCarLeftMiles(b);
+   return 0;
+}
+/* 输出
+200
+190
+*/
+```
+
+
+
+
+## 一些笔试题
+
+### 题目1 - 交换虚函数表
+
+```C++
+#include <iostream>
+using namespace std;
+class Animal {
+public:
+    Animal(string name) : _name(name) {}
+    virtual void bark() = 0;
+protected:
+    string _name;
+};
+class Cat : public Animal {
+public:
+    Cat(string name) : Animal(name) {}
+    void bark() { cout << "miao miao" << endl; }
+};
+class Dog : public Animal {
+public:
+    Dog(string name) : Animal(name) {}
+    void bark() { cout << "wang wang" << endl; }
+};
+
+int main() {
+    Animal* p1 = new Cat("加菲");
+    Animal* p2 = new Dog("哈士奇");
+    int* p11 = (int*)p1; // p11 指向Cat对象的起始位置（vptr 虚函数指针）
+    int* p22 = (int*)p2; // p22 同
+    int tmp = p11[0]; // p11[0] 表示取4个字节 因为int是4字节
+    // 64位编译时vptr应该是8个字节但是这里4个字节也行不知道为什么
+    // 用double表示8个字节获得同样的输出
+    p11[0] = p22[0];  
+    p22[0] = tmp;     // 这里实际上交换了两个对象的vptr
+    p1->bark(); // 动态绑定时就使用了另一个对象的虚函数表
+    // 不交换的话是 miao miao 交换后为 wang wang
+    p2->bark();
+    return 0;
+}
+/* 正确的输出为
+    wang wang
+    miao miao
+*/
+```
+
+### 题目2 - 虚函数的形参默认值
+
+### 题目3 - 调用私有虚函数
+
+### 题目4 - 
