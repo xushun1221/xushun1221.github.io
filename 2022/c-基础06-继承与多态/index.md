@@ -670,6 +670,127 @@ int main() {
 
 ### 题目2 - 虚函数的形参默认值
 
+```C++
+#include <iostream>
+using namespace std;
+class Base {
+public:
+    virtual void show(int i = 10) { cout << "Base::show  i: " << i << endl; } // 形参默认值 i = 10
+};
+class Derive : public Base {
+public:
+    void show(int i = 20) { cout << "Derive::show  i: " << i << endl; } // 形参默认值 i = 20
+};
+int main() {
+    Base* p = new Derive();
+    p->show(); // 动态绑定
+    // p -> Derive().vptr -> Derive::vftable -> Derive::show()
+    // 在运行时期会调用Derive::show()
+    // 但是函数实参压栈的过程是在编译时期确定的
+    // 这里p是Base*类型的指针 压栈时会使用 Base::show() 的形参默认值
+    // 函数调用的汇编类似：
+    // push 0ah                 // 把 i = 10 压栈
+    // mov eax, dword ptr[p]    // Derive().vptr -> eax
+    // mov ecx, dword ptr[eax]  // Derive::vftable.&Derive::show -> ecx
+    // call ecx                 // call Derive::show
+
+    // 虽然 派生类重写了基类的虚函数并使用了新的形参默认值
+    // 但是 由于函数实参压栈过程是在编译时期确定的
+    // 所以 即使进行了动态绑定 依然使用基类方法的形参默认值
+    delete p;
+    return 0;
+}
+/* 输出
+Derive::show  i: 10
+*/
+```
+
 ### 题目3 - 调用私有虚函数
 
-### 题目4 - 
+```C++
+#include <iostream>
+using namespace std;
+class Base {
+public: // 共有虚函数
+    virtual void show() { cout << "Base::show" << endl; }
+};
+class Derive : public Base {
+private: // 这里将show方法重写为私有成员方法
+    void show() { cout << "Derive::show" << endl; }
+};
+int main() {
+    Base* p = new Derive();
+    p->show(); // 动态绑定
+    /*
+        虽然 Derive::show 是私有成员方法 
+        但是 编译仍然可以通过 运行也没问题
+        原因是：
+            还是这个概念 p 调用的 Derive::show 是在运行时期才确定的
+            成员方法的访问权限 是在编译时期就需要确定的
+            p是Base*类型的指针 Base::show 是public的 
+            所以在编译阶段是没有问题的
+            运行时期通过对象的虚函数指针找到对应的函数 和访问限定就无关了
+    */
+    delete p;
+    return 0;
+}
+/* 输出
+Derive::show
+*/
+```
+
+### 题目4 - 继承结构中的vptr赋值问题
+
+```C++
+#include <cstring>
+#include <iostream>
+using namespace std;
+class Base {
+public:
+    Base() { 
+        cout << "Base()" << endl;
+        clear();    
+    }
+    void clear() { memset(this, 0, sizeof(*this)); } // 把对象的内存全部置为 0
+    virtual void show() { cout << "Base::show()" << endl; }
+};
+class Derive : public Base {
+public:
+    Derive() {
+        cout << "Derive()" << endl;
+    }
+    void show() { cout << "Derive::show()" << endl; }
+};
+int main() {
+    /* 1 */
+    Base* pb1 = new Base();
+    // 构造函数中调用了clear() 把对象的内存全部置为 0 （包括vptr）
+    pb1->show(); // 动态绑定
+    // vptr 被置 0 了 进行动态绑定时 无法访问 vptr 原本指向的虚函数表
+    // 导致运行时错误
+    delete pb1;
+    /* 输出 出错
+        Base()
+        Segmentation fault (core dumped)
+    */
+
+    /* 2 */
+    Base* pb2 = new Derive();
+    // 当我们调用派生类构造时 首先会调用基类构造
+    // 顺序 Base() Derive()
+    // 注意：既然对象的vptr指向类的虚函数表 那么一定在某个时间点将虚函数表的地址赋给了vptr
+    //       这个时间点在 对象构造函数开始时 Base() { 这个位置 和 Derive() { 这个位置
+    //       每一层构造函数都会去做这件事情
+    // 当调用 Base() 时 vptr = &Base::vftable 然后 clear() vptr又被清零
+    // 然后调用 Derive() vptr = &Derive::vftable 这里没有被清零
+    // 所以可以进行正常的动态绑定
+    pb2->show(); // 动态绑定
+    delete pb2;
+    /* 输出
+        Base()
+        Derive()
+        Derive::show()
+    */
+    return 0;
+}
+```
