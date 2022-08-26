@@ -1,0 +1,187 @@
+# 【C++基础】07 - 多重继承问题
+
+
+多（重）继承：一个派生类有多个基类`class C: public A, public B {};`。
+
+
+## 虚基类、虚继承、虚基类表
+
+`virtual`两个用法：  
+1. 修饰成员方法（虚函数）；
+2. 修饰继承方式（**虚继承**），被虚继承的类就是**虚基类**。
+
+
+示例1：  
+```C++
+#include <iostream>
+using namespace std;
+class A { // 虚基类
+private:
+    int a;
+};
+class B : virtual public A { // 注意 这里是虚继承
+private:
+    int b;
+};
+int main() {
+    cout << "sizeof(A) : " << sizeof(A) << endl;
+    cout << "sizeof(B) : " << sizeof(B) << endl;
+    return 0;
+}
+/* 输出
+sizeof(A) : 4
+sizeof(B) : 16
+*/
+```
+分析上面的输出，如果不是虚继承`class B : public A`，`sizeof(B)`应为8字节（`A::int a`和`B::int b`共8字节）。但是这里是16字节，原因是使用虚继承，B对象内存中需要多存放一个指向虚基类表的指针`vbptr`。
+
+`class B`对象的内存布局如下：  
+
+|地址偏移|内容|
+|---|---|
+|0|vbptr (指向B类的虚基类表B::vbtable)|
+|8|b|
+|\-\-\-\-\-|\-\-\-\-\-|
+|12|a (虚基类A的成员变量)|
+
+虚继承时，虚基类的内存在派生类的后面，而不是起始位置了。
+
+B类的虚基类表vbtable在编译时期生成，给定虚基类的成员变量在内存中的偏移量：
+
+|地址偏移|内容|
+|---|---|
+|0|12 (从vbptr到虚基类A成员变量位置的偏移量)|
+|...|...|
+
+一个类，对应一个虚基类表。
+
+
+
+
+示例2：  
+```C++
+#include <iostream>
+using namespace std;
+
+class A {
+public:
+    virtual void show() { cout << "A::show()" << endl; }
+private:
+    int a;
+};
+
+class B : virtual public A {
+public:
+    void show() { cout << "B::show()" << endl; }
+private:
+    int b;
+};
+
+int main() {
+    A* p = new B();
+    p->show();
+    delete p;
+    
+    return 0;
+}
+/* 输出 运行时出错
+B::show()
+free(): invalid pointer
+Aborted (core dumped)
+*/
+```
+从输出可以看到，`B::show()`进行了动态绑定并成功调用，但是在`delete`释放内存时出现了问题。
+
+原因是，基类指针指向派生类对象，它指向的位置永远是基类成员变量在派生类内存中的起始位置。如果是普通继承，那么基类指针指向的位置就是派生类对象的起始位置。而如果是虚继承，基类指针指向的位置不是派生类对象内存的起始位置。这也就会导致内存释放错误。
+
+B对象的内存布局如下，基类指针指向派生类对象的话，它指向偏移量16的位置，vptr是B类的虚函数表指针。
+
+|地址偏移|内容|
+|---|---|
+|0|vbptr|
+|8|b|
+|\-\-\-\-\-|\-\-\-\-\-|
+|16|vptr|
+|24|a|
+
+测试一下上面的理论：  
+```C++
+#include <iostream>
+#include <cstdlib>
+using namespace std;
+
+class A {
+public:
+    virtual void show() { cout << "A::show()" << endl; }
+    void operator delete(void* ptr) {
+        cout << "A::operator delete p : " << ptr << endl;
+        free(ptr);
+    }
+private:
+    int a;
+};
+
+class B : virtual public A {
+public:
+    void show() { cout << "B::show()" << endl; }
+    void* operator new(size_t size) {
+        void* p = malloc(size);
+        cout << "B::operator new p : " << p << endl;
+        return p;
+    }
+private:
+    int b;
+};
+
+int main() {
+    A* p = new B();
+    cout << "main p : " << p << endl;
+    p->show();
+    delete p;
+    
+    return 0;
+}
+/* 输出
+B::operator new p : 0x55c3b8009eb0
+main p : 0x55c3b8009ec0
+B::show()
+A::operator delete p : 0x55c3b8009ec0
+free(): invalid pointer
+Aborted (core dumped)
+*/
+```
+没有问题，在`main`中和`operator delete`中的指针相同，和`operator new`中分配的地址不同，指向高地址方向16字节后，和我们的分析相同。
+
+解决这个问题，需要为`A`添加一个虚析构函数`virtual ~A() {}`。
+
+## 菱形继承
+
+
+
+
+
+
+
+
+
+
+
+## C++的四种类型转换
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
