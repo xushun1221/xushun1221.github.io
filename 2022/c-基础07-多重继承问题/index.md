@@ -156,32 +156,260 @@ Aborted (core dumped)
 
 ## 菱形继承
 
+菱形继承问题，`B`和`C`继承自`A`，`D`多重继承自`B`和`C`，`A`可以称为`D`的间接基类。`D`实例化的对象中也有`A`的成员变量，因为`B`继承了`A`的成员变量，又被`D`继承。这也导致一个问题，`D`不仅继承了`B`继承来的`A`的成员变量，也继承了`C`继承来的`A`的成员变量。这就导致，在`D`对象中，存在两份从`A`继承来的成员变量。既浪费了内存，也是软件设计上的错误。
+
+示例：  
+```C++
+#include <iostream>
+using namespace std;
+
+class A {
+public:
+    A(int data) : a(data) { cout << "A()" << endl; }
+    ~A() { cout << "~A()" << endl; }
+protected:
+    int a;
+};
+
+class B : public A {
+public:
+    B(int data) : A(data), b(data) { cout << "B()" << endl; }
+    ~B() { cout << "~B()" << endl; }
+protected:
+    int b;
+};
+
+class C : public A {
+public:
+    C(int data) : A(data), c(data) { cout << "C()" << endl; }
+    ~C() { cout << "~C()" << endl; }
+protected:
+    int c;
+};
+
+class D : public B, public C {
+public:
+    D(int data) : B(data), C(data), d(data) { cout << "D()" << endl; }
+    ~D() { cout << "~D()" << endl; }
+protected:
+    int d;
+};
+
+int main() {
+    D d(10);
+    return 0;
+}
+/* 输出 可以看到 A() 调用了两次
+A()
+B()
+A()
+C()
+D()
+~D()
+~C()
+~A()
+~B()
+~A()
+*/
+```
+
+我们不应该从间接基类中多次继承同一个成员变量。
 
 
+解决方法：使用虚继承，所有从`A`派生的类都使用虚继承，`A`就成为虚基类。在`class D`中，就只会存放一份`A`对象的成员变量，`B`和`C`部分继承的`A`的成员变量，通过vbptr虚基类表指针来查找。同时，`class B`和`class C`也不再负责初始化`A`，而是由`D`来初始化。
+
+`D`对象的内存布局如下：  
+
+|作用域|偏移地址|内容|
+|---|---|---|
+|B::|0|vbptr (指向虚基类表[0,32] 32 == 32 - 0)|
+|B::|8|b|
+|C::|16|vbptr (指向虚基类表[0,16] 16 == 32 - 16)|
+|C::|24|c|
+|D::|28|d|
+|A::|32|a|
+
+测试代码：  
+```C++
+#include <iostream>
+using namespace std;
+
+class A { // 变为虚基类
+public:
+    A(int data) : a(data) { cout << "A()" << endl; }
+    ~A() { cout << "~A()" << endl; }
+protected:
+    int a;
+};
+
+class B : virtual public A { // 虚继承
+public:
+    B(int data) : A(data), b(data) { cout << "B()" << endl; }
+    ~B() { cout << "~B()" << endl; }
+protected:
+    int b;
+};
+
+class C : virtual public A { // 虚继承
+public:
+    C(int data) : A(data), c(data) { cout << "C()" << endl; }
+    ~C() { cout << "~C()" << endl; }
+protected:
+    int c;
+};
+
+class D : public B, public C {
+public:
+    // 注意 由 D 负责 A 的初始化
+    D(int data) : A(data), B(data), C(data), d(data) { cout << "D()" << endl; }
+    ~D() { cout << "~D()" << endl; }
+    void test() { // 测试内存布局
+        cout << this << endl;
+        cout << &b << endl << &c << endl << &d << endl << &a << endl;
+    }
+protected:
+    int d;
+};
+
+int main() {
+    D d(10);
+    cout << sizeof(d) << endl;
+    d.test();
+    return 0;
+}
+/* 输出
+A()
+B()
+C()
+D()
+40
+0x7fffdb544af0
+0x7fffdb544af8
+0x7fffdb544b08
+0x7fffdb544b0c
+0x7fffdb544b10
+~D()
+~C()
+~B()
+~A()
+*/
+```
+从测试结果可以看出，`A`只被构造了一次，内存布局也和我们上面分析的一样。
 
 
-
-
-
-
+从上面的分析可以看出，C++的多重继承，可以更多的代码的复用，但是也需要避免菱形继承问题。
 
 
 ## C++的四种类型转换
 
+C风格的强制类型转换：  
+`int a = (int)b;`。
+
+C++**语言级别**提供的四种类型转换方式：  
+1. `const_cast`：去掉指针或引用常量属性的一个类型转换；
+2. `static_cast`：（编译时期类型）提供编译器认为安全的类型转换；
+3. `reinterpret_cast`：类似于C风格的强制类型转换；
+4. `dynamic_cast`：（运行时期类型 RTTI）主要用于继承结构中，可以支持RTTI类型识别的上下转换。
+
+
+`const_cast`示例：  
+```C++
+int main() {
+    const int a = 10;
+
+    int* p1 = (int*)&a; // C风格的强制类型转换
+    int* p2 = const_cast<int*>(&a); // 表示将 const int* 转换为 int*
+    // 编译后 上面两行汇编代码完全相同
+    // const_cast 只是语言级别的类型安全限制
+
+    double* p3 = (double*)&a; // C风格可以这样转换
+    // double* p5 = const_cast<double*>(&a); // 错误写法
+    // const_cast 只能将const类型指针转为非const 不可以转为其他类型
+
+    // int b = const_cast<int>(a); 错误写法
+    // const_cast 只能转换指针或引用类型
+
+    return 0;
+}
+```
+
+`static_cast`&`reinterpret_cast`示例：  
+```C++
+class Base { protected: int b; };
+class Derive: public Base { private: int d; };
+
+int main() {
+
+    int a = 10;
+    char c = static_cast<char>(c);
+    
+    int* p = nullptr;
+    // double* p1 = static_cast<double*>(p); 错误写法
+    // 编译器认为不安全的（没有任何联系）类型转换 不能通过 static_cast 进行转换
+    double* p1 = reinterpret_cast<double*>(p); // 这样就可以转了 类型C风格的强制类型转换
+
+    Derive d;
+    Base b = static_cast<Base>(d);
+
+    // Base b1;
+    // Derive d1 = static_cast<Derive>(b1); 错误写法
+    // static_cast 也不能做从基类到派生类的转换
+
+    return 0;
+}
+```
 
 
 
+`dynamic_cast`示例：  
+```C++
+#include <iostream>
+using namespace std;
 
+class Base { 
+public: 
+    virtual void func() = 0; 
+};
 
+class Derive1 : public Base { 
+public: 
+    void func() { cout << "Derive1::func()" << endl; } 
+};
 
+class Derive2 : public Base { 
+public: 
+    void func() { cout << "Derive2::func()" << endl; }
+    // 假设我们实现了一个新功能 newfunc
+    // 在 callFunc 中 如果 p 指向 Derive2 类型的对象
+    // 就调用新方法 newfunc 其他类型对象还是调用老方法 func
+    void newfunc() { cout << "Derive2::newfunc()" << endl; }
+};
 
+void callFunc(Base* p) { 
+    Derive2* pd2 = dynamic_cast<Derive2*>(p); // 把 Base* 转成 Derive*
+    // dynamic_cast 会检查 p 是否指向一个 Derive2 类型的对象
+    // 通过 RTTI 方式   p->vptr->vftable->RTTI
+    // 如果是 Derive2 类型  返回 Derive2 对象的地址给 pd2
+    // 如果不是 Derive2 类型  返回 nullptr
+    if (pd2 != nullptr) { // 我们可以根据 dynamic_cast 的返回值 判断 p 是否指向一个 Derive2 类型对象
+        pd2->newfunc(); // 只有 Derive2 类型有 newfunc 方法
+    } else {
+        p->func();
+    }
+}
 
-
-
-
-
-
-
+int main() {
+    Derive1 d1;
+    Derive2 d2;
+    callFunc(&d1);
+    callFunc(&d2);
+    return 0;
+}
+/* 输出
+Derive1::func()
+Derive2::newfunc()
+*/
+```
 
 
 
