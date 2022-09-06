@@ -481,7 +481,123 @@ int main() {
 
 ## 容器的迭代器 iterator
 
+ 1. iterator，普通正向迭代器
+ 2. const_iterator，正向**常**迭代器
+ 3. reverse_iterator，普通反向迭代器
+ 4. const_reverse_iterator，反向常迭代器
 
+`iterator`实际上是从`const iterator`继承而来的，`const iterator`的解引用运算符`operator*()`返回的是常量引用，所以只读，不能修改。而且它也可以接收`iterator`，如`vector<int>::const_iterator it = vec.begin();`，因为这是从下到上的转换。
+
+`rbegin()`，方法返回最后一个元素的反向迭代器；  
+`rend()`，方法返回第一个元素的前驱位置的迭代器。
+
+```C++
+auto rit = vec.rbegin();
+for (; rit != vec.rend(); ++ rit) { // 倒序遍历
+   cout << *rit << " ";
+}
+```
+
+## 函数对象
+
+函数对象，类似于C中的函数指针。
+
+看这样两段代码：  
+```C++
+int sum(int a, int b) {
+   return a + b;
+}
+```
+
+```C++
+class Sum {
+public:
+   int operator()(int a, int b) {
+      return a + b;
+   }
+};
+
+int main() {
+   Sum sum;
+   int ret = sum(10, 20);
+}
+```
+
+第一种方法就是进行了函数调用，第二种方法在`Sum`类中重载了`operator()`运算符，在重载函数中完成了加法的逻辑。用`Sum`实例化了一个对象`sum`，使用该对象的`operator()`函数，和直接调用函数`int sum(int, int)`使用上并无区别。
+
+我们将有`operator()`小括号运算符重载函数的对象，称作**函数对象**或**仿函数**。
+
+
+再看这段代码：  
+```C++
+#include <iostream>
+using namespace std;
+bool mygreater(int a, int b) { return a > b; }
+bool myless(int a, int b) { return a < b; }
+bool compare(int a, int b, bool(*comp)(int, int)) { return comp(a, b); }
+// 通过函数指针调用函数 无法进行内联inline
+int main() {
+   // 使用函数指针改变compare函数的行为
+    cout << compare(10, 20, mygreater) << endl;
+    cout << compare(10, 20, myless) << endl;
+    return 0;
+}
+```
+我们可以通过函数指针的方式，改变比较函数的行为（大于比较 或 小于比较）。
+
+但是有一个问题，通过函数指针调用函数，是无法进行内联的（因为内联是在编译阶段进行的，通过指针间接调用，无法得知具体函数），所以进行标准函数调用，无法避免函数调用的开销，效率很低。
+
+C++通过使用函数对象来解决这个问题。
+
+```C++
+#include <iostream>
+using namespace std;
+
+template<typename T>
+class mygreater{
+public:
+    bool operator()(T a, T b) { return a > b; }
+};
+template<typename T>
+class myless {
+public:
+    bool operator()(T a, T b) { return a < b; }
+};
+template<typename T, typename Comp>
+bool compare(T a, T b, Comp comp) { return comp(a, b); }
+
+int main() {
+    // 使用确定的函数对象调用小括号重载进行比较 可以在编译时期明确调用的具体函数 进行内联以提高效率
+    cout << compare(10, 20, mygreater<int>()) << endl;
+    cout << compare(10, 20, myless<int>()) << endl;
+    // 使用函数对象改变compare函数的行为
+    return 0;
+}
+```
+
+使用函数对象的好处：  
+1. 可以省略函数调用的开销，提高效率；
+2. 可以在函数对象的类中添加其他成员变量，实现其他功能（记录函数对象使用时的更多信息）。
+
+
+### 容器中的函数对象
+
+在`priority_queue`中默认使用`less`函数对象，它表示元素值越大，优先级越大（大根堆），如果传入`greater`则表示构建一个小根堆。
+
+
+在`set`中默认使用`less`函数对象，从小到大排列，如果传入`greater`则表示从大到小排列。
+
+
+## 泛型算法
+
+头文件`algorithm`中包含C++ STL 中的所有泛型算法。
+
+泛型算法的特性：  
+1. 泛型算法参数接收的是容器的迭代器；
+2. 泛型算法的参数还可以接收函数对象；
+
+
+不多写了，查就完了。
 
 
 
