@@ -605,11 +605,49 @@ int main() {
 
 
 
+## 绑定器
+
+绑定器包含在`functional`头文件中。
+
+绑定器的作用是，将一个二元的函数对象`operator()`的某一个参数固定，从而成为一个一元的函数对象。
+
+- `bind1st`：把二元函数对象的`operator()`的第一个形参绑定起来；
+- `bind2nd`：把二元函数对象的`operator()`的第二个形参绑定起来。
 
 
+示例：  
+```C++
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <functional>
+using namespace std;
 
-
-
-
+int main() {
+    // 乱序数组
+    vector<int> vec{52,34,5,64,677,8,231,59,0,546,87,39};
+    for (auto v : vec) {
+        cout << v << " ";
+    }
+    cout << endl;
+    sort(vec.begin(), vec.end()); // 排个序
+    for (auto v : vec) {
+        cout << v << " ";
+    }
+    cout << endl;
+    // 找到第一个大于100的数 并在它前面插入一个 100
+    auto it = find_if(vec.begin(), vec.end(), bind2nd(greater<int>(), 100));
+    // find_if 会在迭代器范围内寻找一个 一元函数对象返回true的元素 并返回其迭代器
+    // 我们要寻找第一个大于100的数 用到greater<int>() 函数对象 但是它是二元的
+    // 所以要使用绑定器进行绑定 将 100 绑定在 greater operator() 的第二个形参上
+    // 也就是 return a > 100(b); 当找到元素 a 大于 100 时就返回true
+    vec.insert(it, 100);
+    for (auto v : vec) {
+        cout << v << " ";
+    }
+    cout << endl;
+    return 0;
+}
+```
 
 
