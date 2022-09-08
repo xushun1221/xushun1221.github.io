@@ -1,9 +1,9 @@
 # 【C++高级】01 - 对象优化&右值引用优化
 
 
-## 对象使用中调用了哪些函数？
+## 对象使用中调用了哪些函数？（构造、析构、拷贝、赋值）
 
-### 构造、拷贝、赋值相关
+### 对象函数调用过程 - 示例1
 
 ```C++
 #include <iostream>
@@ -112,4 +112,318 @@ int main() {
     return 0;
 }
 ```
+
+### 对象函数调用过程 - 示例2
+
+```C++
+#include <iostream>
+using namespace std;
+
+class Test {
+public:
+    Test(int a = 5, int b = 5) : _ma(a), _mb(b) { cout << "Test(int, int)" << endl; }
+    /* Test()    Test(int)    Test(int, int)    这三种都可以*/
+    ~Test() { cout << "~Test()" << endl; }
+    Test(const Test& t) : _ma(t._ma), _mb(t._mb) { cout << "Test(const Test&)" << endl; }
+    Test& operator=(const Test& t) {
+        _ma = t._ma;
+        _mb = t._mb;
+        cout << "operator=(const Test&)" << endl;
+        return *this;
+    }
+private:
+    int _ma;
+    int _mb;
+};
+
+Test t1 (10, 10); // #1 普通构造 Test(int, int)
+/* 
+    程序运行时 全局变量先进行构造
+    全局变量在main函数之前就要进行构造
+*/
+int main() {
+
+    Test t2(20, 20);     // #3 普通构造 Test(int, int)
+    Test t3 = t2;        // #4 拷贝构造 Test(const Test&)
+    static Test t4 = Test(30, 30);  // #5 普通构造 相当于 static Test t4(30, 30);
+    /*
+        上面说过 临时对象拷贝构造新对象会被优化为直接构造新对象
+        static 修饰的变量 在程序开始时就在数据段分配了内存
+        直到运行到该语句时 才会进行对象构造
+        数据段上的对象 在程序运行结束后才析构
+    */
+    t2 = Test(40, 40);      // #6 赋值重载 生成了临时对象 Test(int, int) operator=(const Test&) ~Test()
+    t2 = (Test)(50, 50);    // #7 赋值重载 生成了临时对象 Test(int) operator=(const Test&) ~Test()
+    /* 
+        t2 = (Test)(50, 50); 等号右边有两个部分
+        (50, 50) 是一个逗号表达式 逗号表达式的值是表达式中最后一个表达式的值 这里就是50
+        (Test) 是强制类型转换
+        所以该语句相当于 t2 = (Test)50; 将50转换为 Test 类型的对象
+        编译器可以找到这样的构造函数 Test(int)
+    */
+    t2 = 60; // #8 赋值重载 生成了临时对象 Test(int) operator=(const Test&) ~Test()
+    /* 和 #7 一样 */
+    Test* p1 = new Test(70, 70);    // #9 Test(int, int)
+    /*
+        new 构造的是堆上对象 不是临时对象
+        堆上对象 只有在delete时 才会析构
+    */
+    Test* p2 = new Test[2];         // #10 堆上对象数组 Test() Test()
+    /* 数组中每个对象都要构造 */
+    // Test* p3 = &Test(80, 90);    // #11 错误写法 
+    /* 指针不能指向临时对象 */
+    const Test& p4 = Test(90, 90);  // #12 Test(int, int)
+    /* const引用指向的临时对象 语句结束后不会立即析构 */
+    delete p1;   // #13 ~Test()
+    delete[] p2; // #14 ~Test() ~Test()
+
+    return 0;
+}
+Test t5(100, 100); // #2 普通构造 Test(int, int)
+/* 虽然写在main后面 但仍然先于main进行构造 */
+```
+
+
+## 函数调用过程中对象背后调用的方法太多！
+
+示例：  
+```C++
+#include <iostream>
+using namespace std;
+
+class Test {
+public:
+    Test(int a = 10) : _ma(a) { cout << "Test(int)" << endl; }
+    ~Test() { cout << "~Test()" << endl; }
+    Test(const Test& t) : _ma(t._ma) { cout << "Test(const Test&)" << endl;}
+    Test& operator=(const Test& t) { 
+        _ma = t._ma; 
+        cout << "operator=(const Test&)" << endl;
+        return *this;
+    }
+    int getData() const { return _ma; }
+private:
+    int _ma;
+};
+
+Test getObject(Test t) {   // #3 拷贝构造 Test(const Test&)
+    int val = t.getData();
+    Test tmp(val);  // #4 Test(int)
+    return tmp;  // 函数返回的对象也需要仔细分析
+    /*
+        tmp 是在 getObject 函数栈帧上的一个对象 （局部的对象）
+        getObject 函数执行完成后 tmp 对象就被析构了
+        它不能被直接带回到 main 函数中
+
+        这里的做法是：
+            #5 Test(const Test&)
+            在 main 函数栈帧中构造一个临时对象 （通过对 tmp 对象的拷贝构造）
+
+        返回的对象构造完成后 还要把 getObject 函数栈帧中的对象进行析构
+        #6 ~Test() tmp 析构
+        #7 ~Test() 形参 t 析构
+
+        至此 getObject 函数执行完成
+    */
+}
+
+int main() {
+
+    Test t1;  // #1 Test(int)
+    Test t2;  // #2 Test(int)
+    t2 = getObject(t1); // 函数调用过程需要仔细分析
+    /*
+        1. 对象实参传递给形参的过程是 *初始化* 的过程
+            t1 是一个已经存在的对象而 形参是正在构造的对象 
+            所以这是一个构造过程 需要调用拷贝构造函数进行构造
+        2. getObject 函数执行完成后
+            main 函数栈帧中就构造了函数返回的临时对象
+            然后使用该临时对象 给 t2 赋值
+            #8 operator=(const Test&)
+        3. 赋值完成后 该语句结束 临时对象也要被析构
+            #9 ~Test()
+    */
+    return 0;
+    // #10 ~Test() t2 析构
+    // #11 ~Test() t1 析构
+}
+
+/*
+我的g++编译器输出的结果是这样的
+和上面的分析有一个地方不一样
+可能编译器进行了优化
+
+xushun@xushun-virtual-machine:~/cppadvanced$ g++ objtest3.cpp && ./a.out
+Test(int)
+Test(int)
+Test(const Test&)
+Test(int)
+operator=(const Test&)   [这里没有在main函数栈帧上构造临时对象 而是直接将tmp对象赋值给t2]
+~Test()
+~Test()
+~Test()
+~Test()
+*/
+```
+
+
+
+
+## 三条对象优化的规则
+
+1. 函数参数传递过程中，对象应该**按引用传递**，不要按值传递；
+2. 函数返回对象的时候，应该**返回一个临时对象**，不要返回一个定义过的对象；
+3. 接收返回值是对象的函数调用的时候，应该**按初始化的方式接收**，不要按赋值的方式接收。
+
+注意，下面这句话非常重要！
+
+>用临时对象，拷贝构造一个新对象时，编译器会跳过构造临时对象的过程，直接构造新对象。
+
+
+
+
+示例：  
+```C++
+#include <iostream>
+using namespace std;
+
+class Test {
+public:
+    Test(int a = 10) : _ma(a) { cout << "Test(int)" << endl; }
+    ~Test() { cout << "~Test()" << endl; }
+    Test(const Test& t) : _ma(t._ma) { cout << "Test(const Test&)" << endl;}
+    Test& operator=(const Test& t) { 
+        _ma = t._ma; 
+        cout << "operator=(const Test&)" << endl;
+        return *this;
+    }
+    int getData() const { return _ma; }
+private:
+    int _ma;
+};
+
+// Test getObject(Test t) {
+Test getObject(Test& t) {   // 函数传参 对象应*按引用传递*
+    int val = t.getData();
+    /* Test tmp(val);
+    return tmp; */
+    return Test(val);
+    /*
+        原来返回一个定义过的对象 需要在 main 函数栈帧中构造一个临时对象
+        并由要返回的对象进行拷贝构造
+
+        现在返回的是一个临时对象
+        我们要 *用临时对象拷贝构造一个新对象（在main栈帧中的临时对象）*
+        编译器会跳过构造临时对象的过程 而直接构造新对象
+
+        这里没有生成临时对象 也自然不需要进行析构
+        形参 t 按引用传递 也不需要进行析构
+    */
+}
+
+int main() {
+
+    Test t1;    // #1 Test(int)
+    /* Test t2;
+    t2 = getObject(t1); */
+    Test t2 = getObject(t1);  // 应该按初始化的方式接收函数返回的对象
+    /*
+        1. t1 按引用传递 不需要进行拷贝构造
+        2. 原来用给一个已经定义的对象赋值的方式接收 函数返回的对象时
+            需要在 main 的栈帧中 构造一个临时对象 再进行赋值
+            现在 我们使用 初始化方式 接收 返回的对象
+            由于*用 main 栈帧中新构造的临时对象 构造一个新对象（t2）*
+            编译器会跳过 构造临时对象的过程（不会在 main 栈帧中构造临时对象）
+            而是从 return Test(val); 语句处 直接构造 t2 对象
+            （实际上 在函数实参压栈时 t2 的地址也作为参数进行压栈了 这样 getObject 函数才能直接构造 t2 对象）
+    */
+    return 0;
+    // #3 ~Test()  t2
+    // #4 ~Test()  t1
+}
+
+/* 输出
+从程序输出可以看出 程序调用的函数大幅减少了 性能得到了很好的优化
+
+xushun@xushun-virtual-machine:~/cppadvanced$ g++ objtest4.cpp && ./a.out
+Test(int)
+Test(int)
+~Test()
+~Test()
+*/
+```
+
+
+
+
+
+
+
+## MyString 存在的问题
+
+分析`MyString`类的实现，分析内存使用效率问题。
+
+```C++
+#include <iostream>
+#include <cstring>
+using namespace std;
+
+class MyString {
+public:
+    MyString(const char* str = nullptr) {
+        cout << "MyString(const char*)" << endl;
+        if (str != nullptr) {
+            _mptr = new char[strlen(str) + 1];
+            strcpy(_mptr, str);
+        } else {
+            _mptr = new char[1];
+            _mptr[0] = '\0';
+        }
+    }
+    ~MyString() {
+        cout << "~MyString()" << endl;
+        delete[] _mptr;
+        _mptr = nullptr;
+    }
+    MyString(const MyString& str) {
+        cout << "MyString(const MyString&)" << endl;
+        _mptr = new char[strlen(str._mptr) + 1];
+        strcpy(_mptr, str._mptr);
+    }
+    MyString& operator=(const MyString& str) {
+        cout << "operator(const MyString&)" << endl;
+        if (&str == this) {
+            return *this;
+        }
+        delete[] _mptr;
+        _mptr = new char[strlen(str._mptr) + 1];
+        strcpy(_mptr, str._mptr);
+        return *this;
+    }
+    const char* c_str() const { return _mptr; }
+private:
+    char* _mptr;
+};
+
+MyString GetString(MyString& str) {
+    const char* pstr = str.c_str();
+    MyString tmpStr(pstr);
+    return tmpStr;
+}
+
+int main() {
+
+    MyString str1("aaaaaaaaaaaaaaa");
+    MyString str2;
+    str2 = GetString(str1);
+    cout << str2.c_str() << endl;
+
+    return 0;
+}
+```
+
+
+
+
+
 
