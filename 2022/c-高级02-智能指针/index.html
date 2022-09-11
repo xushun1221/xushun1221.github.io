@@ -1,0 +1,1029 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【C++高级】02 - 智能指针 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/c-%E9%AB%98%E7%BA%A701-%E5%AF%B9%E8%B1%A1%E4%BC%98%E5%8C%96%E5%8F%B3%E5%80%BC%E5%BC%95%E7%94%A8%E4%BC%98%E5%8C%96/><link rel=canonical href=https://xushun1221.github.io/2022/c-%E9%AB%98%E7%BA%A702-%E6%99%BA%E8%83%BD%E6%8C%87%E9%92%88/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【C++高级】02 - 智能指针"><meta name=twitter:description content="智能指针介绍 裸指针，很强大，但是在使用时有很多的坑： 忘记释放资源，导致资源泄露； 同一资源释放多次，释放野指针，导致程序崩溃； 虽然编写了释放资"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【C\x2b\x2b高级】02 - 智能指针","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/c-%E9%AB%98%E7%BA%A702-%E6%99%BA%E8%83%BD%E6%8C%87%E9%92%88\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"C\x2b\x2b","wordcount":6452,"url":"https:\/\/xushun1221.github.io\/2022\/c-%E9%AB%98%E7%BA%A702-%E6%99%BA%E8%83%BD%E6%8C%87%E9%92%88\/","datePublished":"2022-09-10T00:00:00\x2b00:00","dateModified":"2022-09-10T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【C++高级】02 - 智能指针</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-09-10>2022-09-10</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 6452 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#智能指针介绍>智能指针介绍</a><ul><li><a href=#自己实现一个智能指针>自己实现一个智能指针</a></li></ul></li><li><a href=#不带引用计数的智能指针>不带引用计数的智能指针</a><ul><li><a href=#auto_ptr>auto_ptr</a></li><li><a href=#scoped_ptr--boost>scoped_ptr (boost)</a></li><li><a href=#unique_ptr--c11>unique_ptr (c++11)</a></li></ul></li><li><a href=#带引用计数的智能指针>带引用计数的智能指针</a><ul><li><a href=#自己写一个>自己写一个</a></li><li><a href=#shared_ptr--weak_ptr>shared_ptr & weak_ptr</a></li><li><a href=#强智能指针的交叉引用循环引用问题>强智能指针的交叉引用（循环引用）问题</a></li><li><a href=#多线程访问共享对象问题>多线程访问共享对象问题</a></li></ul></li><li><a href=#自定义智能指针的删除器>自定义智能指针的删除器</a></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#智能指针介绍>智能指针介绍</a><ul><li><a href=#自己实现一个智能指针>自己实现一个智能指针</a></li></ul></li><li><a href=#不带引用计数的智能指针>不带引用计数的智能指针</a><ul><li><a href=#auto_ptr>auto_ptr</a></li><li><a href=#scoped_ptr--boost>scoped_ptr (boost)</a></li><li><a href=#unique_ptr--c11>unique_ptr (c++11)</a></li></ul></li><li><a href=#带引用计数的智能指针>带引用计数的智能指针</a><ul><li><a href=#自己写一个>自己写一个</a></li><li><a href=#shared_ptr--weak_ptr>shared_ptr & weak_ptr</a></li><li><a href=#强智能指针的交叉引用循环引用问题>强智能指针的交叉引用（循环引用）问题</a></li><li><a href=#多线程访问共享对象问题>多线程访问共享对象问题</a></li></ul></li><li><a href=#自定义智能指针的删除器>自定义智能指针的删除器</a></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=智能指针介绍></a><h2>智能指针介绍</h2><p>裸指针，很强大，但是在使用时有很多的坑：</p><ol><li>忘记释放资源，导致资源泄露；</li><li>同一资源释放多次，释放野指针，导致程序崩溃；</li><li>虽然编写了释放资源的代码，但由于程序逻辑问题，导致没有执行释放资源的代码；</li><li>代码运行中发生异常，随着异常栈展开，导致释放资源的代码没有被执行。</li></ol><p>智能指针就可以解决这个问题，智能指针的<strong>智能</strong>，就体现在用户可以不关注资源的释放，因为智能指针会帮你完全管理资源的释放，它会保证无论程序逻辑怎么跑，正常执行或发生异常，资源到期的情况下，一定会进行释放。</p><p>在c++11标准中，提供了<strong>带引用计数的智能指针</strong>和<strong>不带引用计数的智能指针</strong>。</p><a class=post-dummy-target id=自己实现一个智能指针></a><h3>自己实现一个智能指针</h3><p>智能指针的运行原理，实际上就是，利用<strong>栈上对象离开作用域自动析构</strong>的特性，来做到资源的自动释放的。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+
+<span class=k>template</span><span class=o>&lt;</span><span class=k>typename</span> <span class=n>T</span><span class=o>&gt;</span>
+<span class=k>class</span> <span class=nc>SmartPtr</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>SmartPtr</span><span class=p>(</span><span class=n>T</span><span class=o>*</span> <span class=n>ptr</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>)</span> <span class=o>:</span> <span class=n>_mptr</span><span class=p>(</span><span class=n>ptr</span><span class=p>)</span> <span class=p>{</span><span class=p>}</span>
+    <span class=cm>/* 析构函数 释放资源 */</span>
+    <span class=o>~</span><span class=n>SmartPtr</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=k>delete</span> <span class=n>_mptr</span><span class=p>;</span> <span class=p>}</span>
+    <span class=cm>/* 指针必须支持 * 运算符重载  返回引用以修改指向的内存 */</span>
+    <span class=n>T</span><span class=o>&amp;</span> <span class=k>operator</span><span class=o>*</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=k>return</span> <span class=o>*</span><span class=n>_mptr</span><span class=p>;</span> <span class=p>}</span>
+    <span class=cm>/* 同样需要支持 -&gt;运算符重载  返回底层管理的指针 以访问其-&gt;重载*/</span>
+    <span class=n>T</span><span class=o>*</span> <span class=k>operator</span><span class=o>-</span><span class=o>&gt;</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=k>return</span> <span class=n>_mptr</span><span class=p>;</span> <span class=p>}</span>
+<span class=k>private</span><span class=o>:</span>
+    <span class=n>T</span><span class=o>*</span> <span class=n>_mptr</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+
+<span class=k>class</span> <span class=nc>Test</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=kt>void</span> <span class=n>test</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>test()</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+<span class=p>}</span><span class=p>;</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=c1>// int* ptr = new int;
+</span><span class=c1></span>    <span class=n>SmartPtr</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span> <span class=n>ptr1</span><span class=p>(</span><span class=k>new</span> <span class=kt>int</span><span class=p>)</span><span class=p>;</span>
+
+    <span class=o>*</span><span class=n>ptr1</span> <span class=o>=</span> <span class=mi>10</span><span class=p>;</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=o>*</span><span class=n>ptr1</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+
+    <span class=n>SmartPtr</span><span class=o>&lt;</span><span class=n>Test</span><span class=o>&gt;</span> <span class=n>ptr2</span><span class=p>(</span><span class=k>new</span> <span class=n>Test</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>(</span><span class=o>*</span><span class=n>ptr2</span><span class=p>)</span><span class=p>.</span><span class=n>test</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>ptr2</span><span class=o>-</span><span class=o>&gt;</span><span class=n>test</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// (ptr2.operator-&gt;())-&gt;test();
+</span><span class=c1></span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+    <span class=cm>/*
+</span><span class=cm>        无论什么情况 只要函数结束
+</span><span class=cm>        该函数栈帧上的对象 就要被自动析构
+</span><span class=cm>    */</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>这样的智能指针已经和裸指针比较相似了，但还是缺少一些东西，我们下面完善。</p><p>注意，智能指针不能定义在堆上，例如<code>SmartPtr&lt;int>* p = new SmartPtr&lt;int>(new int);</code>，这里的<code>p</code>虽然指向一个智能指针对象，但是它本身是一个裸指针，离开作用域后并不能自动析构它指向的对象，仍然需要手动释放。这就又回到了裸指针的问题上。</p><a class=post-dummy-target id=不带引用计数的智能指针></a><h2>不带引用计数的智能指针</h2><p>如果我们使用上一节写的智能指针运行下面的代码会怎么样呢？</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=k>template</span><span class=o>&lt;</span><span class=k>typename</span> <span class=n>T</span><span class=o>&gt;</span>
+<span class=k>class</span> <span class=nc>SmartPtr</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>SmartPtr</span><span class=p>(</span><span class=n>T</span><span class=o>*</span> <span class=n>ptr</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>)</span> <span class=o>:</span> <span class=n>_mptr</span><span class=p>(</span><span class=n>ptr</span><span class=p>)</span> <span class=p>{</span><span class=p>}</span>
+    <span class=o>~</span><span class=n>SmartPtr</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=k>delete</span> <span class=n>_mptr</span><span class=p>;</span> <span class=p>}</span>
+    <span class=n>T</span><span class=o>&amp;</span> <span class=k>operator</span><span class=o>*</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=k>return</span> <span class=o>*</span><span class=n>_mptr</span><span class=p>;</span> <span class=p>}</span>
+    <span class=n>T</span><span class=o>*</span> <span class=k>operator</span><span class=o>-</span><span class=o>&gt;</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=k>return</span> <span class=n>_mptr</span><span class=p>;</span> <span class=p>}</span>
+<span class=k>private</span><span class=o>:</span>
+    <span class=n>T</span><span class=o>*</span> <span class=n>_mptr</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>SmartPtr</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span> <span class=n>ptr1</span><span class=p>(</span><span class=k>new</span> <span class=kt>int</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>SmartPtr</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span> <span class=n>ptr2</span><span class=p>(</span><span class=n>ptr1</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=cm>/*
+</span><span class=cm>xushun@xushun-virtual-machine:~/cppadvanced$ g++ smtptr2.cpp &amp;&amp; ./a.out
+</span><span class=cm>free(): double free detected in tcache 2
+</span><span class=cm>Aborted (core dumped)
+</span><span class=cm>*/</span>
+</code></pre></td></tr></table></div></div><p>我们会发现，程序运行直接崩溃了。</p><p>这是由于，<code>SmartPtr&lt;int> ptr2(ptr1);</code>时，进行了默认拷贝构造（浅拷贝），<code>ptr2</code>复制了一份<code>ptr1</code>持有的堆内存地址，这就导致两个智能指针对象持有了一个相同的堆内存地址，main函数结束时，<code>ptr2</code>析构，释放了该指针，<code>ptr1</code>析构，再次释放该指针，就导致了释放野指针的问题。</p><p>我们需要解决两个问题：</p><ol><li>智能指针的浅拷贝；</li><li>多个智能指针指向同一个资源时，如何保证资源只释放一次，而不是每个智能指针都释放一次。</li></ol><p>浅拷贝的问题不难解决，可以自定义拷贝构造函数：重新分配一块相同的内存，并将其数据拷贝过来。但是这样做有逻辑问题，用户使用一个智能指针初始化另一个智能指针，含义应该是两个指针指向同一个内存地址，而非各自指向不同的地址。</p><p>c++标准库中提供的不带引用计数的智能指针包括：<code>auto_ptr</code>，<code>scoped_ptr</code>(boost)，<code>unique_ptr</code>(c++11)。</p><p>我们依次看一下，这些智能指针是如何实现的。</p><a class=post-dummy-target id=auto_ptr></a><h3>auto_ptr</h3><p>头文件<code>memory</code>。</p><p>先看一下<code>auto_ptr</code>的部分源码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=k>template</span><span class=o>&lt;</span><span class=k>class</span> <span class=nc>_Ty</span><span class=o>&gt;</span>
+	<span class=k>class</span> <span class=nc>auto_ptr</span>
+	<span class=p>{</span>	
+<span class=k>public</span><span class=o>:</span>
+	<span class=k>typedef</span> <span class=n>_Ty</span> <span class=n>element_type</span><span class=p>;</span>
+
+	<span class=k>explicit</span> <span class=nf>auto_ptr</span><span class=p>(</span><span class=n>_Ty</span> <span class=o>*</span> <span class=n>_Ptr</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>)</span> <span class=k>noexcept</span>
+		<span class=o>:</span> <span class=n>_Myptr</span><span class=p>(</span><span class=n>_Ptr</span><span class=p>)</span>
+		<span class=p>{</span>	
+		<span class=p>}</span>
+	<span class=cm>/*
+</span><span class=cm>        这里是auto_ptr的拷贝构造函数，
+</span><span class=cm>        _Right.release()函数中，把_Right的_Myptr赋为nullptr
+</span><span class=cm>        也就是换成当前auto_ptr持有资源地址
+</span><span class=cm>	*/</span>
+	<span class=n>auto_ptr</span><span class=p>(</span><span class=n>auto_ptr</span><span class=o>&amp;</span> <span class=n>_Right</span><span class=p>)</span> <span class=k>noexcept</span>
+		<span class=o>:</span> <span class=n>_Myptr</span><span class=p>(</span><span class=n>_Right</span><span class=p>.</span><span class=n>release</span><span class=p>(</span><span class=p>)</span><span class=p>)</span>
+		<span class=p>{</span>	
+		<span class=p>}</span>
+		
+	<span class=n>_Ty</span> <span class=o>*</span> <span class=nf>release</span><span class=p>(</span><span class=p>)</span> <span class=k>noexcept</span>
+		<span class=p>{</span>	<span class=cm>/* 返回资源地址 并将自己持有的地址置零 */</span>
+		<span class=n>_Ty</span> <span class=o>*</span> <span class=n>_Tmp</span> <span class=o>=</span> <span class=n>_Myptr</span><span class=p>;</span>
+		<span class=n>_Myptr</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>;</span>
+		<span class=k>return</span> <span class=p>(</span><span class=n>_Tmp</span><span class=p>)</span><span class=p>;</span>
+		<span class=p>}</span>
+<span class=k>private</span><span class=o>:</span>
+	<span class=n>_Ty</span> <span class=o>*</span> <span class=n>_Myptr</span><span class=p>;</span>	
+<span class=p>}</span><span class=p>;</span>
+</code></pre></td></tr></table></div></div><p>从源码也能看出，<code>auto_ptr</code>使用拷贝构造函数后，<strong>只有最后一个<code>auto_ptr</code>智能指针持有资源</strong>，原来的智能指针都被赋值为<code>nullptr</code>了。</p><p>看下面的错误示例：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;memory&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>auto_ptr</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span> <span class=n>ptr1</span><span class=p>(</span><span class=k>new</span> <span class=kt>int</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>auto_ptr</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span> <span class=n>ptr2</span><span class=p>(</span><span class=n>ptr1</span><span class=p>)</span><span class=p>;</span>
+    <span class=o>*</span><span class=n>ptr1</span> <span class=o>=</span> <span class=mi>10</span><span class=p>;</span> <span class=cm>/* 错误！ ptr1 持有的指针指向空地址 */</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=o>*</span><span class=n>ptr2</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>总结：<code>auto_ptr</code>不带引用计数，它处理浅拷贝的问题是将前面的智能指针都置为空，只让最后一个智能指针持有资源。c++中建议不使用<code>auto_ptr</code>智能指针，除非应用场景非常简单。</p><p>注意，一定不要在容器中使用<code>auto_ptr</code>，原因是，使用容器过程中一但发生容器的拷贝，新容器会将老容器中的智能指针的资源抢夺来，访问老容器元素时，就会访问空指针。</p><a class=post-dummy-target id=scoped_ptr--boost></a><h3>scoped_ptr (boost)</h3><p><code>scoped_ptr</code>是boost库中的不带引用计数的智能指针。</p><p>它将<code>scoped_ptr</code>的<strong>拷贝构造函数和赋值运算符重载函数私有化了</strong>，从根本上杜绝了浅拷贝问题的发生，非常暴力。</p><p><code>auto_ptr</code>和<code>scoped_ptr</code>这一点上的区别，有些资料上用<strong>所有权</strong>的概念来描述，道理是相同的，<code>auto_ptr</code>可以任意转移资源的所有权，而<code>scoped_ptr</code>不会转移所有权（因为拷贝构造和赋值被禁止了）。</p><p><code>scoped_ptr</code>同样也只能在一些非常简单的场景中使用，所以不推荐使用。</p><a class=post-dummy-target id=unique_ptr--c11></a><h3>unique_ptr (c++11)</h3><p><code>unique_ptr</code>是c++11标准中推荐使用的不带引用计数的智能指针，头文件<code>memory</code>。</p><p>部分源码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span><span class=lnt>59
+</span><span class=lnt>60
+</span><span class=lnt>61
+</span><span class=lnt>62
+</span><span class=lnt>63
+</span><span class=lnt>64
+</span><span class=lnt>65
+</span><span class=lnt>66
+</span><span class=lnt>67
+</span><span class=lnt>68
+</span><span class=lnt>69
+</span><span class=lnt>70
+</span><span class=lnt>71
+</span><span class=lnt>72
+</span><span class=lnt>73
+</span><span class=lnt>74
+</span><span class=lnt>75
+</span><span class=lnt>76
+</span><span class=lnt>77
+</span><span class=lnt>78
+</span><span class=lnt>79
+</span><span class=lnt>80
+</span><span class=lnt>81
+</span><span class=lnt>82
+</span><span class=lnt>83
+</span><span class=lnt>84
+</span><span class=lnt>85
+</span><span class=lnt>86
+</span><span class=lnt>87
+</span><span class=lnt>88
+</span><span class=lnt>89
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=k>template</span><span class=o>&lt;</span><span class=k>class</span> <span class=nc>_Ty</span><span class=p>,</span>
+	<span class=k>class</span> <span class=nc>_Dx</span><span class=o>&gt;</span>	<span class=c1>// = default_delete&lt;_Ty&gt;
+</span><span class=c1></span>	<span class=k>class</span> <span class=nc>unique_ptr</span>
+		<span class=o>:</span> <span class=k>public</span> <span class=n>_Unique_ptr_base</span><span class=o>&lt;</span><span class=n>_Ty</span><span class=p>,</span> <span class=n>_Dx</span><span class=o>&gt;</span>
+	<span class=p>{</span>	<span class=c1>// non-copyable pointer to an object
+</span><span class=c1></span><span class=k>public</span><span class=o>:</span>
+	<span class=k>typedef</span> <span class=n>_Unique_ptr_base</span><span class=o>&lt;</span><span class=n>_Ty</span><span class=p>,</span> <span class=n>_Dx</span><span class=o>&gt;</span> <span class=n>_Mybase</span><span class=p>;</span>
+	<span class=k>typedef</span> <span class=k>typename</span> <span class=n>_Mybase</span><span class=o>:</span><span class=o>:</span><span class=n>pointer</span> <span class=n>pointer</span><span class=p>;</span>
+	<span class=k>typedef</span> <span class=n>_Ty</span> <span class=n>element_type</span><span class=p>;</span>
+	<span class=k>typedef</span> <span class=n>_Dx</span> <span class=n>deleter_type</span><span class=p>;</span>
+
+	<span class=cm>/* 提供了右值引用的拷贝构造函数 */</span>
+	<span class=n>unique_ptr</span><span class=p>(</span><span class=n>unique_ptr</span><span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>_Right</span><span class=p>)</span> <span class=k>noexcept</span>
+		<span class=o>:</span> <span class=n>_Mybase</span><span class=p>(</span><span class=n>_Right</span><span class=p>.</span><span class=n>release</span><span class=p>(</span><span class=p>)</span><span class=p>,</span>
+			<span class=n>_STD</span> <span class=n>forward</span><span class=o>&lt;</span><span class=n>_Dx</span><span class=o>&gt;</span><span class=p>(</span><span class=n>_Right</span><span class=p>.</span><span class=n>get_deleter</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>)</span>
+		<span class=p>{</span>	<span class=c1>// construct by moving _Right
+</span><span class=c1></span>		<span class=p>}</span>
+	
+	<span class=cm>/* 提供了右值引用的operator=赋值重载函数 */</span>
+	<span class=n>unique_ptr</span><span class=o>&amp;</span> <span class=k>operator</span><span class=o>=</span><span class=p>(</span><span class=n>unique_ptr</span><span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>_Right</span><span class=p>)</span> <span class=k>noexcept</span>
+		<span class=p>{</span>	<span class=c1>// assign by moving _Right
+</span><span class=c1></span>		<span class=k>if</span> <span class=p>(</span><span class=k>this</span> <span class=o>!</span><span class=o>=</span> <span class=n>_STD</span> <span class=n>addressof</span><span class=p>(</span><span class=n>_Right</span><span class=p>)</span><span class=p>)</span>
+			<span class=p>{</span>	<span class=c1>// different, do the move
+</span><span class=c1></span>			<span class=n>reset</span><span class=p>(</span><span class=n>_Right</span><span class=p>.</span><span class=n>release</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+			<span class=k>this</span><span class=o>-</span><span class=o>&gt;</span><span class=n>get_deleter</span><span class=p>(</span><span class=p>)</span> <span class=o>=</span> <span class=n>_STD</span> <span class=n>forward</span><span class=o>&lt;</span><span class=n>_Dx</span><span class=o>&gt;</span><span class=p>(</span><span class=n>_Right</span><span class=p>.</span><span class=n>get_deleter</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+			<span class=p>}</span>
+		<span class=k>return</span> <span class=p>(</span><span class=o>*</span><span class=k>this</span><span class=p>)</span><span class=p>;</span>
+		<span class=p>}</span>
+
+	<span class=cm>/* 交换两个unique_ptr智能指针对象的底层指针和删除器 */</span>
+	<span class=kt>void</span> <span class=nf>swap</span><span class=p>(</span><span class=n>unique_ptr</span><span class=o>&amp;</span> <span class=n>_Right</span><span class=p>)</span> <span class=k>noexcept</span>
+		<span class=p>{</span>	<span class=c1>// swap elements
+</span><span class=c1></span>		<span class=n>_Swap_adl</span><span class=p>(</span><span class=k>this</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_Myptr</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>_Right</span><span class=p>.</span><span class=n>_Myptr</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+		<span class=n>_Swap_adl</span><span class=p>(</span><span class=k>this</span><span class=o>-</span><span class=o>&gt;</span><span class=n>get_deleter</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>_Right</span><span class=p>.</span><span class=n>get_deleter</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+		<span class=p>}</span>
+
+	<span class=cm>/* 通过自定义删除器释放资源 */</span>
+	<span class=o>~</span><span class=n>unique_ptr</span><span class=p>(</span><span class=p>)</span> <span class=k>noexcept</span>
+		<span class=p>{</span>	<span class=c1>// destroy the object
+</span><span class=c1></span>		<span class=k>if</span> <span class=p>(</span><span class=n>get</span><span class=p>(</span><span class=p>)</span> <span class=o>!</span><span class=o>=</span> <span class=n>pointer</span><span class=p>(</span><span class=p>)</span><span class=p>)</span>
+			<span class=p>{</span>
+			<span class=k>this</span><span class=o>-</span><span class=o>&gt;</span><span class=n>get_deleter</span><span class=p>(</span><span class=p>)</span><span class=p>(</span><span class=n>get</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+			<span class=p>}</span>
+		<span class=p>}</span>
+	
+	<span class=cm>/* unique_ptr提供-&gt;运算符的重载函数 */</span>
+	<span class=n>_NODISCARD</span> <span class=n>pointer</span> <span class=k>operator</span><span class=o>-</span><span class=o>&gt;</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=k>noexcept</span>
+		<span class=p>{</span>	<span class=c1>// return pointer to class object
+</span><span class=c1></span>		<span class=k>return</span> <span class=p>(</span><span class=k>this</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_Myptr</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+		<span class=p>}</span>
+
+	<span class=cm>/* 返回智能指针对象底层管理的指针 */</span>
+	<span class=n>_NODISCARD</span> <span class=n>pointer</span> <span class=nf>get</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=k>noexcept</span>
+		<span class=p>{</span>	<span class=c1>// return pointer to object
+</span><span class=c1></span>		<span class=k>return</span> <span class=p>(</span><span class=k>this</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_Myptr</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+		<span class=p>}</span>
+
+	<span class=cm>/* 提供bool类型的重载，使unique_ptr对象可以 直接使用在逻辑语句当中，比如if,for,while等 */</span>
+	<span class=k>explicit</span> <span class=k>operator</span> <span class=nf>bool</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=k>noexcept</span>
+		<span class=p>{</span>	<span class=c1>// test for non-null pointer
+</span><span class=c1></span>		<span class=k>return</span> <span class=p>(</span><span class=n>get</span><span class=p>(</span><span class=p>)</span> <span class=o>!</span><span class=o>=</span> <span class=n>pointer</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+		<span class=p>}</span>
+    
+    <span class=cm>/* 功能和auto_ptr的release函数功能相同，最终也是只有一个unique_ptr指针指向资源 */</span>
+	<span class=n>pointer</span> <span class=nf>release</span><span class=p>(</span><span class=p>)</span> <span class=k>noexcept</span>
+		<span class=p>{</span>	<span class=c1>// yield ownership of pointer
+</span><span class=c1></span>		<span class=n>pointer</span> <span class=n>_Ans</span> <span class=o>=</span> <span class=n>get</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+		<span class=k>this</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_Myptr</span><span class=p>(</span><span class=p>)</span> <span class=o>=</span> <span class=n>pointer</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+		<span class=k>return</span> <span class=p>(</span><span class=n>_Ans</span><span class=p>)</span><span class=p>;</span>
+		<span class=p>}</span>
+
+	<span class=cm>/* 把unique_ptr原来的旧资源释放，重置新的资源_Ptr */</span>
+	<span class=kt>void</span> <span class=nf>reset</span><span class=p>(</span><span class=n>pointer</span> <span class=n>_Ptr</span> <span class=o>=</span> <span class=n>pointer</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=k>noexcept</span>
+		<span class=p>{</span>	<span class=c1>// establish new pointer
+</span><span class=c1></span>		<span class=n>pointer</span> <span class=n>_Old</span> <span class=o>=</span> <span class=n>get</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+		<span class=k>this</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_Myptr</span><span class=p>(</span><span class=p>)</span> <span class=o>=</span> <span class=n>_Ptr</span><span class=p>;</span>
+		<span class=k>if</span> <span class=p>(</span><span class=n>_Old</span> <span class=o>!</span><span class=o>=</span> <span class=n>pointer</span><span class=p>(</span><span class=p>)</span><span class=p>)</span>
+			<span class=p>{</span>
+			<span class=k>this</span><span class=o>-</span><span class=o>&gt;</span><span class=n>get_deleter</span><span class=p>(</span><span class=p>)</span><span class=p>(</span><span class=n>_Old</span><span class=p>)</span><span class=p>;</span>
+			<span class=p>}</span>
+		<span class=p>}</span>
+	<span class=cm>/*
+</span><span class=cm>        删除了unique_ptr的拷贝构造和operator=赋值函数，
+</span><span class=cm>        因此不能做unique_ptr智能指针对象的拷贝构造和
+</span><span class=cm>        赋值，防止浅拷贝的发生
+</span><span class=cm>	*/</span>
+	<span class=n>unique_ptr</span><span class=p>(</span><span class=k>const</span> <span class=n>unique_ptr</span><span class=o>&amp;</span><span class=p>)</span> <span class=o>=</span> <span class=k>delete</span><span class=p>;</span>
+	<span class=n>unique_ptr</span><span class=o>&amp;</span> <span class=k>operator</span><span class=o>=</span><span class=p>(</span><span class=k>const</span> <span class=n>unique_ptr</span><span class=o>&amp;</span><span class=p>)</span> <span class=o>=</span> <span class=k>delete</span><span class=p>;</span>
+	<span class=p>}</span><span class=p>;</span>
+</code></pre></td></tr></table></div></div><p>从源码中可以分析出，<code>unique_ptr</code>和<code>scoped_ptr</code>有一点做的一样，就是<strong>去掉了拷贝构造函数和赋值运算符重载函数</strong>，禁止用户对<code>unique_ptr</code>进行显示的拷贝构造和赋值，防止智能指针浅拷贝问题的发生。</p><p>但是，<code>unique_ptr</code>提供了<strong>带右值引用参数的的拷贝构造和赋值</strong>，也就是，<code>unique_ptr</code>智能指针，可以通过右值引用进行拷贝构造和赋值，或者用在在产生<code>unique_ptr</code>临时对象的地方（如把<code>unique_ptr</code>作为函数返回值时）</p><p>示例：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;memory&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+
+<span class=n>unique_ptr</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span> <span class=n>test_unique_ptr</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>unique_ptr</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span> <span class=n>ptr</span><span class=p>(</span><span class=k>new</span> <span class=kt>int</span><span class=p>(</span><span class=mi>20</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=n>ptr</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>unique_ptr</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span> <span class=n>ptr1</span><span class=p>(</span><span class=k>new</span> <span class=kt>int</span><span class=p>(</span><span class=mi>10</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=cm>/* 移动语义 使用右值引用的拷贝构造 */</span>
+    <span class=n>unique_ptr</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span> <span class=n>ptr2</span> <span class=o>=</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>move</span><span class=p>(</span><span class=n>ptr1</span><span class=p>)</span><span class=p>;</span> 
+    <span class=cm>/* 或者这样写 ptr2 = std::move(ptr1); */</span>
+    <span class=cm>/*
+</span><span class=cm>        这样做的好处在于 用户在感知到的情况下
+</span><span class=cm>        主动的使用移动语义进行资源的转移
+</span><span class=cm>    */</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=o>*</span><span class=n>ptr2</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+    <span class=cm>/* cout &lt;&lt; *ptr1 &lt;&lt; endl; 错误！ ptr1 的资源已经转移给 ptr2 */</span>
+
+    <span class=cm>/* 临时 unique_ptr 是右值 */</span>
+    <span class=n>unique_ptr</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span> <span class=n>ptr3</span> <span class=o>=</span> <span class=n>test_unique_ptr</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=o>*</span><span class=n>ptr3</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>总结：<code>unique_ptr</code>和它的名字一样，最终也是只能由一个该智能指针引用资源。它还提供了<code>reset</code>，<code>swap</code>等函数。</p><p>建议在使用不带引用计数的智能指针时，优先选择<code>unique_ptr</code>智能指针。</p><a class=post-dummy-target id=带引用计数的智能指针></a><h2>带引用计数的智能指针</h2><p>什么是引用计数？<br>答： 给每一个对象资源，匹配一个引用计数。</p><ol><li>每当一个智能指针指向该资源时，引用计数增加1；</li><li>当指向该资源的智能指针离开作用域，不再使用该资源时，引用计数减少1；<ol><li>如果引用计数仍然大于0，不做任何事；</li><li>如果引用计数等于0，说明没有其他智能指针引用了这个资源，就释放该资源。</li></ol></li></ol><p>带引用计数的智能指针，可以支持多个指针指向同一个资源，当所有指针都不再指向资源时，才会彻底释放资源。</p><p>要对资源的引用个数进行计数，那么大家知道，对于整数的<code>++</code>或者<code>--</code>操作，它并不是线程安全的操作，因此<code>shared_ptr</code>和<code>weak_ptr</code>底层的引用计数已经通过CAS操作，保证了引用计数加减的原子特性，因此<code>shared_ptr</code>和<code>weak_ptr</code>本身就是<strong>线程安全</strong>的带引用计数的智能指针。</p><a class=post-dummy-target id=自己写一个></a><h3>自己写一个</h3><p>我们自己写的这个类似于<code>shared_ptr</code>，它可以改变资源的引用计数，又被称为强智能指针。</p><p>该智能指针使用一个引用计数器指针。</p><p>当然我们写的这个不是线程安全的。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span><span class=lnt>59
+</span><span class=lnt>60
+</span><span class=lnt>61
+</span><span class=lnt>62
+</span><span class=lnt>63
+</span><span class=lnt>64
+</span><span class=lnt>65
+</span><span class=lnt>66
+</span><span class=lnt>67
+</span><span class=lnt>68
+</span><span class=lnt>69
+</span><span class=lnt>70
+</span><span class=lnt>71
+</span><span class=lnt>72
+</span><span class=lnt>73
+</span><span class=lnt>74
+</span><span class=lnt>75
+</span><span class=lnt>76
+</span><span class=lnt>77
+</span><span class=lnt>78
+</span><span class=lnt>79
+</span><span class=lnt>80
+</span><span class=lnt>81
+</span><span class=lnt>82
+</span><span class=lnt>83
+</span><span class=lnt>84
+</span><span class=lnt>85
+</span><span class=lnt>86
+</span><span class=lnt>87
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;memory&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+
+<span class=k>template</span> <span class=o>&lt;</span><span class=k>typename</span> <span class=n>T</span><span class=o>&gt;</span>
+<span class=k>class</span> <span class=nc>RefCnt</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>RefCnt</span><span class=p>(</span><span class=n>T</span><span class=o>*</span> <span class=n>ptr</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>)</span> <span class=o>:</span> <span class=n>_mptr</span><span class=p>(</span><span class=n>ptr</span><span class=p>)</span> <span class=p>{</span>
+        <span class=cm>/* 指向的资源不是空指针 就初始化引用计数 */</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>_mptr</span> <span class=o>!</span><span class=o>=</span> <span class=k>nullptr</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>_mcount</span> <span class=o>=</span> <span class=mi>1</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=cm>/* 引用计数 加1 */</span>
+    <span class=kt>void</span> <span class=nf>addRef</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=o>+</span><span class=o>+</span> <span class=n>_mcount</span><span class=p>;</span> <span class=p>}</span>
+    <span class=cm>/* 引用计数 减1 返回引用计数 */</span>
+    <span class=kt>int</span> <span class=nf>delRef</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=k>return</span> <span class=o>-</span><span class=o>-</span> <span class=n>_mcount</span><span class=p>;</span> <span class=p>}</span>
+<span class=k>private</span><span class=o>:</span>
+    <span class=n>T</span><span class=o>*</span> <span class=n>_mptr</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>_mcount</span><span class=p>;</span>  <span class=c1>// atomic_int CAS
+</span><span class=c1></span><span class=p>}</span><span class=p>;</span>
+
+<span class=k>template</span><span class=o>&lt;</span><span class=k>typename</span> <span class=n>T</span><span class=o>&gt;</span>
+<span class=k>class</span> <span class=nc>SmartPtr</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>SmartPtr</span><span class=p>(</span><span class=n>T</span><span class=o>*</span> <span class=n>ptr</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>)</span> <span class=o>:</span> <span class=n>_mptr</span><span class=p>(</span><span class=n>ptr</span><span class=p>)</span> <span class=p>{</span>
+        <span class=cm>/* 普通构造时（第一次引用该对象时）初始化引用计数器 */</span>
+        <span class=n>_mpRefCnt</span> <span class=o>=</span> <span class=k>new</span> <span class=n>RefCnt</span><span class=o>&lt;</span><span class=n>T</span><span class=o>&gt;</span><span class=p>(</span><span class=n>_mptr</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=o>~</span><span class=n>SmartPtr</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> 
+        <span class=cm>/* 引用计数归零 才会释放资源 */</span>
+        <span class=k>if</span> <span class=p>(</span><span class=mi>0</span> <span class=o>=</span><span class=o>=</span> <span class=n>_mpRefCnt</span><span class=o>-</span><span class=o>&gt;</span><span class=n>delRef</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+            <span class=k>delete</span> <span class=n>_mptr</span><span class=p>;</span> 
+            <span class=n>_mptr</span> <span class=o>=</span> <span class=k>nullptr</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=n>T</span><span class=o>&amp;</span> <span class=k>operator</span><span class=o>*</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=k>return</span> <span class=o>*</span><span class=n>_mptr</span><span class=p>;</span> <span class=p>}</span>
+    <span class=n>T</span><span class=o>*</span> <span class=k>operator</span><span class=o>-</span><span class=o>&gt;</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=k>return</span> <span class=n>_mptr</span><span class=p>;</span> <span class=p>}</span>
+    <span class=cm>/* 拷贝构造  复制资源指针和引用计数 */</span>
+    <span class=n>SmartPtr</span><span class=p>(</span><span class=k>const</span> <span class=n>SmartPtr</span><span class=o>&lt;</span><span class=n>T</span><span class=o>&gt;</span><span class=o>&amp;</span> <span class=n>src</span><span class=p>)</span> <span class=o>:</span> <span class=n>_mptr</span><span class=p>(</span><span class=n>src</span><span class=p>.</span><span class=n>_mptr</span><span class=p>)</span><span class=p>,</span> <span class=n>_mpRefCnt</span><span class=p>(</span><span class=n>src</span><span class=p>.</span><span class=n>_mpRefCnt</span><span class=p>)</span> <span class=p>{</span>
+        <span class=cm>/* 资源不为空 引用计数才会加1 */</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>_mptr</span> <span class=o>!</span><span class=o>=</span> <span class=k>nullptr</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>_mpRefCnt</span><span class=o>-</span><span class=o>&gt;</span><span class=n>addRef</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=cm>/* 赋值重载 */</span>
+    <span class=n>SmartPtr</span><span class=o>&lt;</span><span class=n>T</span><span class=o>&gt;</span><span class=o>&amp;</span> <span class=k>operator</span><span class=o>=</span><span class=p>(</span><span class=k>const</span> <span class=n>SmartPtr</span><span class=o>&lt;</span><span class=n>T</span><span class=o>&gt;</span><span class=o>&amp;</span> <span class=n>src</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>if</span> <span class=p>(</span><span class=k>this</span> <span class=o>=</span><span class=o>=</span> <span class=o>&amp;</span><span class=n>src</span><span class=p>)</span> <span class=p>{</span>
+            <span class=k>return</span> <span class=o>*</span><span class=k>this</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=cm>/* 赋值要覆盖原有的资源  如果原资源的引用计数归零 释放它 */</span>
+        <span class=k>if</span> <span class=p>(</span><span class=mi>0</span> <span class=o>=</span><span class=o>=</span> <span class=n>_mpRefCnt</span><span class=o>-</span><span class=o>&gt;</span><span class=n>delRef</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+            <span class=k>delete</span> <span class=n>_mptr</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=cm>/* 拷贝资源指针和引用计数器  引用计数加1 */</span>
+        <span class=n>_mptr</span> <span class=o>=</span> <span class=n>src</span><span class=p>.</span><span class=n>_mptr</span><span class=p>;</span>
+        <span class=n>_mpRefCnt</span> <span class=o>=</span> <span class=n>src</span><span class=p>.</span><span class=n>_mpRefCnt</span><span class=p>;</span>
+        <span class=n>_mpRefCnt</span><span class=o>-</span><span class=o>&gt;</span><span class=n>addRef</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>return</span> <span class=o>*</span><span class=k>this</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=k>private</span><span class=o>:</span>
+    <span class=n>T</span><span class=o>*</span> <span class=n>_mptr</span><span class=p>;</span>
+    <span class=cm>/* 指向该资源引用计数对象的指针 */</span>
+    <span class=n>RefCnt</span><span class=o>&lt;</span><span class=n>T</span><span class=o>&gt;</span><span class=o>*</span> <span class=n>_mpRefCnt</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>SmartPtr</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span> <span class=n>ptr1</span><span class=p>(</span><span class=k>new</span> <span class=kt>int</span><span class=p>(</span><span class=mi>10</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>SmartPtr</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span> <span class=n>ptr2</span><span class=p>(</span><span class=n>ptr1</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=o>*</span><span class=n>ptr1</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=o>*</span><span class=n>ptr2</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+    <span class=o>*</span><span class=n>ptr2</span> <span class=o>=</span> <span class=mi>20</span><span class=p>;</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=o>*</span><span class=n>ptr1</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=o>*</span><span class=n>ptr2</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+    <span class=n>SmartPtr</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span> <span class=n>ptr3</span><span class=p>;</span>
+    <span class=n>ptr3</span> <span class=o>=</span> <span class=n>ptr2</span><span class=p>;</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=o>*</span><span class=n>ptr3</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=cm>/*
+</span><span class=cm>xushun@xushun-virtual-machine:~/cppadvanced$ g++ smtptr4.cpp &amp;&amp; ./a.out
+</span><span class=cm>10
+</span><span class=cm>10
+</span><span class=cm>20
+</span><span class=cm>20
+</span><span class=cm>20
+</span><span class=cm>*/</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=shared_ptr--weak_ptr></a><h3>shared_ptr & weak_ptr</h3><p>它们两都是基于c++11标准的，头文件<code>memory</code>。</p><p>c++标准提供了<code>shared_ptr</code>和<code>weak_ptr</code>两种带引用计数的智能指针，它们的区别在于：</p><ul><li><code>shared_ptr</code>：强智能指针，可以改变资源的引用计数；</li><li><code>weak_ptr</code>：弱智能指针，不可以改变资源的引用计数；</li></ul><p>弱智能指针 &ndash;(观察)-> 强智能指针 &ndash;(观察)-> 资源</p><p>这两种智能指针的使用场景：</p><ol><li><code>shared_ptr</code>，定义对象的时候，使用强智能指针；</li><li><code>weak_ptr</code>，引用对象的时候，使用弱智能指针。</li></ol><p>原因看下面。</p><a class=post-dummy-target id=强智能指针的交叉引用循环引用问题></a><h3>强智能指针的交叉引用（循环引用）问题</h3><p>看代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;memory&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+
+<span class=k>class</span> <span class=nc>B</span><span class=p>;</span> <span class=c1>// 前置声明类B
+</span><span class=c1></span><span class=k>class</span> <span class=nc>A</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+	<span class=n>A</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>A()</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+	<span class=o>~</span><span class=n>A</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>~A()</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+	<span class=n>shared_ptr</span><span class=o>&lt;</span><span class=n>B</span><span class=o>&gt;</span> <span class=n>_ptrb</span><span class=p>;</span> <span class=c1>// 指向B对象的智能指针
+</span><span class=c1></span><span class=p>}</span><span class=p>;</span>
+<span class=k>class</span> <span class=nc>B</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+	<span class=n>B</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>B()</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+	<span class=o>~</span><span class=n>B</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>~B()</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+	<span class=n>shared_ptr</span><span class=o>&lt;</span><span class=n>A</span><span class=o>&gt;</span> <span class=n>_ptra</span><span class=p>;</span> <span class=c1>// 指向A对象的智能指针
+</span><span class=c1></span><span class=p>}</span><span class=p>;</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+	<span class=n>shared_ptr</span><span class=o>&lt;</span><span class=n>A</span><span class=o>&gt;</span> <span class=n>ptra</span><span class=p>(</span><span class=k>new</span> <span class=n>A</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span> <span class=c1>// ptra指向A对象，A的引用计数为1
+</span><span class=c1></span>	<span class=n>shared_ptr</span><span class=o>&lt;</span><span class=n>B</span><span class=o>&gt;</span> <span class=n>ptrb</span><span class=p>(</span><span class=k>new</span> <span class=n>B</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span> <span class=c1>// ptrb指向B对象，B的引用计数为1
+</span><span class=c1></span>	<span class=n>ptra</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_ptrb</span> <span class=o>=</span> <span class=n>ptrb</span><span class=p>;</span> <span class=c1>// A对象的成员变量_ptrb也指向B对象，B的引用计数为2
+</span><span class=c1></span>	<span class=n>ptrb</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_ptra</span> <span class=o>=</span> <span class=n>ptra</span><span class=p>;</span> <span class=c1>// B对象的成员变量_ptra也指向A对象，A的引用计数为2
+</span><span class=c1></span>
+	<span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>ptra</span><span class=p>.</span><span class=n>use_count</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=c1>// 打印A的引用计数结果:2
+</span><span class=c1></span>	<span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>ptrb</span><span class=p>.</span><span class=n>use_count</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=c1>// 打印B的引用计数结果:2
+</span><span class=c1></span>	<span class=cm>/*
+</span><span class=cm>        出main函数作用域  ptra和ptrb两个局部对象析构
+</span><span class=cm>        分别给A对象和B对象的引用计数从2减到1
+</span><span class=cm>        达不到释放A和B的条件（释放的条件是A和B的引用计数为0）
+</span><span class=cm>        因此造成两个new出来的A和B对象无法释放  导致内存泄露
+</span><span class=cm>        这个问题就是 *强智能指针的交叉引用(循环引用)问题*
+</span><span class=cm>	*/</span>
+	<span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=cm>/*
+</span><span class=cm>xushun@xushun-virtual-machine:~/cppadvanced$ g++ smtptr5.cpp &amp;&amp; ./a.out
+</span><span class=cm>A()
+</span><span class=cm>B()
+</span><span class=cm>2
+</span><span class=cm>2
+</span><span class=cm>*/</span>
+</code></pre></td></tr></table></div></div><p><code>A</code>对象和<code>B</code>对象没有被析构。</p><p>我们可以使用<code>weak_ptr</code>来解决这个问题。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;memory&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+
+<span class=k>class</span> <span class=nc>B</span><span class=p>;</span>
+<span class=k>class</span> <span class=nc>A</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+	<span class=n>A</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>A()</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+	<span class=o>~</span><span class=n>A</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>~A()</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+	<span class=n>weak_ptr</span><span class=o>&lt;</span><span class=n>B</span><span class=o>&gt;</span> <span class=n>_ptrb</span><span class=p>;</span> <span class=c1>// 使用弱智能指针引用一个对象
+</span><span class=c1></span><span class=p>}</span><span class=p>;</span>
+<span class=k>class</span> <span class=nc>B</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+	<span class=n>B</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>B()</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+	<span class=o>~</span><span class=n>B</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>~B()</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+	<span class=n>weak_ptr</span><span class=o>&lt;</span><span class=n>A</span><span class=o>&gt;</span> <span class=n>_ptra</span><span class=p>;</span> <span class=c1>// 使用弱智能指针引用一个对象
+</span><span class=c1></span><span class=p>}</span><span class=p>;</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+	<span class=n>shared_ptr</span><span class=o>&lt;</span><span class=n>A</span><span class=o>&gt;</span> <span class=n>ptra</span><span class=p>(</span><span class=k>new</span> <span class=n>A</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+	<span class=n>shared_ptr</span><span class=o>&lt;</span><span class=n>B</span><span class=o>&gt;</span> <span class=n>ptrb</span><span class=p>(</span><span class=k>new</span> <span class=n>B</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+	<span class=n>ptra</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_ptrb</span> <span class=o>=</span> <span class=n>ptrb</span><span class=p>;</span> <span class=c1>// _ptrb 是弱智能指针 B 对象的引用计数并没有改变
+</span><span class=c1></span>	<span class=n>ptrb</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_ptra</span> <span class=o>=</span> <span class=n>ptra</span><span class=p>;</span> <span class=c1>// _ptra 是弱智能指针 A 对象的引用计数并没有改变
+</span><span class=c1></span>
+	<span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>ptra</span><span class=p>.</span><span class=n>use_count</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+	<span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>ptrb</span><span class=p>.</span><span class=n>use_count</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+	<span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=cm>/*
+</span><span class=cm>xushun@xushun-virtual-machine:~/cppadvanced$ g++ smtptr6.cpp &amp;&amp; ./a.out
+</span><span class=cm>A()
+</span><span class=cm>B()
+</span><span class=cm>1
+</span><span class=cm>1
+</span><span class=cm>~B()
+</span><span class=cm>~A()
+</span><span class=cm>*/</span>
+</code></pre></td></tr></table></div></div><p><code>A</code>和<code>B</code>正确析构，问题解决。</p><p>那么又存在一个问题，我用一个<code>weak_ptr</code>指向一个资源，肯定是想在某个时候访问它，但我又不能访问它，怎么办呢？</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;memory&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+
+<span class=k>class</span> <span class=nc>B</span><span class=p>;</span>
+<span class=k>class</span> <span class=nc>A</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+	<span class=n>A</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>A()</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+	<span class=o>~</span><span class=n>A</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>~A()</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+	<span class=n>weak_ptr</span><span class=o>&lt;</span><span class=n>B</span><span class=o>&gt;</span> <span class=n>_ptrb</span><span class=p>;</span>
+    <span class=kt>void</span> <span class=nf>test</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>A::test()</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+<span class=p>}</span><span class=p>;</span>
+<span class=k>class</span> <span class=nc>B</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+	<span class=n>B</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>B()</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+	<span class=o>~</span><span class=n>B</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>~B()</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+	<span class=n>weak_ptr</span><span class=o>&lt;</span><span class=n>A</span><span class=o>&gt;</span> <span class=n>_ptra</span><span class=p>;</span>
+    <span class=kt>void</span> <span class=nf>testAtest</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>shared_ptr</span><span class=o>&lt;</span><span class=n>A</span><span class=o>&gt;</span> <span class=n>ps</span> <span class=o>=</span> <span class=n>_ptra</span><span class=p>.</span><span class=n>lock</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* 将 _ptra 提升为一个强智能指针 */</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>ps</span> <span class=o>!</span><span class=o>=</span> <span class=k>nullptr</span><span class=p>)</span> <span class=p>{</span>
+            <span class=cm>/* 
+</span><span class=cm>                注意 提升时要判断是否提升成功 
+</span><span class=cm>                在某些多线程环境下 提升可能失败
+</span><span class=cm>            */</span>
+            <span class=n>ps</span><span class=o>-</span><span class=o>&gt;</span><span class=n>test</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* 强智能指针 访问资源 */</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+<span class=p>}</span><span class=p>;</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+	<span class=n>shared_ptr</span><span class=o>&lt;</span><span class=n>A</span><span class=o>&gt;</span> <span class=n>ptra</span><span class=p>(</span><span class=k>new</span> <span class=n>A</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+	<span class=n>shared_ptr</span><span class=o>&lt;</span><span class=n>B</span><span class=o>&gt;</span> <span class=n>ptrb</span><span class=p>(</span><span class=k>new</span> <span class=n>B</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+	<span class=n>ptra</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_ptrb</span> <span class=o>=</span> <span class=n>ptrb</span><span class=p>;</span>
+	<span class=n>ptrb</span><span class=o>-</span><span class=o>&gt;</span><span class=n>_ptra</span> <span class=o>=</span> <span class=n>ptra</span><span class=p>;</span>
+	<span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>ptra</span><span class=p>.</span><span class=n>use_count</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+	<span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>ptrb</span><span class=p>.</span><span class=n>use_count</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+
+    <span class=n>ptrb</span><span class=o>-</span><span class=o>&gt;</span><span class=n>testAtest</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+	<span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=cm>/*
+</span><span class=cm>xushun@xushun-virtual-machine:~/cppadvanced$ g++ smtptr6.cpp &amp;&amp; ./a.out
+</span><span class=cm>A()
+</span><span class=cm>B()
+</span><span class=cm>1
+</span><span class=cm>1
+</span><span class=cm>~B()
+</span><span class=cm>~A()
+</span><span class=cm>*/</span>
+</code></pre></td></tr></table></div></div><p><code>weak_ptr</code>总结：</p><ol><li><code>weak_ptr</code>不会改变资源的引用计数，它只是一个观察者的角色，通过观察<code>shared_ptr</code>来判定资源是否存在；</li><li><code>weak_ptr</code>持有的引用计数，不会资源的引用计数，而是同一个资源的观察者的计数；</li><li><code>weak_ptr</code>没有提供常用的指针操作，无法直接访问资源，需要先通过<code>lock</code>方法提升为<code>shared_ptr</code>强智能指针，才能访问资源。</li></ol><a class=post-dummy-target id=多线程访问共享对象问题></a><h3>多线程访问共享对象问题</h3><p>我们考虑这样一个问题，线程A和线程B访问一个共享的对象，如果线程A正在析构这个对象，而线程B又要调用该共享对象的方法，此时线程A可能已经把对象析构完成了，线程B再去访问该对象，就会造成不可预期的错误。</p><p>我们可以使用强弱智能指针来解决这个问题：使用强智能指针定义对象，将该对象的弱智能指针传递给其他线程，其他线程使用共享对象前，需要尝试提升弱智能指针，如果提升失败则表明该对象已经被析构，无法正常访问。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;memory&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;thread&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+
+<span class=k>class</span> <span class=nc>A</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>A</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>A()</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+    <span class=o>~</span><span class=n>A</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>~A()</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+    <span class=kt>void</span> <span class=nf>test</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>A::test()</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+<span class=p>}</span><span class=p>;</span>
+
+<span class=kt>void</span> <span class=nf>handler01</span><span class=p>(</span><span class=n>weak_ptr</span><span class=o>&lt;</span><span class=n>A</span><span class=o>&gt;</span> <span class=n>pw</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>this_thread</span><span class=o>:</span><span class=o>:</span><span class=n>sleep_for</span><span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>chrono</span><span class=o>:</span><span class=o>:</span><span class=n>seconds</span><span class=p>(</span><span class=mi>2</span><span class=p>)</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* 睡两秒 */</span>
+    <span class=n>shared_ptr</span><span class=o>&lt;</span><span class=n>A</span><span class=o>&gt;</span> <span class=n>p</span> <span class=o>=</span> <span class=n>pw</span><span class=p>.</span><span class=n>lock</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* 尝试提升弱智能指针 */</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>p</span> <span class=o>!</span><span class=o>=</span> <span class=k>nullptr</span><span class=p>)</span> <span class=p>{</span>
+        <span class=cm>/* 提升成功 */</span>
+        <span class=n>p</span><span class=o>-</span><span class=o>&gt;</span><span class=n>test</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* 访问共享对象的方法 */</span>
+    <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+        <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>Cannot access an object that has been destroyed</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=p>}</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=p>{</span>
+        <span class=cm>/* 强智能指针 指向一个堆上共享对象 */</span>
+        <span class=n>shared_ptr</span><span class=o>&lt;</span><span class=n>A</span><span class=o>&gt;</span> <span class=n>p</span><span class=p>(</span><span class=k>new</span> <span class=n>A</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span> 
+        <span class=cm>/* 启动子线程 给子线程提供一个弱智能指针 */</span>
+        <span class=kr>thread</span> <span class=n>t1</span><span class=p>(</span><span class=n>handler01</span><span class=p>,</span> <span class=n>weak_ptr</span><span class=o>&lt;</span><span class=n>A</span><span class=o>&gt;</span><span class=p>(</span><span class=n>p</span><span class=p>)</span><span class=p>)</span><span class=p>;</span> 
+        <span class=n>t1</span><span class=p>.</span><span class=n>detach</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=cm>/* 智能指针出作用域才析构 所以加一个作用域 */</span>
+    <span class=p>}</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>this_thread</span><span class=o>:</span><span class=o>:</span><span class=n>sleep_for</span><span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>chrono</span><span class=o>:</span><span class=o>:</span><span class=n>seconds</span><span class=p>(</span><span class=mi>5</span><span class=p>)</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* 睡5秒 */</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=cm>/*
+</span><span class=cm>xushun@xushun-virtual-machine:~/cppadvanced$ g++ smtptr8.cpp -lpthread
+</span><span class=cm>xushun@xushun-virtual-machine:~/cppadvanced$ ./a.out 
+</span><span class=cm>A()
+</span><span class=cm>~A()
+</span><span class=cm>Cannot access an object that has been destroyed
+</span><span class=cm>*/</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=自定义智能指针的删除器></a><h2>自定义智能指针的删除器</h2><p>使用智能指针管理的最常见的资源就是堆内存，当智能指针离开作用域的时候，在其析构函数中会<code>delete</code>释放堆内存资源，但是除了堆内存资源，智能指针还可以管理其他资源，比如打开的文件，此时对于文件指针的关闭，就不能使用<code>delete</code>了。这时我们就需要<strong>自定义智能指针释放资源的方式</strong>。</p><p>可以看一下<code>unique_ptr</code>的析构函数：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=o>~</span><span class=n>unique_ptr</span><span class=p>(</span><span class=p>)</span> <span class=k>noexcept</span>
+<span class=p>{</span>	<span class=c1>// destroy the object
+</span><span class=c1></span><span class=k>if</span> <span class=p>(</span><span class=n>get</span><span class=p>(</span><span class=p>)</span> <span class=o>!</span><span class=o>=</span> <span class=n>pointer</span><span class=p>(</span><span class=p>)</span><span class=p>)</span>
+	<span class=p>{</span>
+	<span class=k>this</span><span class=o>-</span><span class=o>&gt;</span><span class=n>get_deleter</span><span class=p>(</span><span class=p>)</span><span class=p>(</span><span class=n>get</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 这里获取底层的删除器，进行函数对象的调用
+</span><span class=c1></span>	<span class=p>}</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>所以我们要实现一个自定义的删除器，实际上就是定义一个函数对象，示例：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;fstream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;memory&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+
+<span class=k>class</span> <span class=nc>FileDeleter</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+	<span class=cm>/* 删除器负责删除资源的函数 */</span>
+	<span class=kt>void</span> <span class=k>operator</span><span class=p>(</span><span class=p>)</span><span class=p>(</span><span class=n>FILE</span> <span class=o>*</span><span class=n>pf</span><span class=p>)</span> <span class=p>{</span>
+		<span class=n>fclose</span><span class=p>(</span><span class=n>pf</span><span class=p>)</span><span class=p>;</span>
+	<span class=p>}</span>
+<span class=p>}</span><span class=p>;</span>
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=cm>/* 由于用智能指针管理文件资源，因此传入自定义的删除器类型FileDeleter */</span>
+	<span class=n>unique_ptr</span><span class=o>&lt;</span><span class=n>FILE</span><span class=p>,</span> <span class=n>FileDeleter</span><span class=o>&gt;</span> <span class=n>filePtr</span><span class=p>(</span><span class=n>fopen</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>data.txt</span><span class=s>&#34;</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>w</span><span class=s>&#34;</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+	<span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+
+</code></pre></td></tr></table></div></div><p>这种方式可以实现自定义的删除器，但是并不好，因为我们需要定义一个类型，而仅仅用于智能指针的删除器。</p><p>还有更好的方式，可以使用c++11标准提供的函数对象function和lambda表达式更好的处理自定义删除器：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;fstream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;memory&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;functional&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+	<span class=c1>// 自定义智能指针删除器，关闭文件资源  返回值为void 参数为FILE*
+</span><span class=c1></span>	<span class=n>unique_ptr</span><span class=o>&lt;</span><span class=n>FILE</span><span class=p>,</span> <span class=n>function</span><span class=o>&lt;</span><span class=kt>void</span><span class=p>(</span><span class=n>FILE</span><span class=o>*</span><span class=p>)</span><span class=o>&gt;</span><span class=o>&gt;</span> 
+		<span class=n>filePtr</span><span class=p>(</span><span class=n>fopen</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>data.txt</span><span class=s>&#34;</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>w</span><span class=s>&#34;</span><span class=p>)</span><span class=p>,</span> <span class=p>[</span><span class=p>]</span><span class=p>(</span><span class=n>FILE</span> <span class=o>*</span><span class=n>pf</span><span class=p>)</span><span class=o>-</span><span class=o>&gt;</span><span class=kt>void</span><span class=p>{</span><span class=n>fclose</span><span class=p>(</span><span class=n>pf</span><span class=p>)</span><span class=p>;</span><span class=p>}</span><span class=p>)</span><span class=p>;</span>
+
+	<span class=c1>// 自定义智能指针删除器，释放数组资源  返回值为void 参数为int*
+</span><span class=c1></span>	<span class=n>unique_ptr</span><span class=o>&lt;</span><span class=kt>int</span><span class=p>,</span> <span class=n>function</span><span class=o>&lt;</span><span class=kt>void</span><span class=p>(</span><span class=kt>int</span><span class=o>*</span><span class=p>)</span><span class=o>&gt;</span><span class=o>&gt;</span>
+		<span class=n>arrayPtr</span><span class=p>(</span><span class=k>new</span> <span class=kt>int</span><span class=p>[</span><span class=mi>100</span><span class=p>]</span><span class=p>,</span> <span class=p>[</span><span class=p>]</span><span class=p>(</span><span class=kt>int</span> <span class=o>*</span><span class=n>ptr</span><span class=p>)</span><span class=o>-</span><span class=o>&gt;</span><span class=kt>void</span><span class=p>{</span><span class=k>delete</span><span class=p>[</span><span class=p>]</span><span class=n>ptr</span><span class=p>;</span><span class=p>}</span><span class=p>)</span><span class=p>;</span>
+	<span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+<span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
+<span>2022-09-10</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
+<span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fc-%25E9%25AB%2598%25E7%25BA%25A702-%25E6%2599%25BA%25E8%2583%25BD%25E6%258C%2587%25E9%2592%2588%2f&text=%e3%80%90C%2b%2b%e9%ab%98%e7%ba%a7%e3%80%9102%20-%20%e6%99%ba%e8%83%bd%e6%8c%87%e9%92%88&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2fc-%25E9%25AB%2598%25E7%25BA%25A702-%25E6%2599%25BA%25E8%2583%25BD%25E6%258C%2587%25E9%2592%2588%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fc-%25E9%25AB%2598%25E7%25BA%25A702-%25E6%2599%25BA%25E8%2583%25BD%25E6%258C%2587%25E9%2592%2588%2f&title=%e3%80%90C%2b%2b%e9%ab%98%e7%ba%a7%e3%80%9102%20-%20%e6%99%ba%e8%83%bd%e6%8c%87%e9%92%88" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/c++/><i class="fas fa-tag fa-fw"></i>&nbsp;C++</a>&nbsp;</span></section><section><span><a href=javascript:window.history.back();>Back</a></span>&nbsp;|&nbsp;<span><a href=https://xushun1221.github.io>Home</a></span></section></div><div class=post-nav><a href=https://xushun1221.github.io/2022/c-%E9%AB%98%E7%BA%A701-%E5%AF%B9%E8%B1%A1%E4%BC%98%E5%8C%96%E5%8F%B3%E5%80%BC%E5%BC%95%E7%94%A8%E4%BC%98%E5%8C%96/ class=prev rel=prev title="【C++高级】01 - 对象优化&右值引用优化"><i class="fas fa-angle-left fa-fw"></i>【C++高级】01 - 对象优化&右值引用优化</a></div><div class=post-comment></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2022</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=https://xushun1221.github.io/about/ target=_blank>xushun</a> | </span>Powered by <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> & <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer">LoveIt</a></div></div></footer></div><a href=# class=dynamic-to-top id=dynamic-to-top data-scroll><span>&nbsp;</span>
+</a><script src=/js/lib/jquery/jquery.slim.min.js></script><script src=/js/lib/lazysizes/lazysizes.min.js></script><script src=/js/lib/smooth-scroll/smooth-scroll.polyfills.min.js></script><script>window.scroll=new SmoothScroll('[data-scroll]',{speed:300,speedAsDuration:true});</script><link rel=stylesheet href=/css/lib/katex/katex.min.css><script src=/js/lib/katex/katex.min.js></script><script defer src=/js/lib/katex/auto-render.min.js></script><link rel=stylesheet href=/css/lib/katex/copy-tex.min.css><script defer src=/js/lib/katex/copy-tex.min.js></script><script defer src=/js/lib/katex/mhchem.min.js></script><script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true},{left:"$",right:"$",display:false},]});});</script><script src=/js/blog.min.js></script></body></html>
