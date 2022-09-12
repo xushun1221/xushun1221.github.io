@@ -1,0 +1,1017 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【C++高级】03 - 绑定器、函数对象、lambda | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/c-%E9%AB%98%E7%BA%A702-%E6%99%BA%E8%83%BD%E6%8C%87%E9%92%88/><link rel=canonical href=https://xushun1221.github.io/2022/c-%E9%AB%98%E7%BA%A703-%E7%BB%91%E5%AE%9A%E5%99%A8%E5%87%BD%E6%95%B0%E5%AF%B9%E8%B1%A1lambda/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【C++高级】03 - 绑定器、函数对象、lambda"><meta name=twitter:description content="绑定器和函数对象都是c++11从boost库中引入的机制。 bind1st bind2nd 绑定器 在c++ STL中提供了两个绑定器： bind1st：将operator()"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【C\x2b\x2b高级】03 - 绑定器、函数对象、lambda","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/c-%E9%AB%98%E7%BA%A703-%E7%BB%91%E5%AE%9A%E5%99%A8%E5%87%BD%E6%95%B0%E5%AF%B9%E8%B1%A1lambda\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"C\x2b\x2b","wordcount":4728,"url":"https:\/\/xushun1221.github.io\/2022\/c-%E9%AB%98%E7%BA%A703-%E7%BB%91%E5%AE%9A%E5%99%A8%E5%87%BD%E6%95%B0%E5%AF%B9%E8%B1%A1lambda\/","datePublished":"2022-09-11T00:00:00\x2b00:00","dateModified":"2022-09-11T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【C++高级】03 - 绑定器、函数对象、lambda</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-09-11>2022-09-11</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 4728 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#bind1st-bind2nd-绑定器>bind1st bind2nd 绑定器</a><ul><li><a href=#何时使用绑定器>何时使用绑定器？</a></li><li><a href=#绑定器的实现原理>绑定器的实现原理</a></li></ul></li><li><a href=#function-函数对象类型>function 函数对象类型</a><ul><li><a href=#function-使用>function 使用</a></li><li><a href=#function-实现原理>function 实现原理</a><ul><li><a href=#模板的完全特例化和部分特例化>模板的完全特例化和部分特例化</a></li><li><a href=#function-实现原理-1>function 实现原理</a></li></ul></li></ul></li><li><a href=#c11-bind-绑定器>c++11 bind 绑定器</a></li><li><a href=#lambda-表达式-c11>lambda 表达式 (c++11)</a><ul><li><a href=#lambda-的实现原理>lambda 的实现原理</a></li><li><a href=#lambda-表达式的应用>lambda 表达式的应用</a></li></ul></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#bind1st-bind2nd-绑定器>bind1st bind2nd 绑定器</a><ul><li><a href=#何时使用绑定器>何时使用绑定器？</a></li><li><a href=#绑定器的实现原理>绑定器的实现原理</a></li></ul></li><li><a href=#function-函数对象类型>function 函数对象类型</a><ul><li><a href=#function-使用>function 使用</a></li><li><a href=#function-实现原理>function 实现原理</a><ul><li><a href=#模板的完全特例化和部分特例化>模板的完全特例化和部分特例化</a></li><li><a href=#function-实现原理-1>function 实现原理</a></li></ul></li></ul></li><li><a href=#c11-bind-绑定器>c++11 bind 绑定器</a></li><li><a href=#lambda-表达式-c11>lambda 表达式 (c++11)</a><ul><li><a href=#lambda-的实现原理>lambda 的实现原理</a></li><li><a href=#lambda-表达式的应用>lambda 表达式的应用</a></li></ul></li></ul></nav></div></details></div><div class=post-content><p>绑定器和函数对象都是c++11从boost库中引入的机制。</p><a class=post-dummy-target id=bind1st-bind2nd-绑定器></a><h2>bind1st bind2nd 绑定器</h2><p>在c++ STL中提供了两个绑定器：</p><ol><li><code>bind1st</code>：将<code>operator()</code>的第一个形参变量绑定成一个确定的值；</li><li><code>bind2nd</code>：将<code>operator()</code>的第二个形参变量绑定曾一个确定的值。</li></ol><p>简单来说就是，绑定器和二元函数对象进行组合，就会得到一个一元函数对象。</p><a class=post-dummy-target id=何时使用绑定器></a><h3>何时使用绑定器？</h3><p>示例：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;vector&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;algorithm&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+<span class=k>template</span> <span class=o>&lt;</span><span class=k>typename</span> <span class=n>Container</span><span class=o>&gt;</span>
+<span class=kt>void</span> <span class=n>showContainer</span><span class=p>(</span><span class=n>Container</span><span class=o>&amp;</span> <span class=n>c</span><span class=p>)</span> <span class=p>{</span>
+    <span class=cm>/* 实例化之前 编译器不知道 Container::iterator 是不是类型 需要 typename 修饰 */</span>
+    <span class=k>typename</span> <span class=n>Container</span><span class=o>:</span><span class=o>:</span><span class=n>iterator</span> <span class=n>it</span> <span class=o>=</span> <span class=n>c</span><span class=p>.</span><span class=n>begin</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span> <span class=p>;</span> <span class=n>it</span> <span class=o>!</span><span class=o>=</span> <span class=n>c</span><span class=p>.</span><span class=n>end</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>it</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=o>*</span><span class=n>it</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> </span><span class=s>&#34;</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span> <span class=n>vec</span><span class=p>;</span>
+    <span class=n>srand</span><span class=p>(</span><span class=n>time</span><span class=p>(</span><span class=k>nullptr</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=mi>20</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>vec</span><span class=p>.</span><span class=n>push_back</span><span class=p>(</span><span class=n>rand</span><span class=p>(</span><span class=p>)</span> <span class=o>%</span> <span class=mi>100</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>showContainer</span><span class=p>(</span><span class=n>vec</span><span class=p>)</span><span class=p>;</span>
+    <span class=cm>/* sort 默认从小到大排序 */</span>
+    <span class=n>sort</span><span class=p>(</span><span class=n>vec</span><span class=p>.</span><span class=n>begin</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>vec</span><span class=p>.</span><span class=n>end</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>showContainer</span><span class=p>(</span><span class=n>vec</span><span class=p>)</span><span class=p>;</span>
+    <span class=cm>/* 从大到小排序 需要二元函数对象 greater */</span>
+    <span class=n>sort</span><span class=p>(</span><span class=n>vec</span><span class=p>.</span><span class=n>begin</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>vec</span><span class=p>.</span><span class=n>end</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>greater</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>showContainer</span><span class=p>(</span><span class=n>vec</span><span class=p>)</span><span class=p>;</span>
+    <span class=cm>/* 
+</span><span class=cm>        现在 vec 从大到小排序 
+</span><span class=cm>        我们要将 70 按序插入 需要找到第一个比 70 小的元素 
+</span><span class=cm>        使用 find_if 函数进行查找
+</span><span class=cm>        find_if 需要一个一元的函数对象  它和 70 进行比较
+</span><span class=cm>        而 less 和 greater 都是二元的函数对象
+</span><span class=cm>        这时就需要使用 bind 绑定器 进行参数绑定 使其变成一元函数对象
+</span><span class=cm>    */</span>
+    <span class=k>auto</span> <span class=n>it1</span> <span class=o>=</span> <span class=n>find_if</span><span class=p>(</span><span class=n>vec</span><span class=p>.</span><span class=n>begin</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>vec</span><span class=p>.</span><span class=n>end</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>bind2nd</span><span class=p>(</span><span class=n>less</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=mi>70</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>auto</span> <span class=n>it2</span> <span class=o>=</span> <span class=n>find_if</span><span class=p>(</span><span class=n>vec</span><span class=p>.</span><span class=n>begin</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>vec</span><span class=p>.</span><span class=n>end</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>bind1st</span><span class=p>(</span><span class=n>greater</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=mi>70</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=cm>/*
+</span><span class=cm>        在 vec 中找到第一个小于70的元素
+</span><span class=cm>        bind2nd + less     a &lt; 70 ?
+</span><span class=cm>        bind1st + greater  70 &gt; a ?
+</span><span class=cm>        这两种都可以
+</span><span class=cm>    */</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>it1</span> <span class=o>=</span><span class=o>=</span> <span class=n>it2</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>vec</span><span class=p>.</span><span class=n>insert</span><span class=p>(</span><span class=n>it1</span><span class=p>,</span> <span class=mi>70</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>showContainer</span><span class=p>(</span><span class=n>vec</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=绑定器的实现原理></a><h3>绑定器的实现原理</h3><p>绑定器实现的原理，其实就是：</p><ol><li>绑定器函数接收一个二元函数对象和一个固定参数，并返回一个一元函数对象；</li><li>该一元函数对象由自定义的函数对象提供；</li><li>该函数对象仅仅是对原本的二元函数对象进行了封装，将其某个参数固定为一个量，它的<code>operator()</code>重载仅接收一个参数，使用上就和一元函数对象相同了。</li></ol><p>可以看出，绑定器是函数对象的一个应用。</p><p>示例：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span><span class=lnt>59
+</span><span class=lnt>60
+</span><span class=lnt>61
+</span><span class=lnt>62
+</span><span class=lnt>63
+</span><span class=lnt>64
+</span><span class=lnt>65
+</span><span class=lnt>66
+</span><span class=lnt>67
+</span><span class=lnt>68
+</span><span class=lnt>69
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;vector&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;algorithm&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+
+<span class=k>template</span> <span class=o>&lt;</span><span class=k>typename</span> <span class=n>Container</span><span class=o>&gt;</span>
+<span class=kt>void</span> <span class=n>showContainer</span><span class=p>(</span><span class=n>Container</span><span class=o>&amp;</span> <span class=n>c</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>typename</span> <span class=n>Container</span><span class=o>:</span><span class=o>:</span><span class=n>iterator</span> <span class=n>it</span> <span class=o>=</span> <span class=n>c</span><span class=p>.</span><span class=n>begin</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span> <span class=p>;</span> <span class=n>it</span> <span class=o>!</span><span class=o>=</span> <span class=n>c</span><span class=p>.</span><span class=n>end</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>it</span><span class=p>)</span> <span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=o>*</span><span class=n>it</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> </span><span class=s>&#34;</span><span class=p>;</span> <span class=p>}</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=k>template</span> <span class=o>&lt;</span><span class=k>typename</span> <span class=n>Iterator</span><span class=p>,</span> <span class=k>typename</span> <span class=n>Compare</span><span class=o>&gt;</span>
+<span class=n>Iterator</span> <span class=n>my_find_if</span><span class=p>(</span><span class=n>Iterator</span> <span class=n>first</span><span class=p>,</span> <span class=n>Iterator</span> <span class=n>end</span><span class=p>,</span> <span class=n>Compare</span> <span class=n>comp</span><span class=p>)</span> <span class=p>{</span>
+    <span class=cm>/* 在 [first, end) 范围上遍历时 第一个满足 comp 的迭代器 返回 */</span>
+    <span class=k>for</span> <span class=p>(</span><span class=p>;</span> <span class=n>first</span> <span class=o>!</span><span class=o>=</span> <span class=n>end</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>first</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>comp</span><span class=p>(</span><span class=o>*</span><span class=n>first</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=nb>true</span><span class=p>)</span> <span class=p>{</span>
+            <span class=k>return</span> <span class=n>first</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=k>return</span> <span class=n>end</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=k>template</span> <span class=o>&lt;</span><span class=k>typename</span> <span class=n>Compare</span><span class=p>,</span> <span class=k>typename</span> <span class=n>T</span><span class=o>&gt;</span>
+<span class=k>class</span> <span class=nc>_mybind1st</span> <span class=p>{</span>
+    <span class=cm>/* 一元函数对象的类 */</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>_mybind1st</span><span class=p>(</span><span class=n>Compare</span> <span class=n>comp</span><span class=p>,</span> <span class=n>T</span> <span class=n>val</span><span class=p>)</span> <span class=o>:</span> <span class=n>_comp</span><span class=p>(</span><span class=n>comp</span><span class=p>)</span><span class=p>,</span> <span class=n>_val</span><span class=p>(</span><span class=n>val</span><span class=p>)</span> <span class=p>{</span><span class=p>}</span>
+    <span class=cm>/* operator() 重载 只需要第二个参数 第一个由绑定器提供了 */</span>
+    <span class=kt>bool</span> <span class=nf>operator</span><span class=p>(</span><span class=p>)</span><span class=p>(</span><span class=k>const</span> <span class=n>T</span><span class=o>&amp;</span> <span class=n>second</span><span class=p>)</span> <span class=p>{</span>
+        <span class=cm>/* 仅仅是对 comp 函数对象进行了封装 底层仍然是 comp 的执行 */</span>
+        <span class=k>return</span> <span class=n>comp</span><span class=p>(</span><span class=n>_val</span><span class=p>,</span> <span class=n>second</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=k>private</span><span class=o>:</span>
+    <span class=n>Compare</span> <span class=n>_comp</span><span class=p>;</span>
+    <span class=n>T</span> <span class=n>_val</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+
+<span class=k>template</span> <span class=o>&lt;</span><span class=k>typename</span> <span class=n>Compare</span><span class=p>,</span> <span class=k>typename</span> <span class=n>T</span><span class=o>&gt;</span>
+<span class=n>_mybind1st</span><span class=o>&lt;</span><span class=n>Compare</span><span class=p>,</span> <span class=n>T</span><span class=o>&gt;</span> <span class=n>my_bind1st</span><span class=p>(</span><span class=n>Compare</span> <span class=n>comp</span><span class=p>,</span> <span class=k>const</span> <span class=n>T</span><span class=o>&amp;</span> <span class=n>val</span><span class=p>)</span> <span class=p>{</span>
+    <span class=cm>/* 
+</span><span class=cm>        my_bind1st 接收二元函数对象和一个值 
+</span><span class=cm>        将 该值和二元函数对象的第一个参数绑定起来
+</span><span class=cm>        并 返回一个一元函数对象
+</span><span class=cm>    */</span>
+    <span class=k>return</span> <span class=n>_mybind1st</span><span class=o>&lt;</span><span class=n>Compare</span><span class=p>,</span> <span class=n>T</span><span class=o>&gt;</span><span class=p>(</span><span class=n>comp</span><span class=p>,</span> <span class=n>val</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span> <span class=n>vec</span><span class=p>;</span>
+    <span class=n>srand</span><span class=p>(</span><span class=n>time</span><span class=p>(</span><span class=k>nullptr</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=mi>20</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>vec</span><span class=p>.</span><span class=n>push_back</span><span class=p>(</span><span class=n>rand</span><span class=p>(</span><span class=p>)</span> <span class=o>%</span> <span class=mi>100</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>showContainer</span><span class=p>(</span><span class=n>vec</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>sort</span><span class=p>(</span><span class=n>vec</span><span class=p>.</span><span class=n>begin</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>vec</span><span class=p>.</span><span class=n>end</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>greater</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>showContainer</span><span class=p>(</span><span class=n>vec</span><span class=p>)</span><span class=p>;</span>
+    <span class=cm>/* 使用自己写的绑定器 */</span>
+    <span class=k>auto</span> <span class=n>it</span> <span class=o>=</span> <span class=n>find_if</span><span class=p>(</span><span class=n>vec</span><span class=p>.</span><span class=n>begin</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>vec</span><span class=p>.</span><span class=n>end</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>bind1st</span><span class=p>(</span><span class=n>greater</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=mi>70</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>vec</span><span class=p>.</span><span class=n>insert</span><span class=p>(</span><span class=n>it</span><span class=p>,</span> <span class=mi>70</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>showContainer</span><span class=p>(</span><span class=n>vec</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=cm>/*
+</span><span class=cm>xushun@xushun-virtual-machine:~/cppadvanced$ g++ bindtest2.cpp &amp;&amp; ./a.out
+</span><span class=cm>41 17 78 62 90 34 65 91 90 100 88 22 21 33 50 39 39 52 53 16 
+</span><span class=cm>100 91 90 90 88 78 65 62 53 52 50 41 39 39 34 33 22 21 17 16 
+</span><span class=cm>100 91 90 90 88 78 70 65 62 53 52 50 41 39 39 34 33 22 21 17 16 
+</span><span class=cm>*/</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=function-函数对象类型></a><h2>function 函数对象类型</h2><p>要使用<code>function</code>类，需要包含头文件<code>functional</code>。</p><p><code>function</code>函数对象类型，可以对函数，或者函数对象，进行包装。</p><p>为什么使用<code>function</code>类型？<br>绑定器、函数对象、lambda表达式，它们都只能使用在一条语句中。如果我们想要将绑定器、函数对象、lambda表达式它们的<strong>类型保留下来</strong>，在多个地方使用，那么就需要用<code>function</code>函数对象类型。</p><a class=post-dummy-target id=function-使用></a><h3>function 使用</h3><p>小结：</p><ol><li>通过函数类型实例化<code>function</code>对象；</li><li>通过<code>function</code>调用<code>operator()</code>时，需要根据函数类型传入相应的参数。</li></ol><p>使用示例：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;functional&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+
+<span class=kt>void</span> <span class=nf>hello1</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>hello world</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+<span class=kt>void</span> <span class=nf>hello2</span><span class=p>(</span><span class=n>string</span> <span class=n>str</span><span class=p>)</span> <span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>str</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+<span class=kt>int</span> <span class=nf>sum</span><span class=p>(</span><span class=kt>int</span> <span class=n>a</span><span class=p>,</span> <span class=kt>int</span> <span class=n>b</span><span class=p>)</span> <span class=p>{</span> <span class=k>return</span> <span class=n>a</span> <span class=o>+</span> <span class=n>b</span><span class=p>;</span> <span class=p>}</span>
+<span class=k>class</span> <span class=nc>Test</span> <span class=p>{</span> <span class=k>public</span><span class=o>:</span> <span class=kt>void</span> <span class=n>hello</span><span class=p>(</span><span class=n>string</span> <span class=n>str</span><span class=p>)</span> <span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>str</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=p>}</span> <span class=p>}</span><span class=p>;</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=cm>/* function 类希望用一个函数类型实例化 */</span>
+    <span class=n>function</span><span class=o>&lt;</span><span class=kt>void</span><span class=p>(</span><span class=p>)</span><span class=o>&gt;</span> <span class=n>func1</span> <span class=o>=</span> <span class=n>hello1</span><span class=p>;</span> <span class=cm>/* void() 表示返回值为void 参数列表为空的函数类型 */</span>
+    <span class=n>func1</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* func1.operator()() =&gt; hello1() */</span>
+    
+    <span class=n>function</span><span class=o>&lt;</span><span class=kt>void</span><span class=p>(</span><span class=n>string</span><span class=p>)</span><span class=o>&gt;</span> <span class=n>func2</span> <span class=o>=</span> <span class=n>hello2</span><span class=p>;</span>
+    <span class=n>func2</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>function&lt;void(string)&gt;</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    
+    <span class=n>function</span><span class=o>&lt;</span><span class=kt>int</span><span class=p>(</span><span class=kt>int</span><span class=p>,</span> <span class=kt>int</span><span class=p>)</span><span class=o>&gt;</span> <span class=n>func3</span> <span class=o>=</span> <span class=n>sum</span><span class=p>;</span> <span class=cm>/* int(int, int) 表示返回值为int 参数列表为int, int */</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>func3</span><span class=p>(</span><span class=mi>10</span><span class=p>,</span> <span class=mi>20</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+
+    <span class=cm>/* function 可以保存一个函数对象的类型 */</span>
+    <span class=n>function</span><span class=o>&lt;</span><span class=kt>int</span><span class=p>(</span><span class=kt>int</span><span class=p>,</span> <span class=kt>int</span><span class=p>)</span><span class=o>&gt;</span> <span class=n>func4</span> <span class=o>=</span> <span class=p>[</span><span class=p>]</span><span class=p>(</span><span class=kt>int</span> <span class=n>a</span><span class=p>,</span> <span class=kt>int</span> <span class=n>b</span><span class=p>)</span><span class=o>-</span><span class=o>&gt;</span><span class=kt>int</span><span class=p>{</span> <span class=k>return</span> <span class=n>a</span> <span class=o>+</span> <span class=n>b</span><span class=p>;</span> <span class=p>}</span><span class=p>;</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>func4</span><span class=p>(</span><span class=mi>100</span><span class=p>,</span> <span class=mi>200</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+
+    <span class=cm>/* 类的成员方法的参数列表中需要包含对象指针 */</span>
+    <span class=n>function</span><span class=o>&lt;</span><span class=kt>void</span><span class=p>(</span><span class=n>Test</span><span class=o>*</span><span class=p>,</span> <span class=n>string</span><span class=p>)</span><span class=o>&gt;</span> <span class=n>func5</span> <span class=o>=</span> <span class=o>&amp;</span><span class=n>Test</span><span class=o>:</span><span class=o>:</span><span class=n>hello</span><span class=p>;</span>
+    <span class=n>Test</span> <span class=n>a</span><span class=p>;</span>
+    <span class=n>func5</span><span class=p>(</span><span class=o>&amp;</span><span class=n>a</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>Test::hello()</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* 调用成员方法 必须依赖一个对象 */</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>为什么不直接调用函数，而是要用<code>function</code>进行包装？看下面的例子：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;functional&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;map&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+
+<span class=kt>void</span> <span class=nf>doHello</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>hello</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+<span class=kt>void</span> <span class=nf>doBye</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>bye</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>choice</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+    <span class=n>map</span><span class=o>&lt;</span><span class=kt>int</span><span class=p>,</span> <span class=n>function</span><span class=o>&lt;</span><span class=kt>void</span><span class=p>(</span><span class=p>)</span><span class=o>&gt;</span><span class=o>&gt;</span> <span class=n>actionMap</span><span class=p>;</span>
+    <span class=n>actionMap</span><span class=p>[</span><span class=mi>1</span><span class=p>]</span> <span class=o>=</span> <span class=n>doHello</span><span class=p>;</span>
+    <span class=n>actionMap</span><span class=p>[</span><span class=mi>2</span><span class=p>]</span> <span class=o>=</span> <span class=n>doBye</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span><span class=p>;</span><span class=p>;</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>1. hello</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+        <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>2. bye</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+        <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>choose your action</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+        <span class=n>cin</span> <span class=o>&gt;</span><span class=o>&gt;</span> <span class=n>choice</span><span class=p>;</span>
+        <span class=k>auto</span> <span class=n>it</span> <span class=o>=</span> <span class=n>actionMap</span><span class=p>.</span><span class=n>find</span><span class=p>(</span><span class=n>choice</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>it</span> <span class=o>=</span><span class=o>=</span> <span class=n>actionMap</span><span class=p>.</span><span class=n>end</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>choose again</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+        <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+            <span class=n>it</span><span class=o>-</span><span class=o>&gt;</span><span class=n>second</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=cm>/* 使用下面这种方式 无法做到开-闭原则 */</span>
+        <span class=cm>/*
+</span><span class=cm>            switch (choice) {
+</span><span class=cm>            case 1:
+</span><span class=cm>                doHello(); break;
+</span><span class=cm>            case 2:
+</span><span class=cm>                doBye(); break;
+</span><span class=cm>            default: break;
+</span><span class=cm>            }
+</span><span class=cm>        */</span>
+    <span class=p>}</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=function-实现原理></a><h3>function 实现原理</h3><a class=post-dummy-target id=模板的完全特例化和部分特例化></a><h4>模板的完全特例化和部分特例化</h4><p><strong>模板的特例化</strong>也叫特殊的实例化，特例化不是编译器做的而是用户提供的，因为编译器对于某些类型提供的实例化逻辑上不正确。如果特例化中提供了确定的类型，就叫做<strong>完全特例化</strong>，否则叫做<strong>部分特例化</strong>。</p><p>示例1：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;cstring&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+
+<span class=k>template</span> <span class=o>&lt;</span><span class=k>typename</span> <span class=n>T</span><span class=o>&gt;</span>
+<span class=kt>bool</span> <span class=n>compare</span><span class=p>(</span><span class=n>T</span> <span class=n>a</span><span class=p>,</span> <span class=n>T</span> <span class=n>b</span><span class=p>)</span> <span class=p>{</span> <span class=k>return</span> <span class=n>a</span> <span class=o>&lt;</span> <span class=n>b</span><span class=p>;</span> <span class=p>}</span>
+
+<span class=cm>/* 提供对字符串类型的特例化 */</span>
+<span class=k>template</span> <span class=o>&lt;</span><span class=o>&gt;</span>
+<span class=kt>bool</span> <span class=n>compare</span><span class=o>&lt;</span><span class=k>const</span> <span class=kt>char</span><span class=o>*</span><span class=o>&gt;</span><span class=p>(</span><span class=k>const</span> <span class=kt>char</span><span class=o>*</span> <span class=n>a</span><span class=p>,</span> <span class=k>const</span> <span class=kt>char</span><span class=o>*</span> <span class=n>b</span><span class=p>)</span> <span class=p>{</span>
+    <span class=cm>/* 完全特例化  因为它的参数都是确定的 */</span>
+    <span class=k>return</span> <span class=nf>strcmp</span><span class=p>(</span><span class=n>a</span><span class=p>,</span> <span class=n>b</span><span class=p>)</span> <span class=o>&lt;</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>compare</span><span class=p>(</span><span class=mi>10</span><span class=p>,</span> <span class=mi>20</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>     <span class=cm>/* 正确的实例化 */</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>compare</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>aa</span><span class=s>&#34;</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>bb</span><span class=s>&#34;</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=cm>/* 编译器无法提供正确的实例化 需要我们添加特例化 */</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>示例2：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;cstring&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+
+<span class=k>template</span> <span class=o>&lt;</span><span class=k>typename</span> <span class=n>T</span><span class=o>&gt;</span>
+<span class=k>class</span> <span class=nc>Vector</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>Vector</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>Vector</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+<span class=p>}</span><span class=p>;</span>
+
+<span class=cm>/* 完全特例化 */</span>
+<span class=k>template</span> <span class=o>&lt;</span><span class=o>&gt;</span>
+<span class=k>class</span> <span class=nc>Vector</span><span class=o>&lt;</span><span class=kt>char</span><span class=o>*</span><span class=o>&gt;</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>Vector</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>Vector&lt;char*&gt;</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+<span class=p>}</span><span class=p>;</span>
+
+<span class=cm>/* 针对指针类型提供的特例化版本  但是没有指定具体的指针类型  所以是部分特例化 */</span>
+<span class=k>template</span> <span class=o>&lt;</span><span class=k>typename</span> <span class=n>Ty</span><span class=o>&gt;</span>
+<span class=k>class</span> <span class=nc>Vector</span><span class=o>&lt;</span><span class=n>Ty</span><span class=o>*</span><span class=o>&gt;</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>Vector</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>Vector&lt;Ty*&gt;</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+<span class=p>}</span><span class=p>;</span>
+
+<span class=cm>/* 为返回值为R 有两个参数的A1A2 的函数指针 提供部分特例化 */</span>
+<span class=cm>/* 将函数返回值和参数也参数化了 */</span>
+<span class=k>template</span><span class=o>&lt;</span><span class=k>typename</span> <span class=n>R</span><span class=p>,</span> <span class=k>typename</span> <span class=n>A1</span><span class=p>,</span> <span class=k>typename</span> <span class=n>A2</span><span class=o>&gt;</span>
+<span class=k>class</span> <span class=nc>Vector</span><span class=o>&lt;</span><span class=n>R</span><span class=p>(</span><span class=o>*</span><span class=p>)</span><span class=p>(</span><span class=n>A1</span><span class=p>,</span> <span class=n>A2</span><span class=p>)</span><span class=o>&gt;</span> <span class=p>{</span> <span class=cm>/* 没有提供返回值和参数的具体类型 所以是部分特例化 */</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>Vector</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>Vector&lt;R(*)(A1, A2)&gt;</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+<span class=p>}</span><span class=p>;</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>Vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span> <span class=n>vec1</span><span class=p>;</span>   <span class=c1>// 没有特例化版本  编译器默认实例化
+</span><span class=c1></span>    <span class=n>Vector</span><span class=o>&lt;</span><span class=kt>char</span><span class=o>*</span><span class=o>&gt;</span> <span class=n>vec2</span><span class=p>;</span> <span class=c1>// 有完全特例化版本  使用完全特例化
+</span><span class=c1></span>    <span class=n>Vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>*</span><span class=o>&gt;</span> <span class=n>vec3</span><span class=p>;</span>  <span class=c1>// 没有完全特例化版本 使用部分特例化
+</span><span class=c1></span>    <span class=n>Vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=p>(</span><span class=o>*</span><span class=p>)</span><span class=p>(</span><span class=kt>int</span><span class=p>,</span> <span class=kt>int</span><span class=p>)</span><span class=o>&gt;</span> <span class=n>vec4</span><span class=p>;</span> <span class=c1>// 部分特例化
+</span><span class=c1></span>    <span class=n>Vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=p>(</span><span class=kt>int</span><span class=p>,</span> <span class=kt>int</span><span class=p>)</span><span class=o>&gt;</span> <span class=n>vec5</span><span class=p>;</span> <span class=c1>// 默认特例化
+</span><span class=c1></span>    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=cm>/*
+</span><span class=cm>xushun@xushun-virtual-machine:~/cppadvanced$ g++ telihua.cpp &amp;&amp; ./a.out
+</span><span class=cm>Vector
+</span><span class=cm>Vector&lt;char*&gt;
+</span><span class=cm>Vector&lt;Ty*&gt;
+</span><span class=cm>Vector&lt;R(*)(A1, A2)&gt;
+</span><span class=cm>Vector
+</span><span class=cm>*/</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=function-实现原理-1></a><h4>function 实现原理</h4><p><code>function</code>使用一个模板类来实现，用一个成员变量保存实例化对象的函数指针，调用<code>operator()</code>时调用该函数指针。对于不同参数数量的函数类型，分别对模板类进行不同的特例化。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+
+<span class=k>template</span> <span class=o>&lt;</span><span class=k>typename</span> <span class=n>Fty</span><span class=o>&gt;</span>
+<span class=k>class</span> <span class=nc>my_function</span> <span class=p>{</span>  <span class=p>}</span><span class=p>;</span>
+
+<span class=k>template</span> <span class=o>&lt;</span><span class=k>typename</span> <span class=n>R</span><span class=p>,</span> <span class=k>typename</span> <span class=n>A1</span><span class=o>&gt;</span>
+<span class=k>class</span> <span class=nc>my_function</span><span class=o>&lt;</span><span class=n>R</span><span class=p>(</span><span class=n>A1</span><span class=p>)</span><span class=o>&gt;</span> <span class=p>{</span>
+    <span class=cm>/* 函数类型为(返回值为R 参数列表为A1) 的模板特例化 */</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=cm>/* 函数指针类型 */</span>
+    <span class=k>using</span> <span class=n>PFUNC</span> <span class=o>=</span> <span class=n>R</span><span class=p>(</span><span class=o>*</span><span class=p>)</span><span class=p>(</span><span class=n>A1</span><span class=p>)</span><span class=p>;</span>
+    <span class=cm>/* 构造函数  保存传入的函数指针类型 */</span>
+    <span class=n>my_function</span><span class=p>(</span><span class=n>PFUNC</span> <span class=n>pfunc</span><span class=p>)</span> <span class=o>:</span> <span class=n>_pfunc</span><span class=p>(</span><span class=n>pfunc</span><span class=p>)</span> <span class=p>{</span><span class=p>}</span>
+    <span class=cm>/* operator() 小括号运算符重载时 调用传入的函数 */</span>
+    <span class=n>R</span> <span class=nf>operator</span><span class=p>(</span><span class=p>)</span><span class=p>(</span><span class=n>A1</span> <span class=n>arg</span><span class=p>)</span> <span class=p>{</span> <span class=k>return</span> <span class=n>_pfunc</span><span class=p>(</span><span class=n>arg</span><span class=p>)</span><span class=p>;</span> <span class=p>}</span>
+<span class=k>private</span><span class=o>:</span>
+    <span class=n>PFUNC</span> <span class=n>_pfunc</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+
+<span class=k>template</span> <span class=o>&lt;</span><span class=k>typename</span> <span class=n>R</span><span class=p>,</span> <span class=k>typename</span> <span class=n>A1</span><span class=p>,</span> <span class=k>typename</span> <span class=n>A2</span><span class=o>&gt;</span>
+<span class=k>class</span> <span class=nc>my_function</span><span class=o>&lt;</span><span class=n>R</span><span class=p>(</span><span class=n>A1</span><span class=p>,</span> <span class=n>A2</span><span class=p>)</span><span class=o>&gt;</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=k>using</span> <span class=n>PFUNC</span> <span class=o>=</span> <span class=n>R</span><span class=p>(</span><span class=o>*</span><span class=p>)</span><span class=p>(</span><span class=n>A1</span><span class=p>,</span> <span class=n>A2</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>my_function</span><span class=p>(</span><span class=n>PFUNC</span> <span class=n>pfunc</span><span class=p>)</span> <span class=o>:</span> <span class=n>_pfunc</span><span class=p>(</span><span class=n>pfunc</span><span class=p>)</span> <span class=p>{</span><span class=p>}</span>
+    <span class=n>R</span> <span class=nf>operator</span><span class=p>(</span><span class=p>)</span><span class=p>(</span><span class=n>A1</span> <span class=n>arg1</span><span class=p>,</span> <span class=n>A2</span> <span class=n>arg2</span><span class=p>)</span> <span class=p>{</span> <span class=k>return</span> <span class=n>_pfunc</span><span class=p>(</span><span class=n>arg1</span><span class=p>,</span> <span class=n>arg2</span><span class=p>)</span><span class=p>;</span> <span class=p>}</span>
+<span class=k>private</span><span class=o>:</span>
+    <span class=n>PFUNC</span> <span class=n>_pfunc</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+
+<span class=kt>void</span> <span class=nf>hello</span><span class=p>(</span><span class=n>string</span> <span class=n>str</span><span class=p>)</span> <span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>str</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+<span class=kt>int</span> <span class=nf>sum</span><span class=p>(</span><span class=kt>int</span> <span class=n>a</span><span class=p>,</span> <span class=kt>int</span> <span class=n>b</span><span class=p>)</span> <span class=p>{</span> <span class=k>return</span> <span class=n>a</span> <span class=o>+</span> <span class=n>b</span><span class=p>;</span> <span class=p>}</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>my_function</span><span class=o>&lt;</span><span class=kt>void</span><span class=p>(</span><span class=n>string</span><span class=p>)</span><span class=o>&gt;</span> <span class=n>func1</span> <span class=o>=</span> <span class=n>hello</span><span class=p>;</span>
+    <span class=n>func1</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>hello world</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span> 
+    <span class=cm>/* func1.operator()(&#34;hello world&#34;) 底层调用的还是hello这个函数 */</span>
+    <span class=n>my_function</span><span class=o>&lt;</span><span class=kt>int</span><span class=p>(</span><span class=kt>int</span><span class=p>,</span> <span class=kt>int</span><span class=p>)</span><span class=o>&gt;</span> <span class=n>func2</span> <span class=o>=</span> <span class=n>sum</span><span class=p>;</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>func2</span><span class=p>(</span><span class=mi>10</span><span class=p>,</span> <span class=mi>20</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=cm>/*
+</span><span class=cm>xushun@xushun-virtual-machine:~/cppadvanced$ g++ functiontest3.cpp &amp;&amp; ./a.out
+</span><span class=cm>hello world
+</span><span class=cm>30
+</span><span class=cm>*/</span>
+</code></pre></td></tr></table></div></div><p>当然为每种参数个数的函数都写一个特例化，很麻烦，c++还提供了另一种可变参数的写法，只需要写一次即可。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+
+<span class=k>template</span> <span class=o>&lt;</span><span class=k>typename</span> <span class=n>Fty</span><span class=o>&gt;</span>
+<span class=k>class</span> <span class=nc>my_function</span> <span class=p>{</span>  <span class=p>}</span><span class=p>;</span>
+
+<span class=k>template</span> <span class=o>&lt;</span><span class=k>typename</span> <span class=n>R</span><span class=p>,</span> <span class=k>typename</span><span class=p>.</span><span class=p>.</span><span class=p>.</span><span class=n>A</span><span class=o>&gt;</span> <span class=cm>/* ... 表示可变参 一组参数 个数任意 */</span>
+<span class=k>class</span> <span class=nc>my_function</span><span class=o>&lt;</span><span class=n>R</span><span class=p>(</span><span class=n>A</span><span class=p>.</span><span class=p>.</span><span class=p>.</span><span class=p>)</span><span class=o>&gt;</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=k>using</span> <span class=n>PFUNC</span> <span class=o>=</span> <span class=n>R</span><span class=p>(</span><span class=o>*</span><span class=p>)</span><span class=p>(</span><span class=n>A</span><span class=p>.</span><span class=p>.</span><span class=p>.</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>my_function</span><span class=p>(</span><span class=n>PFUNC</span> <span class=n>pfunc</span><span class=p>)</span> <span class=o>:</span> <span class=n>_pfunc</span><span class=p>(</span><span class=n>pfunc</span><span class=p>)</span> <span class=p>{</span><span class=p>}</span>
+    <span class=cm>/* 这里的 arg 表示一组参数 调用函数时会将所有参数都传入*/</span>
+    <span class=n>R</span> <span class=nf>operator</span><span class=p>(</span><span class=p>)</span><span class=p>(</span><span class=n>A</span><span class=p>.</span><span class=p>.</span><span class=p>.</span> <span class=n>arg</span><span class=p>)</span> <span class=p>{</span> <span class=k>return</span> <span class=n>_pfunc</span><span class=p>(</span><span class=n>arg</span><span class=p>.</span><span class=p>.</span><span class=p>.</span><span class=p>)</span><span class=p>;</span> <span class=p>}</span>
+<span class=k>private</span><span class=o>:</span>
+    <span class=n>PFUNC</span> <span class=n>_pfunc</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+
+<span class=kt>void</span> <span class=nf>hello</span><span class=p>(</span><span class=n>string</span> <span class=n>str</span><span class=p>)</span> <span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>str</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+<span class=kt>int</span> <span class=nf>sum</span><span class=p>(</span><span class=kt>int</span> <span class=n>a</span><span class=p>,</span> <span class=kt>int</span> <span class=n>b</span><span class=p>)</span> <span class=p>{</span> <span class=k>return</span> <span class=n>a</span> <span class=o>+</span> <span class=n>b</span><span class=p>;</span> <span class=p>}</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>my_function</span><span class=o>&lt;</span><span class=kt>void</span><span class=p>(</span><span class=n>string</span><span class=p>)</span><span class=o>&gt;</span> <span class=n>func1</span> <span class=o>=</span> <span class=n>hello</span><span class=p>;</span>
+    <span class=n>func1</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>hello world</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span> 
+
+    <span class=n>my_function</span><span class=o>&lt;</span><span class=kt>int</span><span class=p>(</span><span class=kt>int</span><span class=p>,</span> <span class=kt>int</span><span class=p>)</span><span class=o>&gt;</span> <span class=n>func2</span> <span class=o>=</span> <span class=n>sum</span><span class=p>;</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>func2</span><span class=p>(</span><span class=mi>10</span><span class=p>,</span> <span class=mi>20</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=c11-bind-绑定器></a><h2>c++11 bind 绑定器</h2><p>c++11 提供了功能更强大的绑定器 <code>bind</code>。</p><p>它是一个函数模板，可以自动推演模板类型参数。STL中提供的<code>bind1st</code>和<code>bind2nd</code>只能绑定二元函数对象，而c++11提供的<code>bind</code>则没有这个限制。</p><p><code>bind</code>可以绑定一个函数或函数对象，它的返回值仍然是一个函数对象。</p><p>使用示例：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;functional&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+
+<span class=kt>void</span> <span class=nf>hello</span><span class=p>(</span><span class=n>string</span> <span class=n>str</span><span class=p>)</span> <span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>str</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+<span class=kt>int</span> <span class=nf>sum</span><span class=p>(</span><span class=kt>int</span> <span class=n>a</span><span class=p>,</span> <span class=kt>int</span> <span class=n>b</span><span class=p>)</span> <span class=p>{</span> <span class=k>return</span> <span class=n>a</span> <span class=o>+</span> <span class=n>b</span><span class=p>;</span> <span class=p>}</span>
+<span class=k>class</span> <span class=nc>Test</span><span class=p>{</span> <span class=k>public</span><span class=o>:</span> <span class=kt>int</span> <span class=n>sum</span><span class=p>(</span><span class=kt>int</span> <span class=n>a</span><span class=p>,</span> <span class=kt>int</span> <span class=n>b</span><span class=p>)</span> <span class=p>{</span> <span class=k>return</span> <span class=n>a</span> <span class=o>+</span> <span class=n>b</span><span class=p>;</span> <span class=p>}</span> <span class=p>}</span><span class=p>;</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=cm>/* bind 返回一个函数对象 使用operaotr()调用函数 */</span>
+    <span class=n>bind</span><span class=p>(</span><span class=n>hello</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>hello bind</span><span class=s>&#34;</span><span class=p>)</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>bind</span><span class=p>(</span><span class=n>sum</span><span class=p>,</span> <span class=mi>10</span><span class=p>,</span> <span class=mi>20</span><span class=p>)</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+    <span class=cm>/* 成员方法同样需要依赖一个对象来调用 */</span>
+    <span class=n>Test</span> <span class=n>a</span><span class=p>;</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>bind</span><span class=p>(</span><span class=o>&amp;</span><span class=n>Test</span><span class=o>:</span><span class=o>:</span><span class=n>sum</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>a</span><span class=p>,</span> <span class=mi>100</span><span class=p>,</span> <span class=mi>200</span><span class=p>)</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>bind</span><span class=p>(</span><span class=o>&amp;</span><span class=n>Test</span><span class=o>:</span><span class=o>:</span><span class=n>sum</span><span class=p>,</span> <span class=n>Test</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=mi>100</span><span class=p>,</span> <span class=mi>200</span><span class=p>)</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+    <span class=cm>/* bind 还支持参数占位符(最多20个) 可以指定某个参数由用户传递 */</span>
+    <span class=n>bind</span><span class=p>(</span><span class=n>hello</span><span class=p>,</span> <span class=n>placeholders</span><span class=o>:</span><span class=o>:</span><span class=n>_1</span><span class=p>)</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>hello bind placeholders::_1</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* 第一个参数被占位 必须由用户传递 */</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>bind</span><span class=p>(</span><span class=n>sum</span><span class=p>,</span> <span class=n>placeholders</span><span class=o>:</span><span class=o>:</span><span class=n>_1</span><span class=p>,</span> <span class=n>placeholders</span><span class=o>:</span><span class=o>:</span><span class=n>_2</span><span class=p>)</span><span class=p>(</span><span class=mi>1000</span><span class=p>,</span> <span class=mi>2000</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>bind</span><span class=p>(</span><span class=n>sum</span><span class=p>,</span> <span class=n>placeholders</span><span class=o>:</span><span class=o>:</span><span class=n>_1</span><span class=p>,</span> <span class=mi>3000</span><span class=p>)</span><span class=p>(</span><span class=mi>1000</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+    <span class=cm>/* 我们可以将绑定器获得的函数对象 使用function保留下来 */</span>
+    <span class=n>function</span><span class=o>&lt;</span><span class=kt>void</span><span class=p>(</span><span class=p>)</span><span class=o>&gt;</span> <span class=n>func1</span> <span class=o>=</span> <span class=n>bind</span><span class=p>(</span><span class=n>hello</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>hello bind</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>function</span><span class=o>&lt;</span><span class=kt>void</span><span class=p>(</span><span class=n>string</span><span class=p>)</span><span class=o>&gt;</span> <span class=n>func2</span> <span class=o>=</span> <span class=n>bind</span><span class=p>(</span><span class=n>hello</span><span class=p>,</span> <span class=n>placeholders</span><span class=o>:</span><span class=o>:</span><span class=n>_1</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>func1</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>func2</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>function + bind</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=lambda-表达式-c11></a><h2>lambda 表达式 (c++11)</h2><p>c++11标准中提供了函数对象的升级版：lambda表达式。</p><p>函数对象的缺点：一般使用在泛型算法参数传递过程中，作为自定义的操作。我们要使用函数对象，就需要在代码中定义函数对象类型，但是它往往只用在某个语句中，用法过于繁琐。</p><p>lambda表达式的语法：</p><ul><li><code>[捕获外部变量](形参列表)->返回值{操作代码}</code>；</li><li>如果返回值为<code>void</code>，可以省略<code>->void</code>，<code>[...](...){...}</code>；</li><li>捕获外部变量的方式也有几种：<ul><li><code>[]</code>，不捕获外部变量；</li><li><code>[=]</code>，以传值方式捕获外部所有变量；</li><li><code>[&]</code>，以传引用方式捕获外部所有变量；</li><li><code>[this]</code>，捕获外部this指针；</li><li><code>[=, &a]</code>，以传值方式捕获外部所有变量，但是<code>a</code>变量以传引用方式捕获；</li><li><code>[a, b]</code>，以传值方式捕获<code>a</code>和<code>b</code>变量；</li><li><code>[a, &b]</code>，以传值方式捕获<code>a</code>，传引用方式捕获<code>b</code>。</li></ul></li></ul><p>注意，lambda表达式用在语句中，如果我们想跨语句使用之前定义的lambda表达式，应该用<code>function</code>函数对象类型来保存。</p><a class=post-dummy-target id=lambda-的实现原理></a><h3>lambda 的实现原理</h3><p>lambda表达式实际上就是用一种更简洁的语法，<strong>让编译器为我们提供函数对象类型的定义</strong>。</p><p>示例：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span><span class=lnt>59
+</span><span class=lnt>60
+</span><span class=lnt>61
+</span><span class=lnt>62
+</span><span class=lnt>63
+</span><span class=lnt>64
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+
+<span class=cm>/* 语句#1 实际上就相当于编译器帮我们定义了TestLambda01类型 */</span>
+<span class=k>template</span><span class=o>&lt;</span><span class=k>typename</span> <span class=n>T</span><span class=o>=</span><span class=kt>void</span><span class=o>&gt;</span>
+<span class=k>class</span> <span class=nc>TestLambda01</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=cm>/* []()-&gt;void{...} 这里的[]就代表构造函数不需要参数 也就是该类型没有成员变量 */</span>
+    <span class=n>TestLambda01</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span><span class=p>}</span>
+    <span class=kt>void</span> <span class=nf>operator</span><span class=p>(</span><span class=p>)</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>hello lambda</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+<span class=p>}</span><span class=p>;</span>
+
+<span class=cm>/* 语句#2 编译器定义的类型 */</span>
+<span class=k>template</span><span class=o>&lt;</span><span class=k>typename</span> <span class=n>T</span><span class=o>=</span><span class=kt>int</span><span class=o>&gt;</span>
+<span class=k>class</span> <span class=nc>TestLambda02</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>TestLambda02</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span><span class=p>}</span>
+    <span class=kt>int</span> <span class=nf>operator</span><span class=p>(</span><span class=p>)</span><span class=p>(</span><span class=kt>int</span> <span class=n>a</span><span class=p>,</span> <span class=kt>int</span> <span class=n>b</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=n>a</span> <span class=o>+</span> <span class=n>b</span><span class=p>;</span> <span class=p>}</span>
+<span class=p>}</span><span class=p>;</span>
+
+<span class=cm>/* 语句#3 编译器定义的类型 */</span>
+<span class=k>template</span><span class=o>&lt;</span><span class=k>typename</span> <span class=n>T</span><span class=o>=</span><span class=kt>int</span><span class=o>&gt;</span>
+<span class=k>class</span> <span class=nc>TestLambda03</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=cm>/* 捕获了两个引用变量 */</span>
+    <span class=n>TestLambda03</span><span class=p>(</span><span class=kt>int</span><span class=o>&amp;</span> <span class=n>a</span><span class=p>,</span> <span class=kt>int</span><span class=o>&amp;</span> <span class=n>b</span><span class=p>)</span> <span class=o>:</span> <span class=n>_ma</span><span class=p>(</span><span class=n>a</span><span class=p>)</span><span class=p>,</span> <span class=n>_mb</span><span class=p>(</span><span class=n>b</span><span class=p>)</span> <span class=p>{</span><span class=p>}</span>
+    <span class=kt>void</span> <span class=nf>operator</span><span class=p>(</span><span class=p>)</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span>
+        <span class=kt>int</span> <span class=n>temp</span> <span class=o>=</span> <span class=n>_ma</span><span class=p>;</span>
+        <span class=n>_ma</span> <span class=o>=</span> <span class=n>_mb</span><span class=p>;</span>
+        <span class=n>_mb</span> <span class=o>=</span> <span class=n>_ma</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=k>private</span><span class=o>:</span>
+    <span class=kt>int</span><span class=o>&amp;</span> <span class=n>_ma</span><span class=p>;</span>
+    <span class=kt>int</span><span class=o>&amp;</span> <span class=n>_mb</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+
+    <span class=cm>/* #1 */</span>
+    <span class=k>auto</span> <span class=n>func1</span> <span class=o>=</span> <span class=p>[</span><span class=p>]</span><span class=p>(</span><span class=p>)</span><span class=o>-</span><span class=o>&gt;</span><span class=kt>void</span><span class=p>{</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>hello lambda</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span> <span class=p>}</span><span class=p>;</span>
+    <span class=n>func1</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+
+    <span class=cm>/* #2 */</span>
+    <span class=k>auto</span> <span class=n>func2</span> <span class=o>=</span> <span class=p>[</span><span class=p>]</span><span class=p>(</span><span class=kt>int</span> <span class=n>a</span><span class=p>,</span> <span class=kt>int</span> <span class=n>b</span><span class=p>)</span><span class=o>-</span><span class=o>&gt;</span><span class=kt>int</span><span class=p>{</span> <span class=k>return</span> <span class=n>a</span> <span class=o>+</span> <span class=n>b</span><span class=p>;</span> <span class=p>}</span><span class=p>;</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>func2</span><span class=p>(</span><span class=mi>10</span><span class=p>,</span> <span class=mi>20</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+
+    <span class=cm>/* #3 */</span>
+    <span class=kt>int</span> <span class=n>a</span> <span class=o>=</span> <span class=mi>100</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>b</span> <span class=o>=</span> <span class=mi>200</span><span class=p>;</span>
+    <span class=k>auto</span> <span class=n>func3</span> <span class=o>=</span> <span class=p>[</span><span class=o>&amp;</span><span class=n>a</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>b</span><span class=p>]</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+        <span class=kt>int</span> <span class=n>temp</span> <span class=o>=</span> <span class=n>a</span><span class=p>;</span>
+        <span class=n>a</span> <span class=o>=</span> <span class=n>b</span><span class=p>;</span>
+        <span class=n>b</span> <span class=o>=</span> <span class=n>temp</span><span class=p>;</span>
+    <span class=p>}</span><span class=p>;</span>
+    <span class=n>func3</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>a</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> </span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>b</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=cm>/*
+</span><span class=cm>xushun@xushun-virtual-machine:~/cppadvanced$ g++ lambda1.cpp &amp;&amp; ./a.out
+</span><span class=cm>hello lambda
+</span><span class=cm>30
+</span><span class=cm>200 100
+</span><span class=cm>*/</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=lambda-表达式的应用></a><h3>lambda 表达式的应用</h3><p>在使用泛型算法时，灵活使用lambda表达式，可以无需定义函数对象，写出简洁的算法表示。</p><p>使用示例：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;vector&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;algorithm&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>vector</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span> <span class=n>vec</span><span class=p>;</span>
+    <span class=n>vec</span><span class=p>.</span><span class=n>reserve</span><span class=p>(</span><span class=mi>20</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>srand</span><span class=p>(</span><span class=n>time</span><span class=p>(</span><span class=k>nullptr</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=cm>/* 随机生成20个数 */</span>
+    <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=mi>20</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>vec</span><span class=p>.</span><span class=n>push_back</span><span class=p>(</span><span class=n>rand</span><span class=p>(</span><span class=p>)</span> <span class=o>%</span> <span class=mi>100</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=cm>/* 输出vec */</span>
+    <span class=n>for_each</span><span class=p>(</span><span class=n>vec</span><span class=p>.</span><span class=n>begin</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>vec</span><span class=p>.</span><span class=n>end</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=p>[</span><span class=p>]</span><span class=p>(</span><span class=kt>int</span> <span class=n>a</span><span class=p>)</span><span class=p>{</span>
+        <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>a</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> </span><span class=s>&#34;</span><span class=p>;</span>
+    <span class=p>}</span><span class=p>)</span><span class=p>;</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+    <span class=cm>/* 将vec按从大到小的顺序排列 */</span>
+    <span class=n>sort</span><span class=p>(</span><span class=n>vec</span><span class=p>.</span><span class=n>begin</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>vec</span><span class=p>.</span><span class=n>end</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=p>[</span><span class=p>]</span><span class=p>(</span><span class=kt>int</span> <span class=n>a</span><span class=p>,</span> <span class=kt>int</span> <span class=n>b</span><span class=p>)</span><span class=o>-</span><span class=o>&gt;</span><span class=kt>bool</span><span class=p>{</span>
+        <span class=k>return</span> <span class=n>a</span> <span class=o>&gt;</span> <span class=n>b</span><span class=p>;</span>
+    <span class=p>}</span><span class=p>)</span><span class=p>;</span>
+    <span class=cm>/* 输出vec */</span>
+    <span class=n>for_each</span><span class=p>(</span><span class=n>vec</span><span class=p>.</span><span class=n>begin</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>vec</span><span class=p>.</span><span class=n>end</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=p>[</span><span class=p>]</span><span class=p>(</span><span class=kt>int</span> <span class=n>a</span><span class=p>)</span><span class=p>{</span>
+        <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>a</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> </span><span class=s>&#34;</span><span class=p>;</span>
+    <span class=p>}</span><span class=p>)</span><span class=p>;</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+    <span class=cm>/* 找到第一个小于70的数 在它前面插入70 */</span>
+    <span class=k>auto</span> <span class=n>it</span> <span class=o>=</span> <span class=n>find_if</span><span class=p>(</span><span class=n>vec</span><span class=p>.</span><span class=n>begin</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>vec</span><span class=p>.</span><span class=n>end</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=p>[</span><span class=p>]</span><span class=p>(</span><span class=kt>int</span> <span class=n>a</span><span class=p>)</span><span class=o>-</span><span class=o>&gt;</span><span class=kt>bool</span><span class=p>{</span>
+        <span class=k>return</span> <span class=n>a</span> <span class=o>&lt;</span> <span class=mi>70</span><span class=p>;</span>
+    <span class=p>}</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>vec</span><span class=p>.</span><span class=n>insert</span><span class=p>(</span><span class=n>it</span><span class=p>,</span> <span class=mi>70</span><span class=p>)</span><span class=p>;</span>
+    <span class=cm>/* 输出vec */</span>
+    <span class=n>for_each</span><span class=p>(</span><span class=n>vec</span><span class=p>.</span><span class=n>begin</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>vec</span><span class=p>.</span><span class=n>end</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=p>[</span><span class=p>]</span><span class=p>(</span><span class=kt>int</span> <span class=n>a</span><span class=p>)</span><span class=p>{</span>
+        <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>a</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> </span><span class=s>&#34;</span><span class=p>;</span>
+    <span class=p>}</span><span class=p>)</span><span class=p>;</span> <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=cm>/*
+</span><span class=cm>xushun@xushun-virtual-machine:~/cppadvanced$ g++ lambda2.cpp &amp;&amp; ./a.out
+</span><span class=cm>37 18 72 72 30 3 14 41 16 53 3 66 83 49 97 74 10 2 69 52 
+</span><span class=cm>97 83 74 72 72 69 66 53 52 49 41 37 30 18 16 14 10 3 3 2 
+</span><span class=cm>97 83 74 72 72 70 69 66 53 52 49 41 37 30 18 16 14 10 3 3 2 
+</span><span class=cm>*/</span>
+</code></pre></td></tr></table></div></div><p>示例2：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;memory&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;functional&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;queue&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;algorithm&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+
+<span class=k>class</span> <span class=nc>Data</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>Data</span><span class=p>(</span><span class=kt>int</span> <span class=n>a</span><span class=p>,</span> <span class=kt>int</span> <span class=n>b</span><span class=p>)</span> <span class=o>:</span> <span class=n>_ma</span><span class=p>(</span><span class=n>a</span><span class=p>)</span><span class=p>,</span> <span class=n>_mb</span><span class=p>(</span><span class=n>b</span><span class=p>)</span> <span class=p>{</span><span class=p>}</span>
+    <span class=kt>int</span> <span class=n>_ma</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>_mb</span><span class=p>;</span>
+    <span class=k>friend</span> <span class=n>ostream</span><span class=o>&amp;</span> <span class=k>operator</span><span class=o>&lt;</span><span class=o>&lt;</span><span class=p>(</span><span class=n>ostream</span><span class=o>&amp;</span> <span class=n>out</span><span class=p>,</span> <span class=k>const</span> <span class=n>Data</span><span class=o>&amp;</span> <span class=n>d</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+<span class=n>ostream</span><span class=o>&amp;</span> <span class=k>operator</span><span class=o>&lt;</span><span class=o>&lt;</span><span class=p>(</span><span class=n>ostream</span><span class=o>&amp;</span> <span class=n>out</span><span class=p>,</span> <span class=k>const</span> <span class=n>Data</span><span class=o>&amp;</span> <span class=n>d</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>d</span><span class=p>.</span><span class=n>_ma</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> </span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>d</span><span class=p>.</span><span class=n>_mb</span><span class=p>;</span>
+    <span class=k>return</span> <span class=n>out</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=cm>/* lambda 自定义智能指针的删除器 */</span>
+    <span class=n>unique_ptr</span><span class=o>&lt;</span><span class=n>FILE</span><span class=p>,</span> <span class=n>function</span><span class=o>&lt;</span><span class=kt>void</span><span class=p>(</span><span class=n>FILE</span><span class=o>*</span><span class=p>)</span><span class=o>&gt;</span><span class=o>&gt;</span> 
+        <span class=n>ptr1</span><span class=p>(</span><span class=n>fopen</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>data.txt</span><span class=s>&#34;</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>w</span><span class=s>&#34;</span><span class=p>)</span><span class=p>,</span> <span class=p>[</span><span class=p>]</span><span class=p>(</span><span class=n>FILE</span><span class=o>*</span> <span class=n>pf</span><span class=p>)</span><span class=p>{</span>
+            <span class=n>fclose</span><span class=p>(</span><span class=n>pf</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span><span class=p>)</span><span class=p>;</span>
+    <span class=cm>/* 优先队列 lambda 自定义比较函数 */</span>
+    <span class=n>priority_queue</span><span class=o>&lt;</span><span class=n>Data</span><span class=p>,</span> <span class=n>vector</span><span class=o>&lt;</span><span class=n>Data</span><span class=o>&gt;</span><span class=p>,</span> <span class=n>function</span><span class=o>&lt;</span><span class=kt>bool</span><span class=p>(</span><span class=n>Data</span><span class=o>&amp;</span><span class=p>,</span> <span class=n>Data</span><span class=o>&amp;</span><span class=p>)</span><span class=o>&gt;</span><span class=o>&gt;</span>
+        <span class=n>maxheap</span><span class=p>(</span><span class=p>[</span><span class=p>]</span><span class=p>(</span><span class=n>Data</span><span class=o>&amp;</span> <span class=n>d1</span><span class=p>,</span> <span class=n>Data</span><span class=o>&amp;</span> <span class=n>d2</span><span class=p>)</span><span class=o>-</span><span class=o>&gt;</span><span class=kt>bool</span><span class=p>{</span>
+            <span class=k>return</span> <span class=n>d1</span><span class=p>.</span><span class=n>_ma</span> <span class=o>+</span> <span class=n>d1</span><span class=p>.</span><span class=n>_mb</span> <span class=o>&lt;</span> <span class=n>d2</span><span class=p>.</span><span class=n>_ma</span> <span class=o>+</span> <span class=n>d2</span><span class=p>.</span><span class=n>_mb</span><span class=p>;</span> <span class=cm>/* 用_ma+_mb来比较 */</span>
+        <span class=p>}</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>maxheap</span><span class=p>.</span><span class=n>push</span><span class=p>(</span><span class=n>Data</span><span class=p>(</span><span class=mi>10</span><span class=p>,</span> <span class=mi>20</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>maxheap</span><span class=p>.</span><span class=n>push</span><span class=p>(</span><span class=n>Data</span><span class=p>(</span><span class=mi>70</span><span class=p>,</span> <span class=mi>80</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>maxheap</span><span class=p>.</span><span class=n>push</span><span class=p>(</span><span class=n>Data</span><span class=p>(</span><span class=mi>50</span><span class=p>,</span> <span class=mi>60</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>maxheap</span><span class=p>.</span><span class=n>push</span><span class=p>(</span><span class=n>Data</span><span class=p>(</span><span class=mi>30</span><span class=p>,</span> <span class=mi>40</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>while</span> <span class=p>(</span><span class=n>maxheap</span><span class=p>.</span><span class=n>empty</span><span class=p>(</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=nb>false</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>maxheap</span><span class=p>.</span><span class=n>top</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+        <span class=n>maxheap</span><span class=p>.</span><span class=n>pop</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=cm>/*
+</span><span class=cm>xushun@xushun-virtual-machine:~/cppadvanced$ g++ lambda3.cpp &amp;&amp; ./a.out
+</span><span class=cm>70 80
+</span><span class=cm>50 60
+</span><span class=cm>30 40
+</span><span class=cm>10 20
+</span><span class=cm>*/</span>
+</code></pre></td></tr></table></div></div></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+<span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
+<span>2022-09-11</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
+<span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fc-%25E9%25AB%2598%25E7%25BA%25A703-%25E7%25BB%2591%25E5%25AE%259A%25E5%2599%25A8%25E5%2587%25BD%25E6%2595%25B0%25E5%25AF%25B9%25E8%25B1%25A1lambda%2f&text=%e3%80%90C%2b%2b%e9%ab%98%e7%ba%a7%e3%80%9103%20-%20%e7%bb%91%e5%ae%9a%e5%99%a8%e3%80%81%e5%87%bd%e6%95%b0%e5%af%b9%e8%b1%a1%e3%80%81lambda&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2fc-%25E9%25AB%2598%25E7%25BA%25A703-%25E7%25BB%2591%25E5%25AE%259A%25E5%2599%25A8%25E5%2587%25BD%25E6%2595%25B0%25E5%25AF%25B9%25E8%25B1%25A1lambda%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fc-%25E9%25AB%2598%25E7%25BA%25A703-%25E7%25BB%2591%25E5%25AE%259A%25E5%2599%25A8%25E5%2587%25BD%25E6%2595%25B0%25E5%25AF%25B9%25E8%25B1%25A1lambda%2f&title=%e3%80%90C%2b%2b%e9%ab%98%e7%ba%a7%e3%80%9103%20-%20%e7%bb%91%e5%ae%9a%e5%99%a8%e3%80%81%e5%87%bd%e6%95%b0%e5%af%b9%e8%b1%a1%e3%80%81lambda" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/c++/><i class="fas fa-tag fa-fw"></i>&nbsp;C++</a>&nbsp;</span></section><section><span><a href=javascript:window.history.back();>Back</a></span>&nbsp;|&nbsp;<span><a href=https://xushun1221.github.io>Home</a></span></section></div><div class=post-nav><a href=https://xushun1221.github.io/2022/c-%E9%AB%98%E7%BA%A702-%E6%99%BA%E8%83%BD%E6%8C%87%E9%92%88/ class=prev rel=prev title="【C++高级】02 - 智能指针"><i class="fas fa-angle-left fa-fw"></i>【C++高级】02 - 智能指针</a></div><div class=post-comment></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2022</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=https://xushun1221.github.io/about/ target=_blank>xushun</a> | </span>Powered by <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> & <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer">LoveIt</a></div></div></footer></div><a href=# class=dynamic-to-top id=dynamic-to-top data-scroll><span>&nbsp;</span>
+</a><script src=/js/lib/jquery/jquery.slim.min.js></script><script src=/js/lib/lazysizes/lazysizes.min.js></script><script src=/js/lib/smooth-scroll/smooth-scroll.polyfills.min.js></script><script>window.scroll=new SmoothScroll('[data-scroll]',{speed:300,speedAsDuration:true});</script><link rel=stylesheet href=/css/lib/katex/katex.min.css><script src=/js/lib/katex/katex.min.js></script><script defer src=/js/lib/katex/auto-render.min.js></script><link rel=stylesheet href=/css/lib/katex/copy-tex.min.css><script defer src=/js/lib/katex/copy-tex.min.js></script><script defer src=/js/lib/katex/mhchem.min.js></script><script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true},{left:"$",right:"$",display:false},]});});</script><script src=/js/blog.min.js></script></body></html>
