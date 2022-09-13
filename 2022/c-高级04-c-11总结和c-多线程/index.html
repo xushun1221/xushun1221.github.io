@@ -1,0 +1,398 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【C++高级】04 - c++11总结和c++多线程 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/c-%E9%AB%98%E7%BA%A702-%E6%99%BA%E8%83%BD%E6%8C%87%E9%92%88/><link rel=next href=https://xushun1221.github.io/2022/c-%E9%AB%98%E7%BA%A703-%E7%BB%91%E5%AE%9A%E5%99%A8%E5%87%BD%E6%95%B0%E5%AF%B9%E8%B1%A1lambda/><link rel=canonical href=https://xushun1221.github.io/2022/c-%E9%AB%98%E7%BA%A704-c-11%E6%80%BB%E7%BB%93%E5%92%8Cc-%E5%A4%9A%E7%BA%BF%E7%A8%8B/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【C++高级】04 - c++11总结和c++多线程"><meta name=twitter:description content="c++11标准内容总结 关键字和语法 auto：可以根据右值推导出右值的类型，确定左边变量的类型； nullptr：原来使用的#define NULL 0是"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【C\x2b\x2b高级】04 - c\x2b\x2b11总结和c\x2b\x2b多线程","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/c-%E9%AB%98%E7%BA%A704-c-11%E6%80%BB%E7%BB%93%E5%92%8Cc-%E5%A4%9A%E7%BA%BF%E7%A8%8B\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"C\x2b\x2b","wordcount":2446,"url":"https:\/\/xushun1221.github.io\/2022\/c-%E9%AB%98%E7%BA%A704-c-11%E6%80%BB%E7%BB%93%E5%92%8Cc-%E5%A4%9A%E7%BA%BF%E7%A8%8B\/","datePublished":"2022-09-11T00:00:00\x2b00:00","dateModified":"2022-09-11T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【C++高级】04 - c++11总结和c++多线程</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-09-11>2022-09-11</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 2446 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#c11标准内容总结>c++11标准内容总结</a></li><li><a href=#c11-语言级别的多线程>c++11 语言级别的多线程</a></li><li><a href=#通过-thread-类编写c多线程程序>通过 thread 类编写c++多线程程序</a></li><li><a href=#线程间互斥---mutexlock_guardunique_lock>线程间互斥 - mutex、lock_guard、unique_lock</a></li><li><a href=#线程同步通信---生产者消费者模型>线程同步通信 - 生产者消费者模型</a></li><li><a href=#基于-cas-操作的-atomic-原子类型>基于 CAS 操作的 atomic 原子类型</a></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#c11标准内容总结>c++11标准内容总结</a></li><li><a href=#c11-语言级别的多线程>c++11 语言级别的多线程</a></li><li><a href=#通过-thread-类编写c多线程程序>通过 thread 类编写c++多线程程序</a></li><li><a href=#线程间互斥---mutexlock_guardunique_lock>线程间互斥 - mutex、lock_guard、unique_lock</a></li><li><a href=#线程同步通信---生产者消费者模型>线程同步通信 - 生产者消费者模型</a></li><li><a href=#基于-cas-操作的-atomic-原子类型>基于 CAS 操作的 atomic 原子类型</a></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=c11标准内容总结></a><h2>c++11标准内容总结</h2><ol><li>关键字和语法<ol><li><code>auto</code>：可以根据右值推导出右值的类型，确定左边变量的类型；</li><li><code>nullptr</code>：原来使用的<code>#define NULL 0</code>是宏定义，<code>nullptr</code>是指针专用，能区别指针和整数；</li><li><code>for(Type val : container) { }</code>：可以遍历数组和容器等，底层就是指针或迭代器遍历；</li><li>右值引用：在对象优化中作用巨大，<code>move</code>移动语义，<code>forward</code>类型完美转发；</li><li><code>typename...A</code>：模板的一个新特性，表示可变参数。</li></ol></li><li>绑定器和函数对象<ol><li><code>function</code>函数对象；</li><li><code>bind</code>绑定器；</li><li><code>lambda</code>表达式。</li></ol></li><li>智能指针<ol><li><code>shared_ptr</code>强智能指针；</li><li><code>weak_ptr</code>弱智能指针。</li></ol></li><li>容器<ol><li><code>unordered_set</code>和<code>unordered_map</code>：新的哈希表容器；</li><li><code>array</code>：数组容器；</li><li><code>forward_list</code>：前向链表。</li></ol></li><li>c++多线程编程<ol><li>c++11支持了语言级别的多线程编程。</li></ol></li></ol><a class=post-dummy-target id=c11-语言级别的多线程></a><h2>c++11 语言级别的多线程</h2><p>c++11 支持了语言级别的多线程编程，最大的优点就是跨平台。</p><p>它底层调用的仍然是，操作系统提供的系统调用API，如Linux下使用<code>pthread</code>线程库。</p><p>主要学习内容：</p><ul><li><code>thread</code></li><li><code>mutex</code></li><li><code>condition_variable</code></li><li><code>lock_quard</code></li><li><code>unique_lock</code></li><li><code>atomic</code></li><li><code>sleep_for</code></li></ul><p>使用c++11多线程，需要包含<code>thread</code>头文件。</p><a class=post-dummy-target id=通过-thread-类编写c多线程程序></a><h2>通过 thread 类编写c++多线程程序</h2><ol><li>创建启动线程：<code>std::thread</code>定义一个线程对象，传入线程函数和所需的参数，线程自动开启运行；</li><li>子线程结束：子线程函数运行完成，线程就结束了；</li><li>主线程处理子线程结束：<ol><li>c++在语言级别对线程结束进行了限制，当主线程运行完成，还有未完成的子线程，该进程就会异常终止；</li><li><code>join()</code>：如<code>t1.join();</code>，阻塞等待某个线程结束；</li><li><code>detach()</code>：如<code>t1.detach();</code>，将某个线程设置为分离线程，与主线程断开联系，无需主线程<code>join</code>。当主线程结束，进程就结束了，所有的子线程都自动结束。</li></ol></li></ol><p>示例：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;thread&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+<span class=kt>void</span> <span class=nf>threadHandle1</span><span class=p>(</span><span class=kt>int</span> <span class=n>sleeptime</span><span class=p>)</span> <span class=p>{</span>
+    <span class=cm>/* 
+</span><span class=cm>        std::this_thread 命名空间中定义了一些对当前线程执行操作的函数 
+</span><span class=cm>        std::chrono 命名空间中定义了一些与时间相关的函数
+</span><span class=cm>    */</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>this_thread</span><span class=o>:</span><span class=o>:</span><span class=n>sleep_for</span><span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>chrono</span><span class=o>:</span><span class=o>:</span><span class=n>seconds</span><span class=p>(</span><span class=n>sleeptime</span><span class=p>)</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* 睡眠两秒 */</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>hello thread1</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=kt>void</span> <span class=nf>threadHandle2</span><span class=p>(</span><span class=kt>int</span> <span class=n>sleeptime</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>this_thread</span><span class=o>:</span><span class=o>:</span><span class=n>sleep_for</span><span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>chrono</span><span class=o>:</span><span class=o>:</span><span class=n>seconds</span><span class=p>(</span><span class=n>sleeptime</span><span class=p>)</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* 睡眠三秒 */</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>hello thread2</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=cm>/* 定义一个线程对象 传入一个线程函数 和 参数 */</span>
+    <span class=kr>thread</span> <span class=n>t1</span><span class=p>(</span><span class=n>threadHandle1</span><span class=p>,</span> <span class=mi>2</span><span class=p>)</span><span class=p>;</span>
+    <span class=kr>thread</span> <span class=n>t2</span><span class=p>(</span><span class=n>threadHandle2</span><span class=p>,</span> <span class=mi>3</span><span class=p>)</span><span class=p>;</span>
+    <span class=cm>/* 主线程阻塞等待 t1 线程退出 */</span>
+    <span class=n>t1</span><span class=p>.</span><span class=n>join</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>t2</span><span class=p>.</span><span class=n>join</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=cm>/* 可以将子线程设置为 分离线程 */</span>
+    <span class=c1>// t1.detach();
+</span><span class=c1></span>    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>main thread done</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+    <span class=cm>/* 这是语言级别的限制 */</span>
+    <span class=cm>/* 主线程执行完成 如果当前进程还有未完成的子线程 该进程就会异常终止 */</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=线程间互斥---mutexlock_guardunique_lock></a><h2>线程间互斥 - mutex、lock_guard、unique_lock</h2><p>使用互斥锁，需要包含头文件<code>mutex</code>。</p><p><code>mutex</code>使用示例：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;thread&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;list&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;mutex&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+
+<span class=cm>/* 车站一共100张车票 三个窗口一起卖票 */</span>
+<span class=kt>int</span> <span class=n>ticket_count</span> <span class=o>=</span> <span class=mi>100</span><span class=p>;</span>
+<span class=cm>/* 全局互斥锁 */</span>
+<span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>mutex</span> <span class=n>mtx</span><span class=p>;</span>
+<span class=cm>/* 模拟卖票的线程函数 */</span>
+<span class=kt>void</span> <span class=nf>sellTicket</span><span class=p>(</span><span class=kt>int</span> <span class=n>index</span><span class=p>)</span> <span class=p>{</span> 
+    <span class=k>while</span> <span class=p>(</span><span class=n>ticket_count</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=cm>/* 访问共享数据前加锁 阻塞加锁 */</span>
+        <span class=n>mtx</span><span class=p>.</span><span class=n>lock</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=cm>/* 防止 ticket_count 已经为 0 但仍然进入循环 需要再次判断 */</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>ticket_count</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>index</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>窗口卖出第</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>ticket_count</span> <span class=o>-</span><span class=o>-</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>张票</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=cm>/* 解锁 */</span>
+        <span class=n>mtx</span><span class=p>.</span><span class=n>unlock</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>this_thread</span><span class=o>:</span><span class=o>:</span><span class=n>sleep_for</span><span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>chrono</span><span class=o>:</span><span class=o>:</span><span class=n>microseconds</span><span class=p>(</span><span class=mi>100</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=p>}</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>list</span><span class=o>&lt;</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=kr>thread</span><span class=o>&gt;</span> <span class=n>tlist</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>1</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span><span class=o>=</span> <span class=mi>3</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>tlist</span><span class=p>.</span><span class=n>push_back</span><span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=kr>thread</span><span class=p>(</span><span class=n>sellTicket</span><span class=p>,</span> <span class=n>i</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>for</span> <span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=kr>thread</span><span class=o>&amp;</span> <span class=nl>t</span> <span class=p>:</span> <span class=n>tlist</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>t</span><span class=p>.</span><span class=n>join</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>sell done</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>使用<code>mutex</code>需要在访问共享数据后进行解锁操作，还可以使用<code>lock_guard</code>来管理互斥锁，它会在出作用域时自动释放互斥锁。</p><p><code>lock_guard</code>使用示例：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;thread&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;list&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;mutex&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+<span class=kt>int</span> <span class=n>ticket_count</span> <span class=o>=</span> <span class=mi>100</span><span class=p>;</span>
+<span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>mutex</span> <span class=n>mtx</span><span class=p>;</span>
+<span class=kt>void</span> <span class=nf>sellTicket</span><span class=p>(</span><span class=kt>int</span> <span class=n>index</span><span class=p>)</span> <span class=p>{</span> 
+    <span class=k>while</span> <span class=p>(</span><span class=n>ticket_count</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=p>{</span>
+            <span class=c1>// mtx.lock();
+</span><span class=c1></span>            <span class=cm>/* 使用局部lock_guard对象管理mutex锁 构造时加锁 */</span>
+            <span class=n>lock_guard</span><span class=o>&lt;</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>mutex</span><span class=o>&gt;</span> <span class=n>lock</span><span class=p>(</span><span class=n>mtx</span><span class=p>)</span><span class=p>;</span>
+            <span class=k>if</span> <span class=p>(</span><span class=n>ticket_count</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+                <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>index</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>窗口卖出第</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>ticket_count</span> <span class=o>-</span><span class=o>-</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>张票</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+            <span class=p>}</span>
+            <span class=c1>// mtx.unlock();
+</span><span class=c1></span>            <span class=cm>/* 出作用域时析构 自动解锁 */</span>
+        <span class=p>}</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>this_thread</span><span class=o>:</span><span class=o>:</span><span class=n>sleep_for</span><span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>chrono</span><span class=o>:</span><span class=o>:</span><span class=n>microseconds</span><span class=p>(</span><span class=mi>100</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=p>}</span>
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>list</span><span class=o>&lt;</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=kr>thread</span><span class=o>&gt;</span> <span class=n>tlist</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>1</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span><span class=o>=</span> <span class=mi>3</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>tlist</span><span class=p>.</span><span class=n>push_back</span><span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=kr>thread</span><span class=p>(</span><span class=n>sellTicket</span><span class=p>,</span> <span class=n>i</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>for</span> <span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=kr>thread</span><span class=o>&amp;</span> <span class=nl>t</span> <span class=p>:</span> <span class=n>tlist</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>t</span><span class=p>.</span><span class=n>join</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>sell done</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>注意，<code>lock_guard</code>不支持拷贝构造和赋值，所以只能用在比较简单的逻辑中。</p><p><code>unique_lock</code>同样不支持左值拷贝构造和赋值，但是它支持带右值引用参数的拷贝构造和赋值，可以通过右值进行拷贝构造和赋值，可以用在产生临时对象的地方。使用<code>unique_lock</code>比直接使用<code>mutex</code>要安全很多。一般在线程通信中会用到。</p><p><code>lock_guard</code>和<code>unique_lock</code>的区别就相当于<code>scoped_ptr</code>和<code>unique_ptr</code>的区别。</p><a class=post-dummy-target id=线程同步通信---生产者消费者模型></a><h2>线程同步通信 - 生产者消费者模型</h2><p>示例：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span><span class=lnt>59
+</span><span class=lnt>60
+</span><span class=lnt>61
+</span><span class=lnt>62
+</span><span class=lnt>63
+</span><span class=lnt>64
+</span><span class=lnt>65
+</span><span class=lnt>66
+</span><span class=lnt>67
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;thread&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;mutex&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;condition_variable&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;queue&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+
+<span class=cm>/* 全局互斥锁 互斥操作 */</span>
+<span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>mutex</span> <span class=n>mtx</span><span class=p>;</span>
+<span class=cm>/* 全局条件变量 同步通信操作 */</span>
+<span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>condition_variable</span> <span class=n>cv</span><span class=p>;</span>
+<span class=cm>/* 注意 c++STL 中提供的容器是不保证线程安全的 我们需要对其进行封装 */</span>
+<span class=k>class</span> <span class=nc>Queue</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=kt>void</span> <span class=n>put</span><span class=p>(</span><span class=kt>int</span> <span class=n>val</span><span class=p>)</span> <span class=p>{</span> <span class=cm>/* 物品为空时生产物品 */</span>
+        <span class=n>unique_lock</span><span class=o>&lt;</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>mutex</span><span class=o>&gt;</span> <span class=n>lck</span><span class=p>(</span><span class=n>mtx</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* 加锁 */</span>
+        <span class=k>while</span> <span class=p>(</span><span class=o>!</span><span class=n>que</span><span class=p>.</span><span class=n>empty</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+            <span class=cm>/* 不为空时 生产者进入等待状态 解锁 */</span>
+            <span class=n>cv</span><span class=p>.</span><span class=n>wait</span><span class=p>(</span><span class=n>lck</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* 解锁lck 等待条件变量满足时 尝试加锁（阻塞） */</span>
+        <span class=p>}</span>
+        <span class=n>que</span><span class=p>.</span><span class=n>push</span><span class=p>(</span><span class=n>val</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>生产者：生产</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>val</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>号物品</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+        <span class=cm>/* 生产完成需要通知消费者进行消费 */</span>
+        <span class=n>cv</span><span class=p>.</span><span class=n>notify_all</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* 通知其他所有线程 */</span>
+        <span class=cm>/* 出作用域 自动解锁 */</span>
+    <span class=p>}</span>
+    <span class=kt>int</span> <span class=nf>get</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=cm>/* 物品不为空时消费物品 */</span>
+        <span class=n>unique_lock</span><span class=o>&lt;</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>mutex</span><span class=o>&gt;</span> <span class=n>lck</span><span class=p>(</span><span class=n>mtx</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* 加锁 */</span>
+        <span class=k>while</span> <span class=p>(</span><span class=n>que</span><span class=p>.</span><span class=n>empty</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+            <span class=cm>/* 物品为空时 进入等待状态 */</span>
+            <span class=n>cv</span><span class=p>.</span><span class=n>wait</span><span class=p>(</span><span class=n>lck</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* 解锁 等待条件变量 尝试加锁 */</span>
+        <span class=p>}</span>
+        <span class=kt>int</span> <span class=n>val</span> <span class=o>=</span> <span class=n>que</span><span class=p>.</span><span class=n>front</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>que</span><span class=p>.</span><span class=n>pop</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>消费者：消费</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>val</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>号物品</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+        <span class=cm>/* 消费完成通知生产者进行生产 */</span>
+        <span class=n>cv</span><span class=p>.</span><span class=n>notify_all</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>return</span> <span class=n>val</span><span class=p>;</span>
+        <span class=cm>/* 出作用域 自动解锁 */</span>
+    <span class=p>}</span>
+<span class=k>private</span><span class=o>:</span>
+    <span class=n>queue</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span> <span class=n>que</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+
+<span class=kt>void</span> <span class=nf>producer</span><span class=p>(</span><span class=n>Queue</span><span class=o>*</span> <span class=n>que</span><span class=p>)</span> <span class=p>{</span>
+    <span class=cm>/* 生产10个物品 */</span>
+    <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>1</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span><span class=o>=</span> <span class=mi>10</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>que</span><span class=o>-</span><span class=o>&gt;</span><span class=n>put</span><span class=p>(</span><span class=n>i</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>this_thread</span><span class=o>:</span><span class=o>:</span><span class=n>sleep_for</span><span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>chrono</span><span class=o>:</span><span class=o>:</span><span class=n>seconds</span><span class=p>(</span><span class=n>rand</span><span class=p>(</span><span class=p>)</span> <span class=o>%</span> <span class=mi>3</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=p>}</span>
+<span class=kt>void</span> <span class=nf>consumer</span><span class=p>(</span><span class=n>Queue</span><span class=o>*</span> <span class=n>que</span><span class=p>)</span> <span class=p>{</span>
+    <span class=cm>/* 消费10个物品 */</span>
+    <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>1</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span><span class=o>=</span> <span class=mi>10</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>que</span><span class=o>-</span><span class=o>&gt;</span><span class=n>get</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>this_thread</span><span class=o>:</span><span class=o>:</span><span class=n>sleep_for</span><span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>chrono</span><span class=o>:</span><span class=o>:</span><span class=n>seconds</span><span class=p>(</span><span class=n>rand</span><span class=p>(</span><span class=p>)</span> <span class=o>%</span> <span class=mi>3</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=p>}</span>
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=cm>/* 共享的队列 */</span>
+    <span class=n>Queue</span> <span class=n>que</span><span class=p>;</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=kr>thread</span> <span class=n>t1</span><span class=p>(</span><span class=n>producer</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>que</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=kr>thread</span> <span class=n>t2</span><span class=p>(</span><span class=n>consumer</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>que</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>t1</span><span class=p>.</span><span class=n>join</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>t2</span><span class=p>.</span><span class=n>join</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=基于-cas-操作的-atomic-原子类型></a><h2>基于 CAS 操作的 atomic 原子类型</h2><p>头文件<code>atomic</code>。</p><p>对于一些类似于<code>++ --</code>的简单操作，没有必要使用互斥锁来保证线程安全，可以使用 CAS 操作的原子特性保证线程安全。</p><p>示例：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;thread&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;atomic&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;list&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+<span class=k>volatile</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>atomic_bool</span> <span class=n>isReady</span><span class=p>{</span><span class=nb>false</span><span class=p>}</span><span class=p>;</span> <span class=cm>/* volatile 防止共享数据被线程缓存 */</span>
+<span class=k>volatile</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>atomic_int</span> <span class=n>mycount</span><span class=p>{</span><span class=mi>0</span><span class=p>}</span><span class=p>;</span>
+<span class=kt>void</span> <span class=nf>task</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>while</span> <span class=p>(</span><span class=o>!</span><span class=n>isReady</span><span class=p>)</span> <span class=p>{</span>
+        <span class=cm>/* 放弃当前时间片 */</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>this_thread</span><span class=o>:</span><span class=o>:</span><span class=n>yield</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=mi>100</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+        <span class=o>+</span><span class=o>+</span> <span class=n>mycount</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=p>}</span>
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>list</span><span class=o>&lt;</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=kr>thread</span><span class=o>&gt;</span> <span class=n>tlist</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=n>i</span> <span class=o>&lt;</span> <span class=mi>10</span><span class=p>;</span> <span class=o>+</span><span class=o>+</span> <span class=n>i</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>tlist</span><span class=p>.</span><span class=n>push_back</span><span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=kr>thread</span><span class=p>(</span><span class=n>task</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>this_thread</span><span class=o>:</span><span class=o>:</span><span class=n>sleep_for</span><span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>chrono</span><span class=o>:</span><span class=o>:</span><span class=n>seconds</span><span class=p>(</span><span class=mi>2</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>isReady</span> <span class=o>=</span> <span class=nb>true</span><span class=p>;</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>this_thread</span><span class=o>:</span><span class=o>:</span><span class=n>sleep_for</span><span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>chrono</span><span class=o>:</span><span class=o>:</span><span class=n>seconds</span><span class=p>(</span><span class=mi>2</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>mycount</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=kr>thread</span><span class=o>&amp;</span> <span class=nl>t</span> <span class=p>:</span> <span class=n>tlist</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>t</span><span class=p>.</span><span class=n>join</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+<span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
+<span>2022-09-11</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
+<span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fc-%25E9%25AB%2598%25E7%25BA%25A704-c-11%25E6%2580%25BB%25E7%25BB%2593%25E5%2592%258Cc-%25E5%25A4%259A%25E7%25BA%25BF%25E7%25A8%258B%2f&text=%e3%80%90C%2b%2b%e9%ab%98%e7%ba%a7%e3%80%9104%20-%20c%2b%2b11%e6%80%bb%e7%bb%93%e5%92%8cc%2b%2b%e5%a4%9a%e7%ba%bf%e7%a8%8b&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2fc-%25E9%25AB%2598%25E7%25BA%25A704-c-11%25E6%2580%25BB%25E7%25BB%2593%25E5%2592%258Cc-%25E5%25A4%259A%25E7%25BA%25BF%25E7%25A8%258B%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fc-%25E9%25AB%2598%25E7%25BA%25A704-c-11%25E6%2580%25BB%25E7%25BB%2593%25E5%2592%258Cc-%25E5%25A4%259A%25E7%25BA%25BF%25E7%25A8%258B%2f&title=%e3%80%90C%2b%2b%e9%ab%98%e7%ba%a7%e3%80%9104%20-%20c%2b%2b11%e6%80%bb%e7%bb%93%e5%92%8cc%2b%2b%e5%a4%9a%e7%ba%bf%e7%a8%8b" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/c++/><i class="fas fa-tag fa-fw"></i>&nbsp;C++</a>&nbsp;</span></section><section><span><a href=javascript:window.history.back();>Back</a></span>&nbsp;|&nbsp;<span><a href=https://xushun1221.github.io>Home</a></span></section></div><div class=post-nav><a href=https://xushun1221.github.io/2022/c-%E9%AB%98%E7%BA%A702-%E6%99%BA%E8%83%BD%E6%8C%87%E9%92%88/ class=prev rel=prev title="【C++高级】02 - 智能指针"><i class="fas fa-angle-left fa-fw"></i>【C++高级】02 - 智能指针</a>
+<a href=https://xushun1221.github.io/2022/c-%E9%AB%98%E7%BA%A703-%E7%BB%91%E5%AE%9A%E5%99%A8%E5%87%BD%E6%95%B0%E5%AF%B9%E8%B1%A1lambda/ class=next rel=next title="【C++高级】03 - 绑定器、函数对象、lambda">【C++高级】03 - 绑定器、函数对象、lambda<i class="fas fa-angle-right fa-fw"></i></a></div><div class=post-comment></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2022</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=https://xushun1221.github.io/about/ target=_blank>xushun</a> | </span>Powered by <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> & <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer">LoveIt</a></div></div></footer></div><a href=# class=dynamic-to-top id=dynamic-to-top data-scroll><span>&nbsp;</span>
+</a><script src=/js/lib/jquery/jquery.slim.min.js></script><script src=/js/lib/lazysizes/lazysizes.min.js></script><script src=/js/lib/smooth-scroll/smooth-scroll.polyfills.min.js></script><script>window.scroll=new SmoothScroll('[data-scroll]',{speed:300,speedAsDuration:true});</script><link rel=stylesheet href=/css/lib/katex/katex.min.css><script src=/js/lib/katex/katex.min.js></script><script defer src=/js/lib/katex/auto-render.min.js></script><link rel=stylesheet href=/css/lib/katex/copy-tex.min.css><script defer src=/js/lib/katex/copy-tex.min.js></script><script defer src=/js/lib/katex/mhchem.min.js></script><script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true},{left:"$",right:"$",display:false},]});});</script><script src=/js/blog.min.js></script></body></html>
