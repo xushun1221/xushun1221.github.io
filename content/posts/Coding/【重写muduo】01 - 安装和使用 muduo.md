@@ -1,7 +1,7 @@
 ---
 title: 【重写muduo】01 - 安装和使用 muduo
 date: 2022-09-07
-tags: [network, C++]
+tags: [network, C++, muduo]
 categories: [Networking]
 ---
 
@@ -263,7 +263,7 @@ int main()
 ```
 
 编译运行：  
-```C++
+```shell
 xushun@xushun-virtual-machine:~/Downloads$ touch testmuduo.cpp
 xushun@xushun-virtual-machine:~/Downloads$ gedit testmuduo.cpp 
 xushun@xushun-virtual-machine:~/Downloads$ g++ testmuduo.cpp -lmuduo_net -lmuduo_base -lpthread -std=c++11
@@ -297,14 +297,127 @@ muduo网络库主要给用户提供了两个主要的类：
 网络库主要的功能就是将`epoll`和线程池进行了封装，把网络IO的代码和业务逻辑代码进行区分。仅仅将用户的连接和断开以及用户的可读写事件暴露出来。
 
 
+### EchoServer 回显服务器
+
+使用muduo写一个简单的回显服务器。
+
+```C++
+#include <muduo/net/TcpServer.h>
+#include <muduo/net/EventLoop.h>
+#include <iostream>
+#include <functional>
+#include <string>
+using namespace std;
+using namespace muduo;
+using namespace muduo::net;
+using namespace placeholders;
+/* 基于muduo网络库开发服务器程序 */
+
+/*
+    1. 组合TcpServer对象
+    2. 创建Eventloop事件循环对象指针
+    3. 明确TcpServer构造函数需要的参数 输出ChatServer的构造函数
+        TcpServer(EventLoop* loop, const InetAddress& listenAddr);
+    4. 在构造函数中 注册处理连接的和处理读写事件的回调函数
+    5. 在构造函数中 设置合适的服务器端的线程数量 muduo会自动划分IO线程和worker线程
+*/
+class EchoServer{
+public:
+/* #3 */
+    EchoServer(EventLoop* loop,             /* 事件循环 */
+            const InetAddress& listenAddr,  /* IP + PORT */
+            const string& nameArg)          /* 服务器名称 */
+            : _server(loop, listenAddr, nameArg)
+            , _loop(loop) {
+/* #4 */
+        /* 给服务器注册 用户连接创建和断开的回调函数 */
+        _server.setConnectionCallback(bind(&EchoServer::onConnection, this, _1));
+        /* 给服务器注册 用户读写事件的回调函数 */
+        _server.setMessageCallback(bind(&EchoServer::onMessage, this, _1, _2, _3));
+/* #5 */
+        /* 设置服务器段线程数量 */
+        _server.setThreadNum(4); /* 1个IO线程 3个worker线程 */
+    }
+/* #6 */
+    /* 开启事件循环 */
+    void start() {
+        _server.start();
+    }
+private:
+    /* 处理用户的连接创建和断开 */
+    void onConnection(const TcpConnectionPtr& conn) {
+        if (conn->connected()) { /* 连接建立 */
+            cout << conn->peerAddress().toIpPort() << "->" 
+                << conn->localAddress().toIpPort() << " online" << endl;
+        } else {    /* 连接断开 */
+            cout << conn->peerAddress().toIpPort() << "->" 
+                << conn->localAddress().toIpPort() << " offline" << endl;
+            conn->shutdown(); /* close(fd) */
+        }
+    }
+    /* 处理用户读写事件 */
+    void onMessage(const TcpConnectionPtr& conn, Buffer* buffer, Timestamp time) {
+        string buf = buffer->retrieveAllAsString();
+        cout << "recv data: " << buf << " time: " << time.toString() << endl;
+        /* 回显 */
+        conn->send(buf);
+    }
+/* #1 */    
+    TcpServer _server;
+/* #2 */
+    EventLoop* _loop; /* epoll */
+};
+
+int main() {
+    EventLoop loop;
+    InetAddress addr("127.0.0.1", 6000);
+    EchoServer server(&loop, addr, "EchoServer");
+
+    server.start(); /* listenfd --(epoll_ctl)--> epoll */
+    loop.loop();    /* epoll_wait 阻塞方式 */
+
+    return 0;
+}
+```
+
+编译运行：  
+```shell
+xushun@xushun-virtual-machine:~/testmuduo$ g++ muduo_server.cpp -o server -lmuduo_net -lmuduo_base -lpthread
+xushun@xushun-virtual-machine:~/testmuduo$ ./server 
+
+```
+注意，`-lmuduo_base`要写在`-lmuduo_net`之前，因为`muduo_net`依赖`muduo_base`，`-lphtread`写在最后。
 
 
+用另一个终端连接：  
+```shell
+xushun@xushun-virtual-machine:~/testmuduo$ telnet 127.0.0.1 6000
+Trying 127.0.0.1...
+Connected to 127.0.0.1.
+Escape character is '^]'.
+hello
+hello
+haha
+haha
+^]
 
+telnet> quit
+Connection closed.
+```
 
+服务器输出：  
+```shell
+xushun@xushun-virtual-machine:~/testmuduo$ ./server 
+20220914 02:47:20.499307Z 23127 INFO  TcpServer::newConnection [EchoServer] - new connection [EchoServer-127.0.0.1:6000#1] from 127.0.0.1:33576 - TcpServer.cc:80
+127.0.0.1:33576->127.0.0.1:6000 online
+recv data: hello
+ time: 1663123643.266532
+recv data: haha
+ time: 1663123646.280992
+127.0.0.1:33576->127.0.0.1:6000 offline
+20220914 02:47:32.130616Z 23127 INFO  TcpServer::removeConnectionInLoop [EchoServer] - connection EchoServer-127.0.0.1:6000#1 - TcpServer.cc:109
 
-
-
-
+```
 
 
 
