@@ -1,6 +1,6 @@
-<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【重写muduo】01 - 安装和使用 muduo | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/c-%E5%9F%BA%E7%A1%8008-stl%E7%BB%84%E4%BB%B6/><link rel=next href=https://xushun1221.github.io/2022/c-%E9%AB%98%E7%BA%A701-%E5%AF%B9%E8%B1%A1%E4%BC%98%E5%8C%96%E5%8F%B3%E5%80%BC%E5%BC%95%E7%94%A8%E4%BC%98%E5%8C%96/><link rel=canonical href=https://xushun1221.github.io/2022/%E9%87%8D%E5%86%99muduo01-%E5%AE%89%E8%A3%85%E5%92%8C%E4%BD%BF%E7%94%A8-muduo/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【重写muduo】01 - 安装和使用 muduo"><meta name=twitter:description content="安装 muduo 先把muduo和boost的源码下载下来（muduo需要依赖boost）。 boost 源码库编译安装 先解压： 1 2 3 4 5 6 7 xushun@xushun-virtual-machine:~/Downloads$ tar -zxvf boost_1_69_0.tar.gz ... xushun@xushun-virtual-machine:~/Downloads$ cd boost_1_69_0/ xushun@xushun-virtual-machine:~/Downloads/boost_1_69_0$ ls boost"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【重写muduo】01 - 安装和使用 muduo","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/%E9%87%8D%E5%86%99muduo01-%E5%AE%89%E8%A3%85%E5%92%8C%E4%BD%BF%E7%94%A8-muduo\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"network, C\x2b\x2b","wordcount":1431,"url":"https:\/\/xushun1221.github.io\/2022\/%E9%87%8D%E5%86%99muduo01-%E5%AE%89%E8%A3%85%E5%92%8C%E4%BD%BF%E7%94%A8-muduo\/","datePublished":"2022-09-07T00:00:00\x2b00:00","dateModified":"2022-09-07T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【重写muduo】01 - 安装和使用 muduo</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-09-07>2022-09-07</time>&nbsp;
-<i class="fas fa-pencil-alt fa-fw"></i>about 1431 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/networking/>Networking</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#安装-muduo>安装 muduo</a><ul><li><a href=#boost-源码库编译安装>boost 源码库编译安装</a></li><li><a href=#编译-muduo-网络库>编译 muduo 网络库</a></li></ul></li><li><a href=#muduo-服务器编程示例>muduo 服务器编程示例</a></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
-<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#安装-muduo>安装 muduo</a><ul><li><a href=#boost-源码库编译安装>boost 源码库编译安装</a></li><li><a href=#编译-muduo-网络库>编译 muduo 网络库</a></li></ul></li><li><a href=#muduo-服务器编程示例>muduo 服务器编程示例</a></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=安装-muduo></a><h2>安装 muduo</h2><p>先把muduo和boost的源码下载下来（muduo需要依赖boost）。</p><a class=post-dummy-target id=boost-源码库编译安装></a><h3>boost 源码库编译安装</h3><p>先解压：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【重写muduo】01 - 安装和使用 muduo | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/c-%E5%9F%BA%E7%A1%8008-stl%E7%BB%84%E4%BB%B6/><link rel=next href=https://xushun1221.github.io/2022/c-%E9%AB%98%E7%BA%A701-%E5%AF%B9%E8%B1%A1%E4%BC%98%E5%8C%96%E5%8F%B3%E5%80%BC%E5%BC%95%E7%94%A8%E4%BC%98%E5%8C%96/><link rel=canonical href=https://xushun1221.github.io/2022/%E9%87%8D%E5%86%99muduo01-%E5%AE%89%E8%A3%85%E5%92%8C%E4%BD%BF%E7%94%A8-muduo/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【重写muduo】01 - 安装和使用 muduo"><meta name=twitter:description content="安装 muduo 先把muduo和boost的源码下载下来（muduo需要依赖boost）。 boost 源码库编译安装 先解压： 1 2 3 4 5 6 7 xushun@xushun-virtual-machine:~/Downloads$ tar -zxvf boost_1_69_0.tar.gz ... xushun@xushun-virtual-machine:~/Downloads$ cd boost_1_69_0/ xushun@xushun-virtual-machine:~/Downloads/boost_1_69_0$ ls boost"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【重写muduo】01 - 安装和使用 muduo","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/%E9%87%8D%E5%86%99muduo01-%E5%AE%89%E8%A3%85%E5%92%8C%E4%BD%BF%E7%94%A8-muduo\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"network, C\x2b\x2b, muduo","wordcount":2199,"url":"https:\/\/xushun1221.github.io\/2022\/%E9%87%8D%E5%86%99muduo01-%E5%AE%89%E8%A3%85%E5%92%8C%E4%BD%BF%E7%94%A8-muduo\/","datePublished":"2022-09-07T00:00:00\x2b00:00","dateModified":"2022-09-07T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【重写muduo】01 - 安装和使用 muduo</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-09-07>2022-09-07</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 2199 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/networking/>Networking</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#安装-muduo>安装 muduo</a><ul><li><a href=#boost-源码库编译安装>boost 源码库编译安装</a></li><li><a href=#编译-muduo-网络库>编译 muduo 网络库</a></li></ul></li><li><a href=#muduo-服务器编程示例>muduo 服务器编程示例</a><ul><li><a href=#echoserver-回显服务器>EchoServer 回显服务器</a></li></ul></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#安装-muduo>安装 muduo</a><ul><li><a href=#boost-源码库编译安装>boost 源码库编译安装</a></li><li><a href=#编译-muduo-网络库>编译 muduo 网络库</a></li></ul></li><li><a href=#muduo-服务器编程示例>muduo 服务器编程示例</a><ul><li><a href=#echoserver-回显服务器>EchoServer 回显服务器</a></li></ul></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=安装-muduo></a><h2>安装 muduo</h2><p>先把muduo和boost的源码下载下来（muduo需要依赖boost）。</p><a class=post-dummy-target id=boost-源码库编译安装></a><h3>boost 源码库编译安装</h3><p>先解压：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2
 </span><span class=lnt>3
 </span><span class=lnt>4
@@ -387,27 +387,230 @@ xushun@xushun-virtual-machine:~/Downloads/build/release-install-cpp11/lib$ sudo 
 </span><span class=lnt> 9
 </span><span class=lnt>10
 </span><span class=lnt>11
-</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=n>xushun</span><span class=err>@</span><span class=n>xushun</span><span class=o>-</span><span class=k>virtual</span><span class=o>-</span><span class=nl>machine</span><span class=p>:</span><span class=o>~</span><span class=o>/</span><span class=n>Downloads</span><span class=err>$</span> <span class=n>touch</span> <span class=n>testmuduo</span><span class=p>.</span><span class=n>cpp</span>
-<span class=n>xushun</span><span class=err>@</span><span class=n>xushun</span><span class=o>-</span><span class=k>virtual</span><span class=o>-</span><span class=nl>machine</span><span class=p>:</span><span class=o>~</span><span class=o>/</span><span class=n>Downloads</span><span class=err>$</span> <span class=n>gedit</span> <span class=n>testmuduo</span><span class=p>.</span><span class=n>cpp</span> 
-<span class=n>xushun</span><span class=err>@</span><span class=n>xushun</span><span class=o>-</span><span class=k>virtual</span><span class=o>-</span><span class=nl>machine</span><span class=p>:</span><span class=o>~</span><span class=o>/</span><span class=n>Downloads</span><span class=err>$</span> <span class=n>g</span><span class=o>+</span><span class=o>+</span> <span class=n>testmuduo</span><span class=p>.</span><span class=n>cpp</span> <span class=o>-</span><span class=n>lmuduo_net</span> <span class=o>-</span><span class=n>lmuduo_base</span> <span class=o>-</span><span class=n>lpthread</span> <span class=o>-</span><span class=n>std</span><span class=o>=</span><span class=n>c</span><span class=o>+</span><span class=o>+</span><span class=mi>11</span>
-<span class=n>xushun</span><span class=err>@</span><span class=n>xushun</span><span class=o>-</span><span class=k>virtual</span><span class=o>-</span><span class=nl>machine</span><span class=p>:</span><span class=o>~</span><span class=o>/</span><span class=n>Downloads</span><span class=err>$</span> <span class=p>.</span><span class=o>/</span><span class=n>a</span><span class=p>.</span><span class=n>out</span> 
-<span class=mi>20220907</span> <span class=mi>12</span><span class=o>:</span><span class=mi>59</span><span class=o>:</span><span class=mf>32.781524</span><span class=n>Z</span> <span class=mi>42004</span> <span class=n>INFO</span>  <span class=n>pid</span> <span class=o>=</span> <span class=mi>42004</span> <span class=o>-</span> <span class=n>testmuduo</span><span class=p>.</span><span class=nl>cpp</span><span class=p>:</span><span class=mi>61</span>
-<span class=mi>20220907</span> <span class=mi>12</span><span class=o>:</span><span class=mi>59</span><span class=o>:</span><span class=mf>35.562126</span><span class=n>Z</span> <span class=mi>42004</span> <span class=n>INFO</span>  <span class=n>TcpServer</span><span class=o>:</span><span class=o>:</span><span class=n>newConnection</span> <span class=p>[</span><span class=n>EchoServer</span><span class=p>]</span> <span class=o>-</span> <span class=k>new</span> <span class=n>connection</span> <span class=p>[</span><span class=n>EchoServer</span><span class=o>-</span><span class=mf>0.0</span><span class=mf>.0</span><span class=mf>.0</span><span class=o>:</span><span class=mi>8888</span><span class=err>#</span><span class=mi>1</span><span class=p>]</span> <span class=n>from</span> <span class=mf>127.0</span><span class=mf>.0</span><span class=mf>.1</span><span class=o>:</span><span class=mi>36014</span> <span class=o>-</span> <span class=n>TcpServer</span><span class=p>.</span><span class=nl>cc</span><span class=p>:</span><span class=mi>80</span>
-<span class=mi>20220907</span> <span class=mi>12</span><span class=o>:</span><span class=mi>59</span><span class=o>:</span><span class=mf>35.562184</span><span class=n>Z</span> <span class=mi>42004</span> <span class=n>INFO</span>  <span class=n>EchoServer</span> <span class=o>-</span> <span class=mf>127.0</span><span class=mf>.0</span><span class=mf>.1</span><span class=o>:</span><span class=mi>36014</span> <span class=o>-</span><span class=o>&gt;</span> <span class=mf>127.0</span><span class=mf>.0</span><span class=mf>.1</span><span class=o>:</span><span class=mi>8888</span> <span class=n>is</span> <span class=n>UP</span> <span class=o>-</span> <span class=n>testmuduo</span><span class=p>.</span><span class=nl>cpp</span><span class=p>:</span><span class=mi>42</span>
-<span class=mi>20220907</span> <span class=mi>12</span><span class=o>:</span><span class=mi>59</span><span class=o>:</span><span class=mf>35.562244</span><span class=n>Z</span> <span class=mi>42004</span> <span class=n>INFO</span>  <span class=n>EchoServer</span><span class=o>-</span><span class=mf>0.0</span><span class=mf>.0</span><span class=mf>.0</span><span class=o>:</span><span class=mi>8888</span><span class=err>#</span><span class=mi>1</span> <span class=n>echo</span> <span class=mi>12</span> <span class=n>bytes</span><span class=p>,</span> <span class=n>data</span> <span class=n>received</span> <span class=n>at</span> <span class=mf>1662555575.562196</span> <span class=o>-</span> <span class=n>testmuduo</span><span class=p>.</span><span class=nl>cpp</span><span class=p>:</span><span class=mi>53</span>
-<span class=mi>20220907</span> <span class=mi>12</span><span class=o>:</span><span class=mi>59</span><span class=o>:</span><span class=mf>41.336223</span><span class=n>Z</span> <span class=mi>42004</span> <span class=n>INFO</span>  <span class=n>EchoServer</span> <span class=o>-</span> <span class=mf>127.0</span><span class=mf>.0</span><span class=mf>.1</span><span class=o>:</span><span class=mi>36014</span> <span class=o>-</span><span class=o>&gt;</span> <span class=mf>127.0</span><span class=mf>.0</span><span class=mf>.1</span><span class=o>:</span><span class=mi>8888</span> <span class=n>is</span> <span class=n>DOWN</span> <span class=o>-</span> <span class=n>testmuduo</span><span class=p>.</span><span class=nl>cpp</span><span class=p>:</span><span class=mi>42</span>
-<span class=mi>20220907</span> <span class=mi>12</span><span class=o>:</span><span class=mi>59</span><span class=o>:</span><span class=mf>41.336275</span><span class=n>Z</span> <span class=mi>42004</span> <span class=n>INFO</span>  <span class=n>TcpServer</span><span class=o>:</span><span class=o>:</span><span class=n>removeConnectionInLoop</span> <span class=p>[</span><span class=n>EchoServer</span><span class=p>]</span> <span class=o>-</span> <span class=n>connection</span> <span class=n>EchoServer</span><span class=o>-</span><span class=mf>0.0</span><span class=mf>.0</span><span class=mf>.0</span><span class=o>:</span><span class=mi>8888</span><span class=err>#</span><span class=mi>1</span> <span class=o>-</span> <span class=n>TcpServer</span><span class=p>.</span><span class=nl>cc</span><span class=p>:</span><span class=mi>109</span>
-<span class=o>^</span><span class=n>C</span>
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell>xushun@xushun-virtual-machine:~/Downloads$ touch testmuduo.cpp
+xushun@xushun-virtual-machine:~/Downloads$ gedit testmuduo.cpp 
+xushun@xushun-virtual-machine:~/Downloads$ g++ testmuduo.cpp -lmuduo_net -lmuduo_base -lpthread -std<span class=o>=</span>c++11
+xushun@xushun-virtual-machine:~/Downloads$ ./a.out 
+<span class=m>20220907</span> 12:59:32.781524Z <span class=m>42004</span> INFO  <span class=nv>pid</span> <span class=o>=</span> <span class=m>42004</span> - testmuduo.cpp:61
+<span class=m>20220907</span> 12:59:35.562126Z <span class=m>42004</span> INFO  TcpServer::newConnection <span class=o>[</span>EchoServer<span class=o>]</span> - new connection <span class=o>[</span>EchoServer-0.0.0.0:8888#1<span class=o>]</span> from 127.0.0.1:36014 - TcpServer.cc:80
+<span class=m>20220907</span> 12:59:35.562184Z <span class=m>42004</span> INFO  EchoServer - 127.0.0.1:36014 -&gt; 127.0.0.1:8888 is UP - testmuduo.cpp:42
+<span class=m>20220907</span> 12:59:35.562244Z <span class=m>42004</span> INFO  EchoServer-0.0.0.0:8888#1 <span class=nb>echo</span> <span class=m>12</span> bytes, data received at 1662555575.562196 - testmuduo.cpp:53
+<span class=m>20220907</span> 12:59:41.336223Z <span class=m>42004</span> INFO  EchoServer - 127.0.0.1:36014 -&gt; 127.0.0.1:8888 is DOWN - testmuduo.cpp:42
+<span class=m>20220907</span> 12:59:41.336275Z <span class=m>42004</span> INFO  TcpServer::removeConnectionInLoop <span class=o>[</span>EchoServer<span class=o>]</span> - connection EchoServer-0.0.0.0:8888#1 - TcpServer.cc:109
+^C
 </code></pre></td></tr></table></div></div><p>开另一个shell：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
 </span><span class=lnt>2
 </span><span class=lnt>3
 </span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell>xushun@xushun-virtual-machine:~$ <span class=nb>echo</span> <span class=s2>&#34;hello world&#34;</span> <span class=p>|</span> nc localhost <span class=m>8888</span>
 hello world
 ^C
-</code></pre></td></tr></table></div></div><p>正确回显，测试成功，安装完成。</p><a class=post-dummy-target id=muduo-服务器编程示例></a><h2>muduo 服务器编程示例</h2><p>muduo网络库主要给用户提供了两个主要的类：</p><ul><li><code>TcpServer</code>：用于编写服务器程序；</li><li><code>TcpClient</code>：用于编写客户端程序。</li></ul><p>网络库主要的功能就是将<code>epoll</code>和线程池进行了封装，把网络IO的代码和业务逻辑代码进行区分。仅仅将用户的连接和断开以及用户的可读写事件暴露出来。</p></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+</code></pre></td></tr></table></div></div><p>正确回显，测试成功，安装完成。</p><a class=post-dummy-target id=muduo-服务器编程示例></a><h2>muduo 服务器编程示例</h2><p>muduo网络库主要给用户提供了两个主要的类：</p><ul><li><code>TcpServer</code>：用于编写服务器程序；</li><li><code>TcpClient</code>：用于编写客户端程序。</li></ul><p>网络库主要的功能就是将<code>epoll</code>和线程池进行了封装，把网络IO的代码和业务逻辑代码进行区分。仅仅将用户的连接和断开以及用户的可读写事件暴露出来。</p><a class=post-dummy-target id=echoserver-回显服务器></a><h3>EchoServer 回显服务器</h3><p>使用muduo写一个简单的回显服务器。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span><span class=lnt>59
+</span><span class=lnt>60
+</span><span class=lnt>61
+</span><span class=lnt>62
+</span><span class=lnt>63
+</span><span class=lnt>64
+</span><span class=lnt>65
+</span><span class=lnt>66
+</span><span class=lnt>67
+</span><span class=lnt>68
+</span><span class=lnt>69
+</span><span class=lnt>70
+</span><span class=lnt>71
+</span><span class=lnt>72
+</span><span class=lnt>73
+</span><span class=lnt>74
+</span><span class=lnt>75
+</span><span class=lnt>76
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-C++ data-lang=C++><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;muduo/net/TcpServer.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;muduo/net/EventLoop.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;functional&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string&gt;</span><span class=cp>
+</span><span class=cp></span><span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=p>;</span>
+<span class=k>using</span> <span class=k>namespace</span> <span class=n>muduo</span><span class=p>;</span>
+<span class=k>using</span> <span class=k>namespace</span> <span class=n>muduo</span><span class=o>:</span><span class=o>:</span><span class=n>net</span><span class=p>;</span>
+<span class=k>using</span> <span class=k>namespace</span> <span class=n>placeholders</span><span class=p>;</span>
+<span class=cm>/* 基于muduo网络库开发服务器程序 */</span>
+
+<span class=cm>/*
+</span><span class=cm>    1. 组合TcpServer对象
+</span><span class=cm>    2. 创建Eventloop事件循环对象指针
+</span><span class=cm>    3. 明确TcpServer构造函数需要的参数 输出ChatServer的构造函数
+</span><span class=cm>        TcpServer(EventLoop* loop, const InetAddress&amp; listenAddr);
+</span><span class=cm>    4. 在构造函数中 注册处理连接的和处理读写事件的回调函数
+</span><span class=cm>    5. 在构造函数中 设置合适的服务器端的线程数量 muduo会自动划分IO线程和worker线程
+</span><span class=cm>*/</span>
+<span class=k>class</span> <span class=nc>EchoServer</span><span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+<span class=cm>/* #3 */</span>
+    <span class=n>EchoServer</span><span class=p>(</span><span class=n>EventLoop</span><span class=o>*</span> <span class=n>loop</span><span class=p>,</span>             <span class=cm>/* 事件循环 */</span>
+            <span class=k>const</span> <span class=n>InetAddress</span><span class=o>&amp;</span> <span class=n>listenAddr</span><span class=p>,</span>  <span class=cm>/* IP + PORT */</span>
+            <span class=k>const</span> <span class=n>string</span><span class=o>&amp;</span> <span class=n>nameArg</span><span class=p>)</span>          <span class=cm>/* 服务器名称 */</span>
+            <span class=o>:</span> <span class=n>_server</span><span class=p>(</span><span class=n>loop</span><span class=p>,</span> <span class=n>listenAddr</span><span class=p>,</span> <span class=n>nameArg</span><span class=p>)</span>
+            <span class=p>,</span> <span class=n>_loop</span><span class=p>(</span><span class=n>loop</span><span class=p>)</span> <span class=p>{</span>
+<span class=cm>/* #4 */</span>
+        <span class=cm>/* 给服务器注册 用户连接创建和断开的回调函数 */</span>
+        <span class=n>_server</span><span class=p>.</span><span class=n>setConnectionCallback</span><span class=p>(</span><span class=n>bind</span><span class=p>(</span><span class=o>&amp;</span><span class=n>EchoServer</span><span class=o>:</span><span class=o>:</span><span class=n>onConnection</span><span class=p>,</span> <span class=k>this</span><span class=p>,</span> <span class=n>_1</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=cm>/* 给服务器注册 用户读写事件的回调函数 */</span>
+        <span class=n>_server</span><span class=p>.</span><span class=n>setMessageCallback</span><span class=p>(</span><span class=n>bind</span><span class=p>(</span><span class=o>&amp;</span><span class=n>EchoServer</span><span class=o>:</span><span class=o>:</span><span class=n>onMessage</span><span class=p>,</span> <span class=k>this</span><span class=p>,</span> <span class=n>_1</span><span class=p>,</span> <span class=n>_2</span><span class=p>,</span> <span class=n>_3</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+<span class=cm>/* #5 */</span>
+        <span class=cm>/* 设置服务器段线程数量 */</span>
+        <span class=n>_server</span><span class=p>.</span><span class=n>setThreadNum</span><span class=p>(</span><span class=mi>4</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* 1个IO线程 3个worker线程 */</span>
+    <span class=p>}</span>
+<span class=cm>/* #6 */</span>
+    <span class=cm>/* 开启事件循环 */</span>
+    <span class=kt>void</span> <span class=nf>start</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>_server</span><span class=p>.</span><span class=n>start</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=k>private</span><span class=o>:</span>
+    <span class=cm>/* 处理用户的连接创建和断开 */</span>
+    <span class=kt>void</span> <span class=n>onConnection</span><span class=p>(</span><span class=k>const</span> <span class=n>TcpConnectionPtr</span><span class=o>&amp;</span> <span class=n>conn</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>conn</span><span class=o>-</span><span class=o>&gt;</span><span class=n>connected</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span> <span class=cm>/* 连接建立 */</span>
+            <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>conn</span><span class=o>-</span><span class=o>&gt;</span><span class=n>peerAddress</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>toIpPort</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>-&gt;</span><span class=s>&#34;</span> 
+                <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>conn</span><span class=o>-</span><span class=o>&gt;</span><span class=n>localAddress</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>toIpPort</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> online</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+        <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>    <span class=cm>/* 连接断开 */</span>
+            <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>conn</span><span class=o>-</span><span class=o>&gt;</span><span class=n>peerAddress</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>toIpPort</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>-&gt;</span><span class=s>&#34;</span> 
+                <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>conn</span><span class=o>-</span><span class=o>&gt;</span><span class=n>localAddress</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>toIpPort</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> offline</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+            <span class=n>conn</span><span class=o>-</span><span class=o>&gt;</span><span class=n>shutdown</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* close(fd) */</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=cm>/* 处理用户读写事件 */</span>
+    <span class=kt>void</span> <span class=nf>onMessage</span><span class=p>(</span><span class=k>const</span> <span class=n>TcpConnectionPtr</span><span class=o>&amp;</span> <span class=n>conn</span><span class=p>,</span> <span class=n>Buffer</span><span class=o>*</span> <span class=n>buffer</span><span class=p>,</span> <span class=n>Timestamp</span> <span class=n>time</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>string</span> <span class=n>buf</span> <span class=o>=</span> <span class=n>buffer</span><span class=o>-</span><span class=o>&gt;</span><span class=n>retrieveAllAsString</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>recv data: </span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>buf</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> time: </span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>time</span><span class=p>.</span><span class=n>toString</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>endl</span><span class=p>;</span>
+        <span class=cm>/* 回显 */</span>
+        <span class=n>conn</span><span class=o>-</span><span class=o>&gt;</span><span class=n>send</span><span class=p>(</span><span class=n>buf</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=cm>/* #1 */</span>    
+    <span class=n>TcpServer</span> <span class=n>_server</span><span class=p>;</span>
+<span class=cm>/* #2 */</span>
+    <span class=n>EventLoop</span><span class=o>*</span> <span class=n>_loop</span><span class=p>;</span> <span class=cm>/* epoll */</span>
+<span class=p>}</span><span class=p>;</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>EventLoop</span> <span class=n>loop</span><span class=p>;</span>
+    <span class=n>InetAddress</span> <span class=n>addr</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>127.0.0.1</span><span class=s>&#34;</span><span class=p>,</span> <span class=mi>6000</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>EchoServer</span> <span class=n>server</span><span class=p>(</span><span class=o>&amp;</span><span class=n>loop</span><span class=p>,</span> <span class=n>addr</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>EchoServer</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+
+    <span class=n>server</span><span class=p>.</span><span class=n>start</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* listenfd --(epoll_ctl)--&gt; epoll */</span>
+    <span class=n>loop</span><span class=p>.</span><span class=n>loop</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>    <span class=cm>/* epoll_wait 阻塞方式 */</span>
+
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>编译运行：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell>xushun@xushun-virtual-machine:~/testmuduo$ g++ muduo_server.cpp -o server -lmuduo_net -lmuduo_base -lpthread
+xushun@xushun-virtual-machine:~/testmuduo$ ./server 
+
+</code></pre></td></tr></table></div></div><p>注意，<code>-lmuduo_base</code>要写在<code>-lmuduo_net</code>之前，因为<code>muduo_net</code>依赖<code>muduo_base</code>，<code>-lphtread</code>写在最后。</p><p>用另一个终端连接：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell>xushun@xushun-virtual-machine:~/testmuduo$ telnet 127.0.0.1 <span class=m>6000</span>
+Trying 127.0.0.1...
+Connected to 127.0.0.1.
+Escape character is <span class=s1>&#39;^]&#39;</span>.
+hello
+hello
+haha
+haha
+^<span class=o>]</span>
+
+telnet&gt; quit
+Connection closed.
+</code></pre></td></tr></table></div></div><p>服务器输出：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell>xushun@xushun-virtual-machine:~/testmuduo$ ./server 
+<span class=m>20220914</span> 02:47:20.499307Z <span class=m>23127</span> INFO  TcpServer::newConnection <span class=o>[</span>EchoServer<span class=o>]</span> - new connection <span class=o>[</span>EchoServer-127.0.0.1:6000#1<span class=o>]</span> from 127.0.0.1:33576 - TcpServer.cc:80
+127.0.0.1:33576-&gt;127.0.0.1:6000 online
+recv data: hello
+ time: 1663123643.266532
+recv data: haha
+ time: 1663123646.280992
+127.0.0.1:33576-&gt;127.0.0.1:6000 offline
+<span class=m>20220914</span> 02:47:32.130616Z <span class=m>23127</span> INFO  TcpServer::removeConnectionInLoop <span class=o>[</span>EchoServer<span class=o>]</span> - connection EchoServer-127.0.0.1:6000#1 - TcpServer.cc:109
+
+</code></pre></td></tr></table></div></div></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
 <span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
 <span>2022-09-07</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
 <span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2f%25E9%2587%258D%25E5%2586%2599muduo01-%25E5%25AE%2589%25E8%25A3%2585%25E5%2592%258C%25E4%25BD%25BF%25E7%2594%25A8-muduo%2f&text=%e3%80%90%e9%87%8d%e5%86%99muduo%e3%80%9101%20-%20%e5%ae%89%e8%a3%85%e5%92%8c%e4%bd%bf%e7%94%a8%20muduo&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2f%25E9%2587%258D%25E5%2586%2599muduo01-%25E5%25AE%2589%25E8%25A3%2585%25E5%2592%258C%25E4%25BD%25BF%25E7%2594%25A8-muduo%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2f%25E9%2587%258D%25E5%2586%2599muduo01-%25E5%25AE%2589%25E8%25A3%2585%25E5%2592%258C%25E4%25BD%25BF%25E7%2594%25A8-muduo%2f&title=%e3%80%90%e9%87%8d%e5%86%99muduo%e3%80%9101%20-%20%e5%ae%89%e8%a3%85%e5%92%8c%e4%bd%bf%e7%94%a8%20muduo" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/network/><i class="fas fa-tag fa-fw"></i>&nbsp;network</a>&nbsp;
-</span><span class=tag><a href=https://xushun1221.github.io/tags/c++/><i class="fas fa-tag fa-fw"></i>&nbsp;C++</a>&nbsp;</span></section><section><span><a href=javascript:window.history.back();>Back</a></span>&nbsp;|&nbsp;<span><a href=https://xushun1221.github.io>Home</a></span></section></div><div class=post-nav><a href=https://xushun1221.github.io/2022/c-%E5%9F%BA%E7%A1%8008-stl%E7%BB%84%E4%BB%B6/ class=prev rel=prev title="【C++基础】08 - STL组件"><i class="fas fa-angle-left fa-fw"></i>【C++基础】08 - STL组件</a>
+</span><span class=tag><a href=https://xushun1221.github.io/tags/c++/><i class="fas fa-tag fa-fw"></i>&nbsp;C++</a>&nbsp;
+</span><span class=tag><a href=https://xushun1221.github.io/tags/muduo/><i class="fas fa-tag fa-fw"></i>&nbsp;muduo</a>&nbsp;</span></section><section><span><a href=javascript:window.history.back();>Back</a></span>&nbsp;|&nbsp;<span><a href=https://xushun1221.github.io>Home</a></span></section></div><div class=post-nav><a href=https://xushun1221.github.io/2022/c-%E5%9F%BA%E7%A1%8008-stl%E7%BB%84%E4%BB%B6/ class=prev rel=prev title="【C++基础】08 - STL组件"><i class="fas fa-angle-left fa-fw"></i>【C++基础】08 - STL组件</a>
 <a href=https://xushun1221.github.io/2022/c-%E9%AB%98%E7%BA%A701-%E5%AF%B9%E8%B1%A1%E4%BC%98%E5%8C%96%E5%8F%B3%E5%80%BC%E5%BC%95%E7%94%A8%E4%BC%98%E5%8C%96/ class=next rel=next title="【C++高级】01 - 对象优化&右值引用优化">【C++高级】01 - 对象优化&右值引用优化<i class="fas fa-angle-right fa-fw"></i></a></div><div class=post-comment></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2022</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=https://xushun1221.github.io/about/ target=_blank>xushun</a> | </span>Powered by <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> & <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer">LoveIt</a></div></div></footer></div><a href=# class=dynamic-to-top id=dynamic-to-top data-scroll><span>&nbsp;</span>
 </a><script src=/js/lib/jquery/jquery.slim.min.js></script><script src=/js/lib/lazysizes/lazysizes.min.js></script><script src=/js/lib/smooth-scroll/smooth-scroll.polyfills.min.js></script><script>window.scroll=new SmoothScroll('[data-scroll]',{speed:300,speedAsDuration:true});</script><link rel=stylesheet href=/css/lib/katex/katex.min.css><script src=/js/lib/katex/katex.min.js></script><script defer src=/js/lib/katex/auto-render.min.js></script><link rel=stylesheet href=/css/lib/katex/copy-tex.min.css><script defer src=/js/lib/katex/copy-tex.min.js></script><script defer src=/js/lib/katex/mhchem.min.js></script><script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true},{left:"$",right:"$",display:false},]});});</script><script src=/js/blog.min.js></script></body></html>
