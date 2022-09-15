@@ -53,7 +53,7 @@
 <span class=k>class</span> <span class=nc>noncopyable</span> <span class=p>{</span>
 <span class=k>public</span><span class=o>:</span>
     <span class=n>noncopyable</span><span class=p>(</span><span class=k>const</span> <span class=n>noncopyable</span><span class=o>&amp;</span><span class=p>)</span> <span class=o>=</span> <span class=k>delete</span><span class=p>;</span>
-    <span class=kt>void</span> <span class=nf>noncopyable</span><span class=p>(</span><span class=k>const</span> <span class=n>noncopyable</span><span class=o>&amp;</span><span class=p>)</span> <span class=o>=</span> <span class=k>delete</span><span class=p>;</span>
+    <span class=kt>void</span> <span class=k>operator</span><span class=o>=</span><span class=p>(</span><span class=k>const</span> <span class=n>noncopyable</span><span class=o>&amp;</span><span class=p>)</span> <span class=o>=</span> <span class=k>delete</span><span class=p>;</span>
 <span class=k>protected</span><span class=o>:</span>
     <span class=n>noncopyable</span><span class=p>(</span><span class=p>)</span> <span class=o>=</span> <span class=k>default</span><span class=p>;</span>
     <span class=o>~</span><span class=n>noncopyable</span><span class=p>(</span><span class=p>)</span> <span class=o>=</span> <span class=k>default</span><span class=p>;</span>
