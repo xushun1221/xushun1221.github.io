@@ -9,7 +9,7 @@ cmake_minimum_required(VERSION 2.5)
 project(mymuduo)
 
 # mymuduo最终编译为so动态库 设置动态库的路径 根目录/lib 目录下
-set(LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
+set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 # 设置g++编译选项 添加调试信息 设置c++11标准
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++11")
@@ -21,3 +21,5 @@ aux_source_directory(. SRC_LIST)
 add_library(mymuduo SHARED ${SRC_LIST})
 ```
 
+
+编译生成时，我们可以使用终端命令，也可以在vscode中直接右键`CMakeLists.txt`，选择`Build All Projects`一键构建。
