@@ -1,0 +1,222 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【重写muduo】16 - Acceptor | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/%E9%87%8D%E5%86%99muduo12-thread/><link rel=next href=https://xushun1221.github.io/2022/%E9%87%8D%E5%86%99muduo15-socket%E7%B1%BB/><link rel=canonical href=https://xushun1221.github.io/2022/%E9%87%8D%E5%86%99muduo16-acceptor/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【重写muduo】16 - Acceptor"><meta name=twitter:description content="对listenfd和accept函数的封装。 Acceptor运行在mainloop中，负责接收新用户的连接。 源码 Acceptor.hh 1 2 3 4 5 6 7 8 9 10 11 12 13"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【重写muduo】16 - Acceptor","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/%E9%87%8D%E5%86%99muduo16-acceptor\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"network, C\x2b\x2b, muduo","wordcount":640,"url":"https:\/\/xushun1221.github.io\/2022\/%E9%87%8D%E5%86%99muduo16-acceptor\/","datePublished":"2022-09-22T00:00:00\x2b00:00","dateModified":"2022-09-22T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【重写muduo】16 - Acceptor</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-09-22>2022-09-22</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 640 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/networking/>Networking</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#源码>源码</a></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#源码>源码</a></li></ul></nav></div></details></div><div class=post-content><p>对listenfd和accept函数的封装。</p><p><code>Acceptor</code>运行在mainloop中，负责接收新用户的连接。</p><a class=post-dummy-target id=源码></a><h2>源码</h2><p><code>Acceptor.hh</code></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=cp>#</span><span class=cp>ifndef   __ACCEPTOR_HH_</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>define   __ACCEPTOR_HH_</span><span class=cp>
+</span><span class=cp></span>
+<span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;noncopyable.hh&#34;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;Socket.hh&#34;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;Channel.hh&#34;</span><span class=cp>
+</span><span class=cp></span>
+<span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;functional&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=k>class</span> <span class=nc>EventLoop</span><span class=p>;</span>
+<span class=k>class</span> <span class=nc>InetAddress</span><span class=p>;</span>
+
+<span class=k>class</span> <span class=nc>Acceptor</span> <span class=o>:</span> <span class=n>noncopyable</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=k>using</span> <span class=n>NewConnectionCallback</span> <span class=o>=</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>function</span><span class=o>&lt;</span><span class=kt>void</span><span class=p>(</span><span class=kt>int</span> <span class=n>sockfd</span><span class=p>,</span> <span class=k>const</span> <span class=n>InetAddress</span><span class=o>&amp;</span><span class=p>)</span><span class=o>&gt;</span><span class=p>;</span>
+    
+    <span class=n>Acceptor</span><span class=p>(</span><span class=n>EventLoop</span><span class=o>*</span> <span class=n>loop</span><span class=p>,</span> <span class=k>const</span> <span class=n>InetAddress</span><span class=o>&amp;</span> <span class=n>listenAddr</span><span class=p>,</span> <span class=kt>bool</span> <span class=n>reuseport</span><span class=p>)</span><span class=p>;</span>
+    <span class=o>~</span><span class=n>Acceptor</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+
+    <span class=kt>void</span> <span class=nf>setNewConnectionCallback</span><span class=p>(</span><span class=k>const</span> <span class=n>NewConnectionCallback</span><span class=o>&amp;</span> <span class=n>cb</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>newConnectionCallback_</span> <span class=o>=</span> <span class=n>cb</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=kt>bool</span> <span class=nf>listenning</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=n>listenning_</span><span class=p>;</span> <span class=p>}</span>
+    <span class=kt>void</span> <span class=nf>listen</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+
+<span class=k>private</span><span class=o>:</span>
+    <span class=cm>/* acceptChannel_收到新用户连接事件时 调用该函数 */</span>
+    <span class=kt>void</span> <span class=n>handleRead</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+
+    <span class=n>EventLoop</span><span class=o>*</span> <span class=n>loop_</span><span class=p>;</span> <span class=cm>/* 就是mainloop */</span>
+    <span class=n>Socket</span> <span class=n>acceptSocket_</span><span class=p>;</span>
+    <span class=n>Channel</span> <span class=n>acceptChannel_</span><span class=p>;</span>
+    <span class=n>NewConnectionCallback</span> <span class=n>newConnectionCallback_</span><span class=p>;</span> <span class=cm>/* 新用户连接时执行回调 将connfd打包为Channel 唤醒一个subloop处理connfd读写事件 */</span>
+    <span class=cm>/* 该函数由TcpServer给出 */</span>
+
+    <span class=kt>bool</span> <span class=n>listenning_</span><span class=p>;</span>
+
+<span class=p>}</span><span class=p>;</span>
+
+
+<span class=cp>#</span><span class=cp>endif </span><span class=c1>// __ACCEPTOR_HH_
+</span></code></pre></td></tr></table></div></div><p><code>Acceptor.cc</code></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span><span class=lnt>59
+</span><span class=lnt>60
+</span><span class=lnt>61
+</span><span class=lnt>62
+</span><span class=lnt>63
+</span><span class=lnt>64
+</span><span class=lnt>65
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;Acceptor.hh&#34;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;Logger.hh&#34;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;InetAddress.hh&#34;</span><span class=cp>
+</span><span class=cp></span>
+<span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/types.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/socket.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;netinet/in.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+
+<span class=k>static</span> <span class=kt>int</span> <span class=nf>createNonblocking</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>sockfd</span> <span class=o>=</span> <span class=o>:</span><span class=o>:</span><span class=n>socket</span><span class=p>(</span><span class=n>AF_INET</span><span class=p>,</span> <span class=n>SOCK_STREAM</span> <span class=o>|</span> <span class=n>SOCK_NONBLOCK</span> <span class=o>|</span> <span class=n>SOCK_CLOEXEC</span><span class=p>,</span> <span class=n>IPPROTO_TCP</span><span class=p>)</span><span class=p>;</span>
+    <span class=cm>/* listenfd创建失败是严重错误 */</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>sockfd</span> <span class=o>&lt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>LOG_FATAL</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>%s:%d listen socket create error:%d </span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>__FILE__</span><span class=p>,</span> <span class=n>__LINE__</span><span class=p>,</span> <span class=n>errno</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span> <span class=n>sockfd</span><span class=p>;</span>
+<span class=p>}</span>
+
+
+<span class=n>Acceptor</span><span class=o>:</span><span class=o>:</span><span class=n>Acceptor</span><span class=p>(</span><span class=n>EventLoop</span><span class=o>*</span> <span class=n>loop</span><span class=p>,</span> <span class=k>const</span> <span class=n>InetAddress</span><span class=o>&amp;</span> <span class=n>listenAddr</span><span class=p>,</span> <span class=kt>bool</span> <span class=n>reuseport</span><span class=p>)</span> 
+    <span class=o>:</span> <span class=n>loop_</span><span class=p>(</span><span class=n>loop</span><span class=p>)</span>
+    <span class=p>,</span> <span class=n>acceptSocket_</span><span class=p>(</span><span class=n>createNonblocking</span><span class=p>(</span><span class=p>)</span><span class=p>)</span>
+    <span class=p>,</span> <span class=n>acceptChannel_</span><span class=p>(</span><span class=n>loop</span><span class=p>,</span> <span class=n>acceptSocket_</span><span class=p>.</span><span class=n>fd</span><span class=p>(</span><span class=p>)</span><span class=p>)</span>
+    <span class=p>,</span> <span class=n>listenning_</span><span class=p>(</span><span class=nb>false</span><span class=p>)</span>
+    <span class=p>{</span>
+        <span class=n>acceptSocket_</span><span class=p>.</span><span class=n>setReuseAddr</span><span class=p>(</span><span class=nb>true</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>acceptSocket_</span><span class=p>.</span><span class=n>setReusePort</span><span class=p>(</span><span class=nb>true</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>acceptSocket_</span><span class=p>.</span><span class=n>bindAddress</span><span class=p>(</span><span class=n>listenAddr</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* bind */</span>
+        <span class=cm>/* 使用handleRead函数 处理新用户的连接 */</span>
+        <span class=n>acceptChannel_</span><span class=p>.</span><span class=n>setReadCallback</span><span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>bind</span><span class=p>(</span><span class=o>&amp;</span><span class=n>Acceptor</span><span class=o>:</span><span class=o>:</span><span class=n>handleRead</span><span class=p>,</span> <span class=k>this</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=n>Acceptor</span><span class=o>:</span><span class=o>:</span><span class=o>~</span><span class=n>Acceptor</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=cm>/* baseloop不再监听新用户连接 */</span>
+    <span class=n>acceptChannel_</span><span class=p>.</span><span class=n>disableAll</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>acceptChannel_</span><span class=p>.</span><span class=n>remove</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>void</span> <span class=n>Acceptor</span><span class=o>:</span><span class=o>:</span><span class=n>listen</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>listenning_</span> <span class=o>=</span> <span class=nb>true</span><span class=p>;</span>
+    <span class=n>acceptSocket_</span><span class=p>.</span><span class=n>listen</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* listen */</span>
+    <span class=n>acceptChannel_</span><span class=p>.</span><span class=n>enableReading</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* 注册到baseloop */</span>
+<span class=p>}</span>
+
+<span class=cm>/* acceptChannel_收到新用户连接事件时 调用该函数 */</span>
+<span class=kt>void</span> <span class=n>Acceptor</span><span class=o>:</span><span class=o>:</span><span class=n>handleRead</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>InetAddress</span> <span class=n>peerAddr</span><span class=p>{</span><span class=mi>0</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>0.0.0.0</span><span class=s>&#34;</span><span class=p>}</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>connfd</span> <span class=o>=</span> <span class=n>acceptSocket_</span><span class=p>.</span><span class=n>accept</span><span class=p>(</span><span class=o>&amp;</span><span class=n>peerAddr</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* 和新用户建立连接 */</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>connfd</span> <span class=o>&gt;</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>newConnectionCallback_</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>newConnectionCallback_</span><span class=p>(</span><span class=n>connfd</span><span class=p>,</span> <span class=n>peerAddr</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+            <span class=cm>/* 如果一个客户端连接了 但没有相应的回调去处理 就关闭连接 */</span>
+            <span class=o>:</span><span class=o>:</span><span class=n>close</span><span class=p>(</span><span class=n>connfd</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+        <span class=cm>/* accept出错了 */</span>
+        <span class=n>LOG_ERROR</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>Acceptor::handleRead accept error:%d </span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>errno</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>errno</span> <span class=o>=</span><span class=o>=</span> <span class=n>EMFILE</span><span class=p>)</span> <span class=p>{</span>
+            <span class=cm>/* 该进程fd资源用尽 */</span>
+            <span class=n>LOG_ERROR</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>sockfd reached limited </span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+<span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
+<span>2022-09-22</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
+<span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2f%25E9%2587%258D%25E5%2586%2599muduo16-acceptor%2f&text=%e3%80%90%e9%87%8d%e5%86%99muduo%e3%80%9116%20-%20Acceptor&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2f%25E9%2587%258D%25E5%2586%2599muduo16-acceptor%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2f%25E9%2587%258D%25E5%2586%2599muduo16-acceptor%2f&title=%e3%80%90%e9%87%8d%e5%86%99muduo%e3%80%9116%20-%20Acceptor" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/network/><i class="fas fa-tag fa-fw"></i>&nbsp;network</a>&nbsp;
+</span><span class=tag><a href=https://xushun1221.github.io/tags/c++/><i class="fas fa-tag fa-fw"></i>&nbsp;C++</a>&nbsp;
+</span><span class=tag><a href=https://xushun1221.github.io/tags/muduo/><i class="fas fa-tag fa-fw"></i>&nbsp;muduo</a>&nbsp;</span></section><section><span><a href=javascript:window.history.back();>Back</a></span>&nbsp;|&nbsp;<span><a href=https://xushun1221.github.io>Home</a></span></section></div><div class=post-nav><a href=https://xushun1221.github.io/2022/%E9%87%8D%E5%86%99muduo12-thread/ class=prev rel=prev title="【重写muduo】12 - Thread"><i class="fas fa-angle-left fa-fw"></i>【重写muduo】12 - Thread</a>
+<a href=https://xushun1221.github.io/2022/%E9%87%8D%E5%86%99muduo15-socket%E7%B1%BB/ class=next rel=next title="【重写muduo】15 - Socket类">【重写muduo】15 - Socket类<i class="fas fa-angle-right fa-fw"></i></a></div><div class=post-comment></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2022</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=https://xushun1221.github.io/about/ target=_blank>xushun</a> | </span>Powered by <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> & <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer">LoveIt</a></div></div></footer></div><a href=# class=dynamic-to-top id=dynamic-to-top data-scroll><span>&nbsp;</span>
+</a><script src=/js/lib/jquery/jquery.slim.min.js></script><script src=/js/lib/lazysizes/lazysizes.min.js></script><script src=/js/lib/smooth-scroll/smooth-scroll.polyfills.min.js></script><script>window.scroll=new SmoothScroll('[data-scroll]',{speed:300,speedAsDuration:true});</script><link rel=stylesheet href=/css/lib/katex/katex.min.css><script src=/js/lib/katex/katex.min.js></script><script defer src=/js/lib/katex/auto-render.min.js></script><link rel=stylesheet href=/css/lib/katex/copy-tex.min.css><script defer src=/js/lib/katex/copy-tex.min.js></script><script defer src=/js/lib/katex/mhchem.min.js></script><script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true},{left:"$",right:"$",display:false},]});});</script><script src=/js/blog.min.js></script></body></html>
