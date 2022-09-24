@@ -166,6 +166,35 @@ void LevelOrder(TreeNode *root) {
 }
 ```
 
+拓展：[LeetCode102](https://leetcode.cn/problems/binary-tree-level-order-traversal/) 
+
+和上面有点不同，按层输出。  
+思路：还是使用队列遍历，在每一层开始时，记录该层节点的个数`n`，然后遍历队列中的`n`个节点，再遍历下一层即可。
+
+代码：  
+```cpp
+class Solution {
+public:
+    vector<vector<int>> levelOrder(TreeNode* root) {
+        if (!root) { return {}; }
+        vector<vector<int>> res;
+        queue<TreeNode*> tnque{{root}};
+        while (!tnque.empty()) {
+            res.push_back({});
+            int n = tnque.size();
+            for (int i = 0; i < n; ++ i) {
+                TreeNode* tmp = tnque.front();
+                tnque.pop();
+                res.back().push_back(tmp->val);
+                if (tmp->left) { tnque.push(tmp->left); }
+                if (tmp->right) { tnque.push(tmp->right); }
+            }
+        }
+        return res;
+    }
+};
+```
+
 -----
 
 ### 题目：求一颗二叉树的最大宽度
