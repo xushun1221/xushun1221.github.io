@@ -1,0 +1,379 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【重写muduo】18 - Buffer缓冲区 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/%E9%87%8D%E5%86%99muduo15-socket%E7%B1%BB/><link rel=canonical href=https://xushun1221.github.io/2022/%E9%87%8D%E5%86%99muduo18-buffer%E7%BC%93%E5%86%B2%E5%8C%BA/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【重写muduo】18 - Buffer缓冲区"><meta name=twitter:description content="在实现TcpConnection之前，需要实现底层的缓冲区Buffer，具体的实现细节在注释里非常详细的说明了。不再赘述。 源码 Buffer.hh 1 2 3 4 5 6"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【重写muduo】18 - Buffer缓冲区","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/%E9%87%8D%E5%86%99muduo18-buffer%E7%BC%93%E5%86%B2%E5%8C%BA\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"network, C\x2b\x2b, muduo","wordcount":2086,"url":"https:\/\/xushun1221.github.io\/2022\/%E9%87%8D%E5%86%99muduo18-buffer%E7%BC%93%E5%86%B2%E5%8C%BA\/","datePublished":"2022-09-23T00:00:00\x2b00:00","dateModified":"2022-09-23T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【重写muduo】18 - Buffer缓冲区</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-09-23>2022-09-23</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 2086 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/networking/>Networking</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#源码>源码</a></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#源码>源码</a></li></ul></nav></div></details></div><div class=post-content><p>在实现<code>TcpConnection</code>之前，需要实现底层的缓冲区<code>Buffer</code>，具体的实现细节在注释里非常详细的说明了。不再赘述。</p><a class=post-dummy-target id=源码></a><h2>源码</h2><p><code>Buffer.hh</code></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>  1
+</span><span class=lnt>  2
+</span><span class=lnt>  3
+</span><span class=lnt>  4
+</span><span class=lnt>  5
+</span><span class=lnt>  6
+</span><span class=lnt>  7
+</span><span class=lnt>  8
+</span><span class=lnt>  9
+</span><span class=lnt> 10
+</span><span class=lnt> 11
+</span><span class=lnt> 12
+</span><span class=lnt> 13
+</span><span class=lnt> 14
+</span><span class=lnt> 15
+</span><span class=lnt> 16
+</span><span class=lnt> 17
+</span><span class=lnt> 18
+</span><span class=lnt> 19
+</span><span class=lnt> 20
+</span><span class=lnt> 21
+</span><span class=lnt> 22
+</span><span class=lnt> 23
+</span><span class=lnt> 24
+</span><span class=lnt> 25
+</span><span class=lnt> 26
+</span><span class=lnt> 27
+</span><span class=lnt> 28
+</span><span class=lnt> 29
+</span><span class=lnt> 30
+</span><span class=lnt> 31
+</span><span class=lnt> 32
+</span><span class=lnt> 33
+</span><span class=lnt> 34
+</span><span class=lnt> 35
+</span><span class=lnt> 36
+</span><span class=lnt> 37
+</span><span class=lnt> 38
+</span><span class=lnt> 39
+</span><span class=lnt> 40
+</span><span class=lnt> 41
+</span><span class=lnt> 42
+</span><span class=lnt> 43
+</span><span class=lnt> 44
+</span><span class=lnt> 45
+</span><span class=lnt> 46
+</span><span class=lnt> 47
+</span><span class=lnt> 48
+</span><span class=lnt> 49
+</span><span class=lnt> 50
+</span><span class=lnt> 51
+</span><span class=lnt> 52
+</span><span class=lnt> 53
+</span><span class=lnt> 54
+</span><span class=lnt> 55
+</span><span class=lnt> 56
+</span><span class=lnt> 57
+</span><span class=lnt> 58
+</span><span class=lnt> 59
+</span><span class=lnt> 60
+</span><span class=lnt> 61
+</span><span class=lnt> 62
+</span><span class=lnt> 63
+</span><span class=lnt> 64
+</span><span class=lnt> 65
+</span><span class=lnt> 66
+</span><span class=lnt> 67
+</span><span class=lnt> 68
+</span><span class=lnt> 69
+</span><span class=lnt> 70
+</span><span class=lnt> 71
+</span><span class=lnt> 72
+</span><span class=lnt> 73
+</span><span class=lnt> 74
+</span><span class=lnt> 75
+</span><span class=lnt> 76
+</span><span class=lnt> 77
+</span><span class=lnt> 78
+</span><span class=lnt> 79
+</span><span class=lnt> 80
+</span><span class=lnt> 81
+</span><span class=lnt> 82
+</span><span class=lnt> 83
+</span><span class=lnt> 84
+</span><span class=lnt> 85
+</span><span class=lnt> 86
+</span><span class=lnt> 87
+</span><span class=lnt> 88
+</span><span class=lnt> 89
+</span><span class=lnt> 90
+</span><span class=lnt> 91
+</span><span class=lnt> 92
+</span><span class=lnt> 93
+</span><span class=lnt> 94
+</span><span class=lnt> 95
+</span><span class=lnt> 96
+</span><span class=lnt> 97
+</span><span class=lnt> 98
+</span><span class=lnt> 99
+</span><span class=lnt>100
+</span><span class=lnt>101
+</span><span class=lnt>102
+</span><span class=lnt>103
+</span><span class=lnt>104
+</span><span class=lnt>105
+</span><span class=lnt>106
+</span><span class=lnt>107
+</span><span class=lnt>108
+</span><span class=lnt>109
+</span><span class=lnt>110
+</span><span class=lnt>111
+</span><span class=lnt>112
+</span><span class=lnt>113
+</span><span class=lnt>114
+</span><span class=lnt>115
+</span><span class=lnt>116
+</span><span class=lnt>117
+</span><span class=lnt>118
+</span><span class=lnt>119
+</span><span class=lnt>120
+</span><span class=lnt>121
+</span><span class=lnt>122
+</span><span class=lnt>123
+</span><span class=lnt>124
+</span><span class=lnt>125
+</span><span class=lnt>126
+</span><span class=lnt>127
+</span><span class=lnt>128
+</span><span class=lnt>129
+</span><span class=lnt>130
+</span><span class=lnt>131
+</span><span class=lnt>132
+</span><span class=lnt>133
+</span><span class=lnt>134
+</span><span class=lnt>135
+</span><span class=lnt>136
+</span><span class=lnt>137
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=cp>#</span><span class=cp>ifndef   __BUFFER_HH_</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>define   __BUFFER_HH_</span><span class=cp>
+</span><span class=cp></span>
+<span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;vector&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;algorithm&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=cm>/*
+</span><span class=cm>                                 Buffer
+</span><span class=cm>    +--------------------+--------------------+--------------------+
+</span><span class=cm>    | prependable bytes  |   readable bytes   |   writable bytes   |
+</span><span class=cm>    |                    |     (CONTENT)      |                    | 
+</span><span class=cm>    +--------------------+--------------------+--------------------+
+</span><span class=cm>    |                    |                    |                    |
+</span><span class=cm>    0         &lt;=    readerIndex    &lt;=   writerIndex      &lt;=       size
+</span><span class=cm>
+</span><span class=cm>    Buffer的内存空间由std::vector&lt;char&gt;管理
+</span><span class=cm>
+</span><span class=cm>    prependable: 预留区 最小长度为kCheapPrepend = 8 会随着readerIndex的后移而扩大
+</span><span class=cm>    readable:    可读区 长度为writerIndex - readerIndex 会随着writerIndex的后移而扩大
+</span><span class=cm>    writable:    可写区 长度为buffer.size() - writerIndex 可以随着数组扩容而扩大 或者因为buffer空间重新调整而扩大
+</span><span class=cm>    readerIndex: 可读区首地址 标记可以读取的第一个字符的地址 每读取一个字节 readerIndex后移一个字节
+</span><span class=cm>    writerIndex: 可写区首地址 标记可以写入的第一个字符空间的地址 每写入一个字节 writerIndex后移一个字节
+</span><span class=cm>
+</span><span class=cm>    Buffer使用方法: writable区紧跟着readable区 先写再读 写入的数据直接进入可读区
+</span><span class=cm>                   可写区写入字符后 writerIndex后移(可读区扩大)
+</span><span class=cm>                   写入的字符就直接进入可读区的末尾了 可以被读取了
+</span><span class=cm>*/</span>
+
+<span class=k>class</span> <span class=nc>Buffer</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+
+    <span class=k>static</span> <span class=k>const</span> <span class=n>size_t</span> <span class=n>kCheapPrepend</span> <span class=o>=</span> <span class=mi>8</span><span class=p>;</span>      <span class=cm>/* 预留区最小长度 */</span>
+    <span class=k>static</span> <span class=k>const</span> <span class=n>size_t</span> <span class=n>kInitialSize</span> <span class=o>=</span> <span class=mi>1024</span><span class=p>;</span>    <span class=cm>/* 缓冲区初始大小 */</span>
+
+    <span class=k>explicit</span> <span class=nf>Buffer</span><span class=p>(</span><span class=n>size_t</span> <span class=n>initialSize</span> <span class=o>=</span> <span class=n>kInitialSize</span><span class=p>)</span> 
+        <span class=o>:</span> <span class=n>buffer_</span><span class=p>(</span><span class=n>kCheapPrepend</span> <span class=o>+</span> <span class=n>initialSize</span><span class=p>)</span>
+        <span class=p>,</span> <span class=n>readerIndex_</span><span class=p>(</span><span class=n>kCheapPrepend</span><span class=p>)</span>
+        <span class=p>,</span> <span class=n>writerIndex_</span><span class=p>(</span><span class=n>kCheapPrepend</span><span class=p>)</span>
+        <span class=p>{</span>
+    <span class=p>}</span>
+    <span class=o>~</span><span class=n>Buffer</span><span class=p>(</span><span class=p>)</span> <span class=o>=</span> <span class=k>default</span><span class=p>;</span>
+
+    <span class=n>size_t</span> <span class=nf>readableBytes</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=n>writerIndex_</span> <span class=o>-</span> <span class=n>readerIndex_</span><span class=p>;</span> <span class=p>}</span>   <span class=cm>/* 可读数据长度 */</span>
+    <span class=n>size_t</span> <span class=nf>writableBytes</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=n>buffer_</span><span class=p>.</span><span class=n>size</span><span class=p>(</span><span class=p>)</span> <span class=o>-</span> <span class=n>writerIndex_</span><span class=p>;</span> <span class=p>}</span> <span class=cm>/* 可写缓冲区长度 */</span>
+    <span class=n>size_t</span> <span class=nf>prependableBytes</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=n>readerIndex_</span><span class=p>;</span> <span class=p>}</span>               <span class=cm>/* 预留区长度(最小8) */</span>
+
+    <span class=k>const</span> <span class=kt>char</span><span class=o>*</span> <span class=nf>peek</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=n>begin</span><span class=p>(</span><span class=p>)</span> <span class=o>+</span> <span class=n>readerIndex_</span><span class=p>;</span> <span class=p>}</span> <span class=cm>/* 获得可读数据首地址 */</span>
+
+<span class=cm>/* 读数据相关的接口 */</span>
+    <span class=cm>/* 从缓冲区收回len长度的可读空间 */</span>
+    <span class=kt>void</span> <span class=nf>retrieve</span><span class=p>(</span><span class=n>size_t</span> <span class=n>len</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>len</span> <span class=o>&lt;</span> <span class=n>readableBytes</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+            <span class=cm>/* 没有全部读完可读数据 */</span>
+            <span class=n>readerIndex_</span> <span class=o>+</span><span class=o>=</span> <span class=n>len</span><span class=p>;</span>
+        <span class=p>}</span> <span class=k>else</span> <span class=p>{</span> <span class=cm>/* len == readableBytes() */</span>
+            <span class=n>retrieveAll</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=cm>/* 从缓冲区收回全部空间 */</span>
+    <span class=kt>void</span> <span class=nf>retrieveAll</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>  
+        <span class=cm>/* 全部字符都被读取了 直接重置readerIndex_和writerIndex_ */</span>
+        <span class=n>readerIndex_</span> <span class=o>=</span> <span class=n>kCheapPrepend</span><span class=p>;</span>
+        <span class=n>writerIndex_</span> <span class=o>=</span> <span class=n>kCheapPrepend</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=cm>/* 把缓冲区中全部可读字符装载为string 并收回全部可读空间 */</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>retrieveAllAsString</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>return</span> <span class=nf>retrieveAsString</span><span class=p>(</span><span class=n>readableBytes</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span> 
+    <span class=p>}</span>
+    <span class=cm>/* 从缓冲区中装载长度为len的可读字符为string 并回收这些空间 */</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>retrieveAsString</span><span class=p>(</span><span class=n>size_t</span> <span class=n>len</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>result</span><span class=p>(</span><span class=n>peek</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>len</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* 指定范围的可读字符串转为string */</span>
+        <span class=n>retrieve</span><span class=p>(</span><span class=n>len</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* 将刚刚(上句)读取出的字符空间在可读区中回收 */</span>
+        <span class=k>return</span> <span class=n>result</span><span class=p>;</span>
+    <span class=p>}</span>
+
+<span class=cm>/* 写数据相关的接口 */</span>
+    <span class=cm>/* 向Buffer中写数据前 需要确保Buffer中有足够的空间可写 */</span>
+    <span class=kt>void</span> <span class=nf>ensureWritableBytes</span><span class=p>(</span><span class=n>size_t</span> <span class=n>len</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>writableBytes</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span> <span class=n>len</span><span class=p>)</span> <span class=p>{</span>
+            <span class=cm>/* 可写空间不足 需要进行空间扩展 */</span>
+            <span class=n>makeSpace</span><span class=p>(</span><span class=n>len</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+
+    <span class=cm>/* 向Buffer可写区中写入data上长度为len的数据 */</span>
+    <span class=kt>void</span> <span class=nf>append</span><span class=p>(</span><span class=k>const</span> <span class=kt>char</span><span class=o>*</span> <span class=n>data</span><span class=p>,</span> <span class=n>size_t</span> <span class=n>len</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>ensureWritableBytes</span><span class=p>(</span><span class=n>len</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>copy</span><span class=p>(</span><span class=n>data</span><span class=p>,</span> <span class=n>data</span> <span class=o>+</span> <span class=n>len</span><span class=p>,</span> <span class=n>beginWrite</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>writerIndex_</span> <span class=o>+</span><span class=o>=</span> <span class=n>len</span><span class=p>;</span> <span class=cm>/* 写入数据 可写区变小 可读区扩大 */</span>
+    <span class=p>}</span>
+
+    <span class=cm>/* 获得可写区第一个字节内存地址 */</span>
+    <span class=kt>char</span><span class=o>*</span> <span class=nf>beginWrite</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=k>return</span> <span class=n>begin</span><span class=p>(</span><span class=p>)</span> <span class=o>+</span> <span class=n>writerIndex_</span><span class=p>;</span> <span class=p>}</span>
+    <span class=k>const</span> <span class=kt>char</span><span class=o>*</span> <span class=nf>beginWrite</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=n>begin</span><span class=p>(</span><span class=p>)</span> <span class=o>+</span> <span class=n>writerIndex_</span><span class=p>;</span> <span class=p>}</span>
+
+
+<span class=cm>/* 读写文件描述符 */</span>
+    <span class=cm>/* 从fd读取数据到Buffer */</span>
+    <span class=n>ssize_t</span> <span class=nf>readFd</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=kt>int</span><span class=o>*</span> <span class=n>savedErrno</span><span class=p>)</span><span class=p>;</span>
+
+
+<span class=k>private</span><span class=o>:</span>
+    <span class=cm>/* 获得Buffer底层数组首地址 对socket进行操作需要字符串指针 从vector底层数组获取 */</span>
+    <span class=kt>char</span><span class=o>*</span> <span class=n>begin</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=k>return</span> <span class=o>&amp;</span><span class=o>*</span><span class=n>buffer_</span><span class=p>.</span><span class=n>begin</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=p>}</span> <span class=cm>/* it.operator*()获得char再&amp;获得地址 */</span>
+    <span class=k>const</span> <span class=kt>char</span><span class=o>*</span> <span class=nf>begin</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=o>&amp;</span><span class=o>*</span><span class=n>buffer_</span><span class=p>.</span><span class=n>begin</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=p>}</span>
+    
+
+    <span class=cm>/* 对底层数组空间进行扩容或重新调整 满足可写区有len长度的空间 */</span>
+    <span class=kt>void</span> <span class=nf>makeSpace</span><span class=p>(</span><span class=n>size_t</span> <span class=n>len</span><span class=p>)</span> <span class=p>{</span>
+        <span class=cm>/* 
+</span><span class=cm>            如果prepend预留区和可写区总长度足够 就无需扩容
+</span><span class=cm>            只需把可读区向前移动即可在数组后面留出足够的空间
+</span><span class=cm>            否则必须进行扩容
+</span><span class=cm>        */</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>writableBytes</span><span class=p>(</span><span class=p>)</span> <span class=o>+</span> <span class=n>prependableBytes</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span> <span class=n>len</span> <span class=o>+</span> <span class=n>kCheapPrepend</span><span class=p>)</span> <span class=p>{</span>
+            <span class=cm>/* 空间不足 需要扩容 */</span>
+            <span class=n>buffer_</span><span class=p>.</span><span class=n>resize</span><span class=p>(</span><span class=n>writerIndex_</span> <span class=o>+</span> <span class=n>len</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* 保证writableBytes()有len长度 */</span>
+        <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+            <span class=cm>/* 空间可以满足 前移可读区 在数组后面留出足够空间即可 */</span>
+            <span class=n>size_t</span> <span class=n>readable</span> <span class=o>=</span> <span class=n>readableBytes</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+            <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>copy</span><span class=p>(</span><span class=n>begin</span><span class=p>(</span><span class=p>)</span> <span class=o>+</span> <span class=n>readerIndex_</span><span class=p>,</span>   <span class=cm>/* start */</span>
+                      <span class=n>begin</span><span class=p>(</span><span class=p>)</span> <span class=o>+</span> <span class=n>writerIndex_</span><span class=p>,</span>   <span class=cm>/* end */</span>
+                      <span class=n>begin</span><span class=p>(</span><span class=p>)</span> <span class=o>+</span> <span class=n>kCheapPrepend</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* dst */</span>
+            <span class=n>readerIndex_</span> <span class=o>=</span> <span class=n>kCheapPrepend</span><span class=p>;</span>
+            <span class=n>writerIndex_</span> <span class=o>=</span> <span class=n>readerIndex_</span> <span class=o>+</span> <span class=n>readable</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>vector</span><span class=o>&lt;</span><span class=kt>char</span><span class=o>&gt;</span> <span class=n>buffer_</span><span class=p>;</span> <span class=cm>/* 缓冲区数组 */</span>
+    <span class=n>size_t</span> <span class=n>readerIndex_</span><span class=p>;</span>       <span class=cm>/* 可读起始位置 */</span>
+    <span class=n>size_t</span> <span class=n>writerIndex_</span><span class=p>;</span>        <span class=cm>/* 可写起始位置 */</span>
+
+<span class=p>}</span><span class=p>;</span>
+
+
+<span class=cp>#</span><span class=cp>endif </span><span class=c1>// __BUFFER_HH_
+</span></code></pre></td></tr></table></div></div><p><code>Buffer.cc</code></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;Buffer.hh&#34;</span><span class=cp>
+</span><span class=cp></span>
+<span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/uio.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;errno.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+
+
+<span class=k>const</span> <span class=n>size_t</span> <span class=n>Buffer</span><span class=o>:</span><span class=o>:</span><span class=n>kCheapPrepend</span><span class=p>;</span> <span class=cm>/* 静态常量要在类外定义 */</span>
+<span class=k>const</span> <span class=n>size_t</span> <span class=n>Buffer</span><span class=o>:</span><span class=o>:</span><span class=n>kInitialSize</span><span class=p>;</span>
+
+
+<span class=cm>/* 从fd读取数据到Buffer */</span>
+<span class=n>ssize_t</span> <span class=n>Buffer</span><span class=o>:</span><span class=o>:</span><span class=n>readFd</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span><span class=p>,</span> <span class=kt>int</span><span class=o>*</span> <span class=n>savedErrno</span><span class=p>)</span> <span class=p>{</span>
+<span class=cm>/*
+</span><span class=cm>    这里存在一个问题: 
+</span><span class=cm>        使用read()或readv()从fd读取数据时 是直接拷贝到char*内存空间上
+</span><span class=cm>        如果Buffer的可写空间不够 就无法直接从内核fd缓冲区拷贝到Buffer可写区中
+</span><span class=cm>    解决方法:
+</span><span class=cm>        使用另一块栈上的extrabuf空间 配合使用readv()读取内核fd缓冲区内容
+</span><span class=cm>        如果Buffer中可写空间足够 直接完全写入Buffer中
+</span><span class=cm>        如果不够 剩余的内容写入extrabuf空间 然后使用Buffer::append()方法添加到Buffer中
+</span><span class=cm>*/</span>
+    <span class=kt>char</span> <span class=n>extrabuf</span><span class=p>[</span><span class=mi>65536</span><span class=p>]</span> <span class=o>=</span> <span class=p>{</span><span class=mi>0</span><span class=p>}</span><span class=p>;</span> <span class=cm>/* 64K栈上内存 效率高 函数结束随着栈帧回退自动释放 */</span>
+    <span class=k>const</span> <span class=n>size_t</span> <span class=n>writable</span> <span class=o>=</span> <span class=n>writableBytes</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* Buffer可写空间大小 */</span>
+    <span class=k>struct</span> <span class=nc>iovec</span> <span class=n>vec</span><span class=p>[</span><span class=mi>2</span><span class=p>]</span><span class=p>;</span>
+    <span class=n>vec</span><span class=p>[</span><span class=mi>0</span><span class=p>]</span><span class=p>.</span><span class=n>iov_base</span> <span class=o>=</span> <span class=n>begin</span><span class=p>(</span><span class=p>)</span> <span class=o>+</span> <span class=n>writerIndex_</span><span class=p>;</span>
+    <span class=n>vec</span><span class=p>[</span><span class=mi>0</span><span class=p>]</span><span class=p>.</span><span class=n>iov_len</span> <span class=o>=</span> <span class=n>writable</span><span class=p>;</span>
+    <span class=n>vec</span><span class=p>[</span><span class=mi>1</span><span class=p>]</span><span class=p>.</span><span class=n>iov_base</span> <span class=o>=</span> <span class=n>extrabuf</span><span class=p>;</span>
+    <span class=n>vec</span><span class=p>[</span><span class=mi>1</span><span class=p>]</span><span class=p>.</span><span class=n>iov_len</span> <span class=o>=</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>extrabuf</span><span class=p>)</span><span class=p>;</span>
+
+    <span class=cm>/* 如果Buffer空间大于64K则不启用extrabuf (一次最多读64K) */</span>
+    <span class=k>const</span> <span class=kt>int</span> <span class=n>iovcnt</span> <span class=o>=</span> <span class=p>(</span><span class=n>writable</span> <span class=o>&lt;</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>extrabuf</span><span class=p>)</span><span class=p>)</span> <span class=o>?</span> <span class=mi>2</span> <span class=o>:</span> <span class=mi>1</span><span class=p>;</span>
+    <span class=k>const</span> <span class=n>ssize_t</span> <span class=n>n</span> <span class=o>=</span> <span class=o>:</span><span class=o>:</span><span class=n>readv</span><span class=p>(</span><span class=n>fd</span><span class=p>,</span> <span class=n>vec</span><span class=p>,</span> <span class=n>iovcnt</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* 读数据 */</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>n</span> <span class=o>&lt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=o>*</span><span class=n>savedErrno</span> <span class=o>=</span> <span class=n>errno</span><span class=p>;</span> <span class=cm>/* 传出错误号 */</span>
+    <span class=p>}</span> <span class=k>else</span> <span class=nf>if</span> <span class=p>(</span><span class=k>static_cast</span><span class=o>&lt;</span><span class=n>size_t</span><span class=o>&gt;</span><span class=p>(</span><span class=n>n</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>=</span> <span class=n>writable</span><span class=p>)</span> <span class=p>{</span>
+        <span class=cm>/* 读到的数据可以完全写入Buffer */</span>
+        <span class=n>writerIndex_</span> <span class=o>+</span><span class=o>=</span> <span class=n>n</span><span class=p>;</span>
+    <span class=p>}</span> <span class=k>else</span> <span class=p>{</span> <span class=cm>/* n &gt; writable */</span>
+        <span class=cm>/* Buffer已经写满 且extrabuf中也有数据 */</span>
+        <span class=n>writerIndex_</span> <span class=o>=</span> <span class=n>buffer_</span><span class=p>.</span><span class=n>size</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=cm>/* 将extrabuf中数据写入Buffer (Buffer进行了扩容) */</span>
+        <span class=n>append</span><span class=p>(</span><span class=n>extrabuf</span><span class=p>,</span> <span class=n>n</span> <span class=o>-</span> <span class=n>writable</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=cm>/* 返回读取的字节数 */</span>
+    <span class=k>return</span> <span class=n>n</span><span class=p>;</span> 
+<span class=p>}</span>
+
+</code></pre></td></tr></table></div></div></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+<span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
+<span>2022-09-23</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
+<span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2f%25E9%2587%258D%25E5%2586%2599muduo18-buffer%25E7%25BC%2593%25E5%2586%25B2%25E5%258C%25BA%2f&text=%e3%80%90%e9%87%8d%e5%86%99muduo%e3%80%9118%20-%20Buffer%e7%bc%93%e5%86%b2%e5%8c%ba&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2f%25E9%2587%258D%25E5%2586%2599muduo18-buffer%25E7%25BC%2593%25E5%2586%25B2%25E5%258C%25BA%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2f%25E9%2587%258D%25E5%2586%2599muduo18-buffer%25E7%25BC%2593%25E5%2586%25B2%25E5%258C%25BA%2f&title=%e3%80%90%e9%87%8d%e5%86%99muduo%e3%80%9118%20-%20Buffer%e7%bc%93%e5%86%b2%e5%8c%ba" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/network/><i class="fas fa-tag fa-fw"></i>&nbsp;network</a>&nbsp;
+</span><span class=tag><a href=https://xushun1221.github.io/tags/c++/><i class="fas fa-tag fa-fw"></i>&nbsp;C++</a>&nbsp;
+</span><span class=tag><a href=https://xushun1221.github.io/tags/muduo/><i class="fas fa-tag fa-fw"></i>&nbsp;muduo</a>&nbsp;</span></section><section><span><a href=javascript:window.history.back();>Back</a></span>&nbsp;|&nbsp;<span><a href=https://xushun1221.github.io>Home</a></span></section></div><div class=post-nav><a href=https://xushun1221.github.io/2022/%E9%87%8D%E5%86%99muduo15-socket%E7%B1%BB/ class=prev rel=prev title="【重写muduo】15 - Socket类"><i class="fas fa-angle-left fa-fw"></i>【重写muduo】15 - Socket类</a></div><div class=post-comment></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2022</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=https://xushun1221.github.io/about/ target=_blank>xushun</a> | </span>Powered by <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> & <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer">LoveIt</a></div></div></footer></div><a href=# class=dynamic-to-top id=dynamic-to-top data-scroll><span>&nbsp;</span>
+</a><script src=/js/lib/jquery/jquery.slim.min.js></script><script src=/js/lib/lazysizes/lazysizes.min.js></script><script src=/js/lib/smooth-scroll/smooth-scroll.polyfills.min.js></script><script>window.scroll=new SmoothScroll('[data-scroll]',{speed:300,speedAsDuration:true});</script><link rel=stylesheet href=/css/lib/katex/katex.min.css><script src=/js/lib/katex/katex.min.js></script><script defer src=/js/lib/katex/auto-render.min.js></script><link rel=stylesheet href=/css/lib/katex/copy-tex.min.css><script defer src=/js/lib/katex/copy-tex.min.js></script><script defer src=/js/lib/katex/mhchem.min.js></script><script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true},{left:"$",right:"$",display:false},]});});</script><script src=/js/blog.min.js></script></body></html>
