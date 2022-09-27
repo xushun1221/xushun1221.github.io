@@ -109,6 +109,8 @@ public:
 /* 读写文件描述符 */
     /* 从fd读取数据到Buffer */
     ssize_t readFd(int fd, int* savedErrno);
+    /* 从Buffer写数据到fd */
+    ssize_t writeFd(int fd, int* savedErrno);
 
 
 private:
@@ -200,4 +202,15 @@ ssize_t Buffer::readFd(int fd, int* savedErrno) {
     return n; 
 }
 
+
+/* 从Buffer写数据到fd */
+ssize_t Buffer::writeFd(int fd, int* savedErrno) {
+    /* 把Buffer中的数据全部写出去 */
+    ssize_t n = ::write(fd, peek(), readableBytes());
+    if (n < 0) {
+        /* 出错 */
+        *savedErrno = errno;
+    }
+    return n;
+}
 ```
