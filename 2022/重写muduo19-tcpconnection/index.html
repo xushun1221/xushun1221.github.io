@@ -1,0 +1,698 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【重写muduo】19 - TcpConnection | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/%E9%87%8D%E5%86%99muduo15-socket%E7%B1%BB/><link rel=next href=https://xushun1221.github.io/2022/%E9%87%8D%E5%86%99muduo18-buffer%E7%BC%93%E5%86%B2%E5%8C%BA/><link rel=canonical href=https://xushun1221.github.io/2022/%E9%87%8D%E5%86%99muduo19-tcpconnection/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【重写muduo】19 - TcpConnection"><meta name=twitter:description content="TcpConnection管理一个socket及其对应的channel、tcp连接状态、一对输入输出缓冲区、设置channel的各种回调函数"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【重写muduo】19 - TcpConnection","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/%E9%87%8D%E5%86%99muduo19-tcpconnection\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"network, C\x2b\x2b, muduo","wordcount":2490,"url":"https:\/\/xushun1221.github.io\/2022\/%E9%87%8D%E5%86%99muduo19-tcpconnection\/","datePublished":"2022-09-24T00:00:00\x2b00:00","dateModified":"2022-09-24T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【重写muduo】19 - TcpConnection</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-09-24>2022-09-24</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 2490 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/networking/>Networking</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#源码>源码</a></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#源码>源码</a></li></ul></nav></div></details></div><div class=post-content><p><code>TcpConnection</code>管理一个socket及其对应的channel、tcp连接状态、一对输入输出缓冲区、设置channel的各种回调函数、发送数据方法、关闭连接方法。</p><a class=post-dummy-target id=源码></a><h2>源码</h2><p><code>TcpConnection.hh</code></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span><span class=lnt>59
+</span><span class=lnt>60
+</span><span class=lnt>61
+</span><span class=lnt>62
+</span><span class=lnt>63
+</span><span class=lnt>64
+</span><span class=lnt>65
+</span><span class=lnt>66
+</span><span class=lnt>67
+</span><span class=lnt>68
+</span><span class=lnt>69
+</span><span class=lnt>70
+</span><span class=lnt>71
+</span><span class=lnt>72
+</span><span class=lnt>73
+</span><span class=lnt>74
+</span><span class=lnt>75
+</span><span class=lnt>76
+</span><span class=lnt>77
+</span><span class=lnt>78
+</span><span class=lnt>79
+</span><span class=lnt>80
+</span><span class=lnt>81
+</span><span class=lnt>82
+</span><span class=lnt>83
+</span><span class=lnt>84
+</span><span class=lnt>85
+</span><span class=lnt>86
+</span><span class=lnt>87
+</span><span class=lnt>88
+</span><span class=lnt>89
+</span><span class=lnt>90
+</span><span class=lnt>91
+</span><span class=lnt>92
+</span><span class=lnt>93
+</span><span class=lnt>94
+</span><span class=lnt>95
+</span><span class=lnt>96
+</span><span class=lnt>97
+</span><span class=lnt>98
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=cp>#</span><span class=cp>ifndef   __TCPCONNECTION_HH_</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>define   __TCPCONNECTION_HH_</span><span class=cp>
+</span><span class=cp></span>
+<span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;noncopyable.hh&#34;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;InetAddress.hh&#34;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;Callbacks.hh&#34;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;Buffer.hh&#34;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;Timestamp.hh&#34;</span><span class=cp>
+</span><span class=cp></span>
+<span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;memory&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;atomic&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=k>class</span> <span class=nc>Channel</span><span class=p>;</span>
+<span class=k>class</span> <span class=nc>EventLoop</span><span class=p>;</span>
+<span class=k>class</span> <span class=nc>Socket</span><span class=p>;</span>
+
+
+<span class=cm>/* TcpConnection代表一条已经建立的客户端连接 */</span>
+<span class=k>class</span> <span class=nc>TcpConnection</span> <span class=o>:</span> <span class=n>noncopyable</span><span class=p>,</span> <span class=k>public</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>enable_shared_from_this</span><span class=o>&lt;</span><span class=n>TcpConnection</span><span class=o>&gt;</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>TcpConnection</span><span class=p>(</span><span class=n>EventLoop</span><span class=o>*</span> <span class=n>loop</span><span class=p>,</span>
+                  <span class=k>const</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=o>&amp;</span> <span class=n>nameArg</span><span class=p>,</span>
+                  <span class=kt>int</span> <span class=n>sockfd</span><span class=p>,</span>
+                  <span class=k>const</span> <span class=n>InetAddress</span><span class=o>&amp;</span> <span class=n>localAddr</span><span class=p>,</span>
+                  <span class=k>const</span> <span class=n>InetAddress</span><span class=o>&amp;</span> <span class=n>peerAddr</span><span class=p>)</span><span class=p>;</span>
+    <span class=o>~</span><span class=n>TcpConnection</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+
+    <span class=n>EventLoop</span><span class=o>*</span> <span class=nf>getLoop</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=n>loop_</span><span class=p>;</span> <span class=p>}</span>
+    <span class=k>const</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=o>&amp;</span> <span class=n>name</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=n>name_</span><span class=p>;</span> <span class=p>}</span>
+    <span class=k>const</span> <span class=n>InetAddress</span><span class=o>&amp;</span> <span class=n>localAddress</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=n>localAddr_</span><span class=p>;</span> <span class=p>}</span>
+    <span class=k>const</span> <span class=n>InetAddress</span><span class=o>&amp;</span> <span class=n>peerAddress</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=n>peerAddr_</span><span class=p>;</span> <span class=p>}</span>
+    <span class=n>Buffer</span><span class=o>*</span> <span class=nf>inputBuffer</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=k>return</span> <span class=o>&amp;</span><span class=n>inputBuffer_</span><span class=p>;</span> <span class=p>}</span>
+    <span class=n>Buffer</span><span class=o>*</span> <span class=nf>outputBuffer</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=k>return</span> <span class=o>&amp;</span><span class=n>outputBuffer_</span><span class=p>;</span> <span class=p>}</span>
+
+    <span class=kt>bool</span> <span class=nf>connected</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=n>state_</span> <span class=o>=</span><span class=o>=</span> <span class=n>kConnected</span><span class=p>;</span> <span class=p>}</span>
+    <span class=kt>bool</span> <span class=nf>disconnected</span><span class=p>(</span><span class=p>)</span> <span class=k>const</span> <span class=p>{</span> <span class=k>return</span> <span class=n>state_</span> <span class=o>=</span><span class=o>=</span> <span class=n>kDisconnected</span><span class=p>;</span> <span class=p>}</span>
+
+    <span class=cm>/* 发送数据 调用sendInLoop */</span>
+    <span class=kt>void</span> <span class=nf>send</span><span class=p>(</span><span class=k>const</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=o>&amp;</span> <span class=n>buf</span><span class=p>)</span><span class=p>;</span>
+    <span class=cm>/* 关闭连接 调用shutdownInLoop */</span>
+    <span class=kt>void</span> <span class=nf>shutdown</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+
+    <span class=cm>/* 设置回调 */</span>
+    <span class=kt>void</span> <span class=nf>setConnectionCallback</span><span class=p>(</span><span class=k>const</span> <span class=n>ConnectionCallback</span><span class=o>&amp;</span> <span class=n>cb</span><span class=p>)</span> <span class=p>{</span> <span class=n>connectionCallback_</span> <span class=o>=</span> <span class=n>cb</span><span class=p>;</span> <span class=p>}</span>
+    <span class=kt>void</span> <span class=nf>setMessageCallback</span><span class=p>(</span><span class=k>const</span> <span class=n>MessageCallback</span><span class=o>&amp;</span> <span class=n>cb</span><span class=p>)</span> <span class=p>{</span> <span class=n>messageCallback_</span> <span class=o>=</span> <span class=n>cb</span><span class=p>;</span> <span class=p>}</span>
+    <span class=kt>void</span> <span class=nf>setWriteCompleteCallback</span><span class=p>(</span><span class=k>const</span> <span class=n>WriteCompleteCallback</span><span class=o>&amp;</span> <span class=n>cb</span><span class=p>)</span> <span class=p>{</span> <span class=n>writeCompleteCallback_</span> <span class=o>=</span> <span class=n>cb</span><span class=p>;</span> <span class=p>}</span>
+    <span class=kt>void</span> <span class=nf>setHighWaterMarkCallback</span><span class=p>(</span><span class=k>const</span> <span class=n>HighWaterMarkCallback</span><span class=o>&amp;</span> <span class=n>cb</span><span class=p>,</span> <span class=n>size_t</span> <span class=n>highWaterMark</span><span class=p>)</span> <span class=p>{</span> 
+        <span class=n>highWaterMarkCallback_</span> <span class=o>=</span> <span class=n>cb</span><span class=p>;</span>
+        <span class=n>highWaterMark_</span> <span class=o>=</span> <span class=n>highWaterMark</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=kt>void</span> <span class=nf>setCloseCallback</span><span class=p>(</span><span class=k>const</span> <span class=n>CloseCallback</span><span class=o>&amp;</span> <span class=n>cb</span><span class=p>)</span> <span class=p>{</span> <span class=n>closeCallback_</span> <span class=o>=</span> <span class=n>cb</span><span class=p>;</span> <span class=p>}</span>
+
+    <span class=cm>/* 连接建立 */</span>
+    <span class=kt>void</span> <span class=nf>connectEstablished</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=cm>/* 连接销毁 */</span>
+    <span class=kt>void</span> <span class=nf>connectDestroyed</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    
+<span class=k>private</span><span class=o>:</span>
+    <span class=cm>/* TCP状态 */</span>
+    <span class=k>enum</span> <span class=nc>StateE</span> <span class=p>{</span> <span class=n>kDisconnected</span><span class=p>,</span> <span class=n>kConnecting</span><span class=p>,</span> <span class=n>kConnected</span><span class=p>,</span> <span class=n>kDisconnecting</span> <span class=p>}</span><span class=p>;</span>
+    <span class=kt>void</span> <span class=nf>setState</span><span class=p>(</span><span class=n>StateE</span> <span class=n>state</span><span class=p>)</span> <span class=p>{</span> <span class=n>state_</span> <span class=o>=</span> <span class=n>state</span><span class=p>;</span> <span class=p>}</span>
+
+    <span class=cm>/* 事件处理回调 */</span>
+    <span class=kt>void</span> <span class=nf>handleRead</span><span class=p>(</span><span class=n>Timestamp</span> <span class=n>receiveTime</span><span class=p>)</span><span class=p>;</span>
+    <span class=kt>void</span> <span class=nf>handleWrite</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=kt>void</span> <span class=nf>handleClose</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=kt>void</span> <span class=nf>handleError</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+
+    <span class=cm>/* 由当前loop发送数据 */</span>
+    <span class=kt>void</span> <span class=nf>sendInLoop</span><span class=p>(</span><span class=k>const</span> <span class=kt>void</span><span class=o>*</span> <span class=n>message</span><span class=p>,</span> <span class=n>size_t</span> <span class=n>len</span><span class=p>)</span><span class=p>;</span>
+    <span class=cm>/* 在当前loop中删除掉对应的channel */</span>
+    <span class=kt>void</span> <span class=nf>shutdownInLoop</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+
+    <span class=n>EventLoop</span><span class=o>*</span> <span class=n>loop_</span><span class=p>;</span>        <span class=cm>/* 从属的subloop */</span>
+    <span class=k>const</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>name_</span><span class=p>;</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>atomic_int</span> <span class=n>state_</span><span class=p>;</span>  <span class=cm>/* TCP状态 */</span>
+    <span class=kt>bool</span> <span class=n>reading_</span><span class=p>;</span>
+
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>unique_ptr</span><span class=o>&lt;</span><span class=n>Socket</span><span class=o>&gt;</span> <span class=n>socket_</span><span class=p>;</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>unique_ptr</span><span class=o>&lt;</span><span class=n>Channel</span><span class=o>&gt;</span> <span class=n>channel_</span><span class=p>;</span>
+
+    <span class=k>const</span> <span class=n>InetAddress</span> <span class=n>localAddr_</span><span class=p>;</span>
+    <span class=k>const</span> <span class=n>InetAddress</span> <span class=n>peerAddr_</span><span class=p>;</span>
+
+    <span class=n>ConnectionCallback</span> <span class=n>connectionCallback_</span><span class=p>;</span>
+    <span class=n>MessageCallback</span> <span class=n>messageCallback_</span><span class=p>;</span>
+    <span class=n>WriteCompleteCallback</span> <span class=n>writeCompleteCallback_</span><span class=p>;</span>
+    <span class=n>HighWaterMarkCallback</span> <span class=n>highWaterMarkCallback_</span><span class=p>;</span> <span class=cm>/* 高水位标记回调 */</span>
+    <span class=n>CloseCallback</span> <span class=n>closeCallback_</span><span class=p>;</span>
+    <span class=n>size_t</span> <span class=n>highWaterMark_</span><span class=p>;</span> <span class=cm>/* 高水位标记 */</span>
+
+    <span class=n>Buffer</span> <span class=n>inputBuffer_</span><span class=p>;</span>    <span class=cm>/* 接收数据缓冲区 */</span>
+    <span class=n>Buffer</span> <span class=n>outputBuffer_</span><span class=p>;</span>   <span class=cm>/* 发送数据缓冲区 */</span>
+<span class=p>}</span><span class=p>;</span>
+
+
+<span class=cp>#</span><span class=cp>endif </span><span class=c1>// __TCPCONNECTION_HH_
+</span></code></pre></td></tr></table></div></div><p><code>TcpConnection.cc</code></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>  1
+</span><span class=lnt>  2
+</span><span class=lnt>  3
+</span><span class=lnt>  4
+</span><span class=lnt>  5
+</span><span class=lnt>  6
+</span><span class=lnt>  7
+</span><span class=lnt>  8
+</span><span class=lnt>  9
+</span><span class=lnt> 10
+</span><span class=lnt> 11
+</span><span class=lnt> 12
+</span><span class=lnt> 13
+</span><span class=lnt> 14
+</span><span class=lnt> 15
+</span><span class=lnt> 16
+</span><span class=lnt> 17
+</span><span class=lnt> 18
+</span><span class=lnt> 19
+</span><span class=lnt> 20
+</span><span class=lnt> 21
+</span><span class=lnt> 22
+</span><span class=lnt> 23
+</span><span class=lnt> 24
+</span><span class=lnt> 25
+</span><span class=lnt> 26
+</span><span class=lnt> 27
+</span><span class=lnt> 28
+</span><span class=lnt> 29
+</span><span class=lnt> 30
+</span><span class=lnt> 31
+</span><span class=lnt> 32
+</span><span class=lnt> 33
+</span><span class=lnt> 34
+</span><span class=lnt> 35
+</span><span class=lnt> 36
+</span><span class=lnt> 37
+</span><span class=lnt> 38
+</span><span class=lnt> 39
+</span><span class=lnt> 40
+</span><span class=lnt> 41
+</span><span class=lnt> 42
+</span><span class=lnt> 43
+</span><span class=lnt> 44
+</span><span class=lnt> 45
+</span><span class=lnt> 46
+</span><span class=lnt> 47
+</span><span class=lnt> 48
+</span><span class=lnt> 49
+</span><span class=lnt> 50
+</span><span class=lnt> 51
+</span><span class=lnt> 52
+</span><span class=lnt> 53
+</span><span class=lnt> 54
+</span><span class=lnt> 55
+</span><span class=lnt> 56
+</span><span class=lnt> 57
+</span><span class=lnt> 58
+</span><span class=lnt> 59
+</span><span class=lnt> 60
+</span><span class=lnt> 61
+</span><span class=lnt> 62
+</span><span class=lnt> 63
+</span><span class=lnt> 64
+</span><span class=lnt> 65
+</span><span class=lnt> 66
+</span><span class=lnt> 67
+</span><span class=lnt> 68
+</span><span class=lnt> 69
+</span><span class=lnt> 70
+</span><span class=lnt> 71
+</span><span class=lnt> 72
+</span><span class=lnt> 73
+</span><span class=lnt> 74
+</span><span class=lnt> 75
+</span><span class=lnt> 76
+</span><span class=lnt> 77
+</span><span class=lnt> 78
+</span><span class=lnt> 79
+</span><span class=lnt> 80
+</span><span class=lnt> 81
+</span><span class=lnt> 82
+</span><span class=lnt> 83
+</span><span class=lnt> 84
+</span><span class=lnt> 85
+</span><span class=lnt> 86
+</span><span class=lnt> 87
+</span><span class=lnt> 88
+</span><span class=lnt> 89
+</span><span class=lnt> 90
+</span><span class=lnt> 91
+</span><span class=lnt> 92
+</span><span class=lnt> 93
+</span><span class=lnt> 94
+</span><span class=lnt> 95
+</span><span class=lnt> 96
+</span><span class=lnt> 97
+</span><span class=lnt> 98
+</span><span class=lnt> 99
+</span><span class=lnt>100
+</span><span class=lnt>101
+</span><span class=lnt>102
+</span><span class=lnt>103
+</span><span class=lnt>104
+</span><span class=lnt>105
+</span><span class=lnt>106
+</span><span class=lnt>107
+</span><span class=lnt>108
+</span><span class=lnt>109
+</span><span class=lnt>110
+</span><span class=lnt>111
+</span><span class=lnt>112
+</span><span class=lnt>113
+</span><span class=lnt>114
+</span><span class=lnt>115
+</span><span class=lnt>116
+</span><span class=lnt>117
+</span><span class=lnt>118
+</span><span class=lnt>119
+</span><span class=lnt>120
+</span><span class=lnt>121
+</span><span class=lnt>122
+</span><span class=lnt>123
+</span><span class=lnt>124
+</span><span class=lnt>125
+</span><span class=lnt>126
+</span><span class=lnt>127
+</span><span class=lnt>128
+</span><span class=lnt>129
+</span><span class=lnt>130
+</span><span class=lnt>131
+</span><span class=lnt>132
+</span><span class=lnt>133
+</span><span class=lnt>134
+</span><span class=lnt>135
+</span><span class=lnt>136
+</span><span class=lnt>137
+</span><span class=lnt>138
+</span><span class=lnt>139
+</span><span class=lnt>140
+</span><span class=lnt>141
+</span><span class=lnt>142
+</span><span class=lnt>143
+</span><span class=lnt>144
+</span><span class=lnt>145
+</span><span class=lnt>146
+</span><span class=lnt>147
+</span><span class=lnt>148
+</span><span class=lnt>149
+</span><span class=lnt>150
+</span><span class=lnt>151
+</span><span class=lnt>152
+</span><span class=lnt>153
+</span><span class=lnt>154
+</span><span class=lnt>155
+</span><span class=lnt>156
+</span><span class=lnt>157
+</span><span class=lnt>158
+</span><span class=lnt>159
+</span><span class=lnt>160
+</span><span class=lnt>161
+</span><span class=lnt>162
+</span><span class=lnt>163
+</span><span class=lnt>164
+</span><span class=lnt>165
+</span><span class=lnt>166
+</span><span class=lnt>167
+</span><span class=lnt>168
+</span><span class=lnt>169
+</span><span class=lnt>170
+</span><span class=lnt>171
+</span><span class=lnt>172
+</span><span class=lnt>173
+</span><span class=lnt>174
+</span><span class=lnt>175
+</span><span class=lnt>176
+</span><span class=lnt>177
+</span><span class=lnt>178
+</span><span class=lnt>179
+</span><span class=lnt>180
+</span><span class=lnt>181
+</span><span class=lnt>182
+</span><span class=lnt>183
+</span><span class=lnt>184
+</span><span class=lnt>185
+</span><span class=lnt>186
+</span><span class=lnt>187
+</span><span class=lnt>188
+</span><span class=lnt>189
+</span><span class=lnt>190
+</span><span class=lnt>191
+</span><span class=lnt>192
+</span><span class=lnt>193
+</span><span class=lnt>194
+</span><span class=lnt>195
+</span><span class=lnt>196
+</span><span class=lnt>197
+</span><span class=lnt>198
+</span><span class=lnt>199
+</span><span class=lnt>200
+</span><span class=lnt>201
+</span><span class=lnt>202
+</span><span class=lnt>203
+</span><span class=lnt>204
+</span><span class=lnt>205
+</span><span class=lnt>206
+</span><span class=lnt>207
+</span><span class=lnt>208
+</span><span class=lnt>209
+</span><span class=lnt>210
+</span><span class=lnt>211
+</span><span class=lnt>212
+</span><span class=lnt>213
+</span><span class=lnt>214
+</span><span class=lnt>215
+</span><span class=lnt>216
+</span><span class=lnt>217
+</span><span class=lnt>218
+</span><span class=lnt>219
+</span><span class=lnt>220
+</span><span class=lnt>221
+</span><span class=lnt>222
+</span><span class=lnt>223
+</span><span class=lnt>224
+</span><span class=lnt>225
+</span><span class=lnt>226
+</span><span class=lnt>227
+</span><span class=lnt>228
+</span><span class=lnt>229
+</span><span class=lnt>230
+</span><span class=lnt>231
+</span><span class=lnt>232
+</span><span class=lnt>233
+</span><span class=lnt>234
+</span><span class=lnt>235
+</span><span class=lnt>236
+</span><span class=lnt>237
+</span><span class=lnt>238
+</span><span class=lnt>239
+</span><span class=lnt>240
+</span><span class=lnt>241
+</span><span class=lnt>242
+</span><span class=lnt>243
+</span><span class=lnt>244
+</span><span class=lnt>245
+</span><span class=lnt>246
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;TcpConnection.hh&#34;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;Logger.hh&#34;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;Socket.hh&#34;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;Channel.hh&#34;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;EventLoop.hh&#34;</span><span class=cp>
+</span><span class=cp></span>
+<span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;functional&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;errno.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/types.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/socket.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;netinet/tcp.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=k>static</span> <span class=n>EventLoop</span><span class=o>*</span> <span class=nf>CheckLoopNotNull</span><span class=p>(</span><span class=n>EventLoop</span><span class=o>*</span> <span class=n>loop</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>loop</span> <span class=o>=</span><span class=o>=</span> <span class=k>nullptr</span><span class=p>)</span> <span class=p>{</span>
+        <span class=cm>/* mainloop为空不能初始化TcpServer 严重错误 */</span>
+        <span class=n>LOG_FATAL</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>CheckLoopNotNull TcpConnection loop is null </span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>return</span> <span class=n>loop</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=n>TcpConnection</span><span class=o>:</span><span class=o>:</span><span class=n>TcpConnection</span><span class=p>(</span><span class=n>EventLoop</span><span class=o>*</span> <span class=n>loop</span><span class=p>,</span>
+                             <span class=k>const</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=o>&amp;</span> <span class=n>nameArg</span><span class=p>,</span>
+                             <span class=kt>int</span> <span class=n>sockfd</span><span class=p>,</span>
+                             <span class=k>const</span> <span class=n>InetAddress</span><span class=o>&amp;</span> <span class=n>localAddr</span><span class=p>,</span>
+                             <span class=k>const</span> <span class=n>InetAddress</span><span class=o>&amp;</span> <span class=n>peerAddr</span><span class=p>)</span> 
+    <span class=o>:</span> <span class=n>loop_</span><span class=p>(</span><span class=n>CheckLoopNotNull</span><span class=p>(</span><span class=n>loop</span><span class=p>)</span><span class=p>)</span>
+    <span class=p>,</span> <span class=n>name_</span><span class=p>(</span><span class=n>nameArg</span><span class=p>)</span>
+    <span class=p>,</span> <span class=n>state_</span><span class=p>(</span><span class=n>kConnecting</span><span class=p>)</span> <span class=cm>/* 初始时正在连接 */</span>
+    <span class=p>,</span> <span class=n>reading_</span><span class=p>(</span><span class=nb>true</span><span class=p>)</span>
+    <span class=p>,</span> <span class=n>socket_</span><span class=p>(</span><span class=k>new</span> <span class=n>Socket</span><span class=p>(</span><span class=n>sockfd</span><span class=p>)</span><span class=p>)</span>
+    <span class=p>,</span> <span class=n>channel_</span><span class=p>(</span><span class=k>new</span> <span class=n>Channel</span><span class=p>(</span><span class=n>loop</span><span class=p>,</span> <span class=n>sockfd</span><span class=p>)</span><span class=p>)</span>
+    <span class=p>,</span> <span class=n>localAddr_</span><span class=p>(</span><span class=n>localAddr</span><span class=p>)</span>
+    <span class=p>,</span> <span class=n>peerAddr_</span><span class=p>(</span><span class=n>peerAddr</span><span class=p>)</span>
+    <span class=p>,</span> <span class=n>highWaterMark_</span><span class=p>(</span><span class=mi>64</span> <span class=o>*</span> <span class=mi>1024</span> <span class=o>*</span> <span class=mi>1024</span><span class=p>)</span> <span class=cm>/* 64M */</span>
+    <span class=p>{</span>
+        <span class=cm>/* 为Channel设置回调 */</span>
+        <span class=n>channel_</span><span class=o>-</span><span class=o>&gt;</span><span class=n>setReadCallback</span><span class=p>(</span>
+            <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>bind</span><span class=p>(</span><span class=o>&amp;</span><span class=n>TcpConnection</span><span class=o>:</span><span class=o>:</span><span class=n>handleRead</span><span class=p>,</span> <span class=k>this</span><span class=p>,</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>placeholders</span><span class=o>:</span><span class=o>:</span><span class=n>_1</span><span class=p>)</span>
+        <span class=p>)</span><span class=p>;</span>
+        <span class=n>channel_</span><span class=o>-</span><span class=o>&gt;</span><span class=n>setWriteCallback</span><span class=p>(</span>
+            <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>bind</span><span class=p>(</span><span class=o>&amp;</span><span class=n>TcpConnection</span><span class=o>:</span><span class=o>:</span><span class=n>handleWrite</span><span class=p>,</span> <span class=k>this</span><span class=p>)</span>
+        <span class=p>)</span><span class=p>;</span>
+        <span class=n>channel_</span><span class=o>-</span><span class=o>&gt;</span><span class=n>setCloseCallback</span><span class=p>(</span>
+            <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>bind</span><span class=p>(</span><span class=o>&amp;</span><span class=n>TcpConnection</span><span class=o>:</span><span class=o>:</span><span class=n>handleClose</span><span class=p>,</span> <span class=k>this</span><span class=p>)</span>
+        <span class=p>)</span><span class=p>;</span>
+        <span class=n>channel_</span><span class=o>-</span><span class=o>&gt;</span><span class=n>setErrorCallback</span><span class=p>(</span>
+            <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>bind</span><span class=p>(</span><span class=o>&amp;</span><span class=n>TcpConnection</span><span class=o>:</span><span class=o>:</span><span class=n>handleError</span><span class=p>,</span> <span class=k>this</span><span class=p>)</span>
+        <span class=p>)</span><span class=p>;</span>
+        <span class=n>LOG_INFO</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>TcpConnection create[%s] at fd=%d </span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>name_</span><span class=p>.</span><span class=n>c_str</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>sockfd</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>socket_</span><span class=o>-</span><span class=o>&gt;</span><span class=n>setKeepAlive</span><span class=p>(</span><span class=nb>true</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=n>TcpConnection</span><span class=o>:</span><span class=o>:</span><span class=o>~</span><span class=n>TcpConnection</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>LOG_INFO</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>TcpConnection destroyed[%s] at fd=%d state=%d </span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> 
+                <span class=n>name_</span><span class=p>.</span><span class=n>c_str</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>channel_</span><span class=o>-</span><span class=o>&gt;</span><span class=n>fd</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=p>(</span><span class=kt>int</span><span class=p>)</span><span class=n>state_</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+
+<span class=kt>void</span> <span class=n>TcpConnection</span><span class=o>:</span><span class=o>:</span><span class=n>handleRead</span><span class=p>(</span><span class=n>Timestamp</span> <span class=n>receiveTime</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>savedErrno</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+    <span class=cm>/* fd数据写入缓冲区 */</span>
+    <span class=n>ssize_t</span> <span class=n>n</span> <span class=o>=</span> <span class=n>inputBuffer_</span><span class=p>.</span><span class=n>readFd</span><span class=p>(</span><span class=n>channel_</span><span class=o>-</span><span class=o>&gt;</span><span class=n>fd</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>savedErrno</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>n</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=cm>/* 已连接的客户 有可读事件发生 调用用户传入的回调onMessage */</span>
+        <span class=n>messageCallback_</span><span class=p>(</span><span class=n>shared_from_this</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>inputBuffer_</span><span class=p>,</span> <span class=n>receiveTime</span><span class=p>)</span><span class=p>;</span>
+        <span class=cm>/* 注意 shared_from_this不属于std:: */</span>
+    <span class=p>}</span> <span class=k>else</span> <span class=nf>if</span> <span class=p>(</span><span class=n>n</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=cm>/* 客户端断开连接 */</span>
+        <span class=n>handleClose</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+        <span class=cm>/* 出错 */</span>
+        <span class=n>errno</span> <span class=o>=</span> <span class=n>savedErrno</span><span class=p>;</span>
+        <span class=n>LOG_ERROR</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>TcpConnection::handleRead error </span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>handleError</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* 当错误发生时 发生错误的sockfd会被标记为可读写 */</span>
+    <span class=p>}</span>
+<span class=p>}</span>
+
+<span class=kt>void</span> <span class=n>TcpConnection</span><span class=o>:</span><span class=o>:</span><span class=n>handleWrite</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=cm>/* 判断channel是否注册了写事件 */</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>channel_</span><span class=o>-</span><span class=o>&gt;</span><span class=n>isWriting</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+        <span class=kt>int</span> <span class=n>saveErrno</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+        <span class=cm>/* 将缓冲区中的数据写入fd */</span>
+        <span class=n>ssize_t</span> <span class=n>n</span> <span class=o>=</span> <span class=n>outputBuffer_</span><span class=p>.</span><span class=n>writeFd</span><span class=p>(</span><span class=n>channel_</span><span class=o>-</span><span class=o>&gt;</span><span class=n>fd</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>saveErrno</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>n</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+            <span class=cm>/* 成功写出数据 从Buffer中删掉写出的n个字符 */</span>
+            <span class=n>outputBuffer_</span><span class=p>.</span><span class=n>retrieve</span><span class=p>(</span><span class=n>n</span><span class=p>)</span><span class=p>;</span>
+            <span class=k>if</span> <span class=p>(</span><span class=n>outputBuffer_</span><span class=p>.</span><span class=n>readableBytes</span><span class=p>(</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+                <span class=cm>/* 发送完成了 设置channel不可写 */</span>
+                <span class=n>channel_</span><span class=o>-</span><span class=o>&gt;</span><span class=n>disableWriting</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+                <span class=k>if</span> <span class=p>(</span><span class=n>writeCompleteCallback_</span><span class=p>)</span> <span class=p>{</span>
+                    <span class=cm>/* 如果注册过写完的回调 调用它 */</span>
+                    <span class=n>loop_</span><span class=o>-</span><span class=o>&gt;</span><span class=n>queueInLoop</span><span class=p>(</span>
+                        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>bind</span><span class=p>(</span><span class=n>writeCompleteCallback_</span><span class=p>,</span> <span class=n>shared_from_this</span><span class=p>(</span><span class=p>)</span><span class=p>)</span>
+                    <span class=p>)</span><span class=p>;</span>
+                <span class=p>}</span>
+                <span class=k>if</span> <span class=p>(</span><span class=n>state_</span> <span class=o>=</span><span class=o>=</span> <span class=n>kDisconnecting</span><span class=p>)</span> <span class=p>{</span>
+                    <span class=cm>/* 连接正在断开 */</span>
+                    <span class=n>shutdownInLoop</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+                <span class=p>}</span>
+            <span class=p>}</span>
+        <span class=p>}</span> <span class=k>else</span> <span class=p>{</span> <span class=cm>/* n &lt;= 0 */</span>
+            <span class=cm>/* 出错了 */</span>
+            <span class=n>LOG_ERROR</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>TcpConnection::handleWrite error </span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+        <span class=n>LOG_ERROR</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>TcpConnection fd=%d is down, no more writing </span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>channel_</span><span class=o>-</span><span class=o>&gt;</span><span class=n>fd</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=p>}</span>
+
+<span class=kt>void</span> <span class=n>TcpConnection</span><span class=o>:</span><span class=o>:</span><span class=n>handleClose</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>LOG_INFO</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>fd=%d state=%d </span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>channel_</span><span class=o>-</span><span class=o>&gt;</span><span class=n>fd</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=p>(</span><span class=kt>int</span><span class=p>)</span><span class=n>state_</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>setState</span><span class=p>(</span><span class=n>kDisconnected</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* 设置已断开状态 */</span>
+    <span class=n>channel_</span><span class=o>-</span><span class=o>&gt;</span><span class=n>disableAll</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>  <span class=cm>/* 摘下所有监听事件 */</span>
+
+    <span class=n>TcpConnectionPtr</span> <span class=nf>guardThis</span><span class=p>(</span><span class=n>shared_from_this</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>connectionCallback_</span><span class=p>(</span><span class=n>guardThis</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* 执行连接关闭的回调 */</span>
+    <span class=n>closeCallback_</span><span class=p>(</span><span class=n>guardThis</span><span class=p>)</span><span class=p>;</span>      <span class=cm>/* 执行关闭连接的回调 */</span>
+<span class=p>}</span>
+
+<span class=kt>void</span> <span class=n>TcpConnection</span><span class=o>:</span><span class=o>:</span><span class=n>handleError</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=kt>int</span> <span class=n>optval</span><span class=p>;</span>
+    <span class=n>socklen_t</span> <span class=n>optlen</span> <span class=o>=</span> <span class=k>static_cast</span><span class=o>&lt;</span><span class=n>socklen_t</span><span class=o>&gt;</span><span class=p>(</span><span class=k>sizeof</span><span class=p>(</span><span class=n>optval</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>err</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+    <span class=cm>/* 获取socket的错误 */</span>
+    <span class=k>if</span> <span class=p>(</span><span class=o>:</span><span class=o>:</span><span class=n>getsockopt</span><span class=p>(</span><span class=n>channel_</span><span class=o>-</span><span class=o>&gt;</span><span class=n>fd</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>SOL_SOCKET</span><span class=p>,</span> <span class=n>SO_ERROR</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>optval</span><span class=p>,</span> <span class=o>&amp;</span><span class=n>optlen</span><span class=p>)</span> <span class=o>&lt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>err</span> <span class=o>=</span> <span class=n>errno</span><span class=p>;</span>
+    <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+        <span class=n>err</span> <span class=o>=</span> <span class=n>optval</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>LOG_ERROR</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>TcpConnection::handleError name:%s - SO_ERROR:%d </span><span class=se>\n</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>name_</span><span class=p>.</span><span class=n>c_str</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>err</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+
+
+<span class=cm>/* 发送数据 调用sendInLoop */</span>
+<span class=kt>void</span> <span class=n>TcpConnection</span><span class=o>:</span><span class=o>:</span><span class=n>send</span><span class=p>(</span><span class=k>const</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=o>&amp;</span> <span class=n>str</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>state_</span> <span class=o>=</span><span class=o>=</span> <span class=n>kConnected</span><span class=p>)</span> <span class=p>{</span>
+        <span class=cm>/* 由loop线程发送数据 */</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>loop_</span><span class=o>-</span><span class=o>&gt;</span><span class=n>isInLoopThread</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>sendInLoop</span><span class=p>(</span><span class=n>str</span><span class=p>.</span><span class=n>c_str</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>str</span><span class=p>.</span><span class=n>size</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+            <span class=n>loop_</span><span class=o>-</span><span class=o>&gt;</span><span class=n>runInLoop</span><span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>bind</span><span class=p>(</span><span class=o>&amp;</span><span class=n>TcpConnection</span><span class=o>:</span><span class=o>:</span><span class=n>sendInLoop</span><span class=p>,</span> <span class=k>this</span><span class=p>,</span> <span class=n>str</span><span class=p>.</span><span class=n>c_str</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>str</span><span class=p>.</span><span class=n>size</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+<span class=p>}</span>
+
+<span class=cm>/* 由当前loop线程发送数据 */</span>
+<span class=kt>void</span> <span class=n>TcpConnection</span><span class=o>:</span><span class=o>:</span><span class=n>sendInLoop</span><span class=p>(</span><span class=k>const</span> <span class=kt>void</span><span class=o>*</span> <span class=n>data</span><span class=p>,</span> <span class=n>size_t</span> <span class=n>len</span><span class=p>)</span> <span class=p>{</span>
+    <span class=cm>/*
+</span><span class=cm>        发送数据时 应用写的快 但是内核发送数据慢
+</span><span class=cm>        需要将待发送数据写入发送缓冲区 而且有高水位回调 防止发送太快
+</span><span class=cm>    */</span>
+    <span class=n>ssize_t</span> <span class=n>nwrote</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>      <span class=cm>/* 已写入缓冲区的数据 */</span>
+    <span class=n>size_t</span> <span class=n>remaining</span> <span class=o>=</span> <span class=n>len</span><span class=p>;</span>  <span class=cm>/* 待写的数据 */</span>
+    <span class=kt>bool</span> <span class=n>faultError</span> <span class=o>=</span> <span class=nb>false</span><span class=p>;</span> <span class=cm>/* 是否产生错误 */</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>state_</span> <span class=o>=</span><span class=o>=</span> <span class=n>kDisconnected</span><span class=p>)</span> <span class=p>{</span>
+        <span class=cm>/* 连接断开 无法发送数据 */</span>
+        <span class=n>LOG_ERROR</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>TcpConnection::sendInLoop disconnected give up writing</span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>return</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=cm>/* 该channel第一次开始发送数据 缓冲区中无数据待发 */</span>
+    <span class=k>if</span> <span class=p>(</span><span class=o>!</span><span class=n>channel_</span><span class=o>-</span><span class=o>&gt;</span><span class=n>isWriting</span><span class=p>(</span><span class=p>)</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>outputBuffer_</span><span class=p>.</span><span class=n>readableBytes</span><span class=p>(</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=cm>/* 尝试直接发送 */</span>
+        <span class=n>nwrote</span> <span class=o>=</span> <span class=o>:</span><span class=o>:</span><span class=n>write</span><span class=p>(</span><span class=n>channel_</span><span class=o>-</span><span class=o>&gt;</span><span class=n>fd</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>data</span><span class=p>,</span> <span class=n>len</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>nwrote</span> <span class=o>&gt;</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+            <span class=cm>/* 发送成功了 */</span>
+            <span class=n>remaining</span> <span class=o>=</span> <span class=n>len</span> <span class=o>-</span> <span class=n>nwrote</span><span class=p>;</span> <span class=cm>/* 剩下多少 */</span>
+            <span class=k>if</span> <span class=p>(</span><span class=n>remaining</span> <span class=o>=</span><span class=o>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+                <span class=cm>/* 全部发送成功 无需缓冲  也无需给channel注册EPOLLOUT事件了 也就不会执行handleWrite方法了 */</span>
+                <span class=n>loop_</span><span class=o>-</span><span class=o>&gt;</span><span class=n>queueInLoop</span><span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>bind</span><span class=p>(</span><span class=n>writeCompleteCallback_</span><span class=p>,</span> <span class=n>shared_from_this</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* 执行发送完成回调 */</span>
+            <span class=p>}</span>
+        <span class=p>}</span> <span class=k>else</span> <span class=p>{</span> <span class=cm>/* nwrote &lt; 0  出错 */</span>
+            <span class=n>nwrote</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+            <span class=k>if</span> <span class=p>(</span><span class=n>errno</span> <span class=o>!</span><span class=o>=</span> <span class=n>EWOULDBLOCK</span><span class=p>)</span> <span class=p>{</span> <span class=cm>/* EWOULDBLOCK表示TCP发送缓冲区满 */</span>
+                <span class=n>LOG_ERROR</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>TcpConnection::sendInLoop write error </span><span class=se>\n</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+                <span class=k>if</span> <span class=p>(</span><span class=n>errno</span> <span class=o>=</span><span class=o>=</span> <span class=n>EPIPE</span> <span class=o>|</span><span class=o>|</span> <span class=n>errno</span> <span class=o>=</span><span class=o>=</span> <span class=n>ECONNRESET</span><span class=p>)</span> <span class=p>{</span>
+                    <span class=n>faultError</span> <span class=o>=</span> <span class=nb>true</span><span class=p>;</span>
+                <span class=p>}</span>
+            <span class=p>}</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=cm>/* 
+</span><span class=cm>        没有发生错误 并且有剩余数据待发  
+</span><span class=cm>        剩余数据需要保存到缓冲区 然后给channel注册EPOLLOUT事件 
+</span><span class=cm>        当poller发现发送缓冲区有空间 就会通知相应的channel调用handleWrite回调
+</span><span class=cm>        最终就是调用TcpConnection::handleWrite方法 将发送缓冲区中待发数据全部发送完成
+</span><span class=cm>        (只有发送缓冲区中的数据全部发送完毕 才会将channel的EPOLLOUT事件关闭)
+</span><span class=cm>    */</span>
+    <span class=k>if</span> <span class=p>(</span><span class=o>!</span><span class=n>faultError</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>remaining</span> <span class=o>&gt;</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>size_t</span> <span class=n>oldLen</span> <span class=o>=</span> <span class=n>outputBuffer_</span><span class=p>.</span><span class=n>readableBytes</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* 原待发数据量 */</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>oldLen</span> <span class=o>+</span> <span class=n>remaining</span> <span class=o>&gt;</span><span class=o>=</span> <span class=n>highWaterMark_</span> <span class=cm>/* 现在的待发数据 超过了高水位标记 */</span>
+                    <span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>oldLen</span> <span class=o>&lt;</span> <span class=n>highWaterMark_</span>   <span class=cm>/* 原待发数据不会超过高水位标记 如果超过了 肯定已经调用过高水位回调 */</span>
+                    <span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>highWaterMarkCallback_</span><span class=p>)</span><span class=p>{</span>  <span class=cm>/* 得设置过高水位回调 */</span>
+            <span class=cm>/* 执行高水位回调 */</span>
+            <span class=n>loop_</span><span class=o>-</span><span class=o>&gt;</span><span class=n>queueInLoop</span><span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>bind</span><span class=p>(</span><span class=n>highWaterMarkCallback_</span><span class=p>,</span> <span class=n>shared_from_this</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>oldLen</span> <span class=o>+</span> <span class=n>remaining</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=cm>/* 剩余的数据写入输出缓冲区 */</span>
+        <span class=n>outputBuffer_</span><span class=p>.</span><span class=n>append</span><span class=p>(</span><span class=k>static_cast</span><span class=o>&lt;</span><span class=k>const</span> <span class=kt>char</span><span class=o>*</span><span class=o>&gt;</span><span class=p>(</span><span class=n>data</span><span class=p>)</span> <span class=o>+</span> <span class=n>nwrote</span><span class=p>,</span> <span class=n>remaining</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>if</span> <span class=p>(</span><span class=o>!</span><span class=n>channel_</span><span class=o>-</span><span class=o>&gt;</span><span class=n>isWriting</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+            <span class=cm>/* 给channel设置EPOLLOUT事件 */</span>
+            <span class=n>channel_</span><span class=o>-</span><span class=o>&gt;</span><span class=n>enableWriting</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+<span class=p>}</span>
+
+<span class=cm>/* 连接建立 */</span>
+<span class=kt>void</span> <span class=n>TcpConnection</span><span class=o>:</span><span class=o>:</span><span class=n>connectEstablished</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=n>setState</span><span class=p>(</span><span class=n>kConnected</span><span class=p>)</span><span class=p>;</span>
+    <span class=cm>/* 将TcpConnection管理的channel绑定到TcpConnection上 */</span>
+    <span class=n>channel_</span><span class=o>-</span><span class=o>&gt;</span><span class=n>tie</span><span class=p>(</span><span class=n>shared_from_this</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=cm>/* 注册读事件 */</span>
+    <span class=n>channel_</span><span class=o>-</span><span class=o>&gt;</span><span class=n>enableReading</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=cm>/* 新连接建立 执行回调 */</span>
+    <span class=n>connectionCallback_</span><span class=p>(</span><span class=n>shared_from_this</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=cm>/* 连接销毁 */</span>
+<span class=kt>void</span> <span class=n>TcpConnection</span><span class=o>:</span><span class=o>:</span><span class=n>connectDestroyed</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>state_</span> <span class=o>=</span><span class=o>=</span> <span class=n>kConnected</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>setState</span><span class=p>(</span><span class=n>kDisconnected</span><span class=p>)</span><span class=p>;</span>
+        <span class=cm>/* 注销所有监听事件 */</span>
+        <span class=n>channel_</span><span class=o>-</span><span class=o>&gt;</span><span class=n>disableAll</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=cm>/* 连接销毁 执行回调 */</span>
+        <span class=n>connectionCallback_</span><span class=p>(</span><span class=n>shared_from_this</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=cm>/* 连接关闭了 就从EventLoop上取下 */</span>
+    <span class=n>channel_</span><span class=o>-</span><span class=o>&gt;</span><span class=n>remove</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=cm>/* 关闭连接 调用shutdownInLoop */</span>
+<span class=kt>void</span> <span class=n>TcpConnection</span><span class=o>:</span><span class=o>:</span><span class=n>shutdown</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>state_</span> <span class=o>=</span><span class=o>=</span> <span class=n>kConnected</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>setState</span><span class=p>(</span><span class=n>kDisconnecting</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>loop_</span><span class=o>-</span><span class=o>&gt;</span><span class=n>runInLoop</span><span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>bind</span><span class=p>(</span><span class=o>&amp;</span><span class=n>TcpConnection</span><span class=o>:</span><span class=o>:</span><span class=n>shutdownInLoop</span><span class=p>,</span> <span class=k>this</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=p>}</span>
+
+<span class=cm>/* 在当前loop中删除掉对应的channel */</span>
+<span class=kt>void</span> <span class=n>TcpConnection</span><span class=o>:</span><span class=o>:</span><span class=n>shutdownInLoop</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+    <span class=k>if</span> <span class=p>(</span><span class=o>!</span><span class=n>channel_</span><span class=o>-</span><span class=o>&gt;</span><span class=n>isWriting</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span> <span class=cm>/* 发送缓冲区中无待发数据了 */</span>
+        <span class=cm>/* 关闭TCP的写端 会调用handleClose方法 */</span>
+        <span class=n>socket_</span><span class=o>-</span><span class=o>&gt;</span><span class=n>shutdownWrite</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=cm>/* 关闭TCP写端 会触发socket的EPOLLHUP事件(EPOLLHUP不需要注册) */</span>
+    <span class=p>}</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+<span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
+<span>2022-09-24</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
+<span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2f%25E9%2587%258D%25E5%2586%2599muduo19-tcpconnection%2f&text=%e3%80%90%e9%87%8d%e5%86%99muduo%e3%80%9119%20-%20TcpConnection&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2f%25E9%2587%258D%25E5%2586%2599muduo19-tcpconnection%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2f%25E9%2587%258D%25E5%2586%2599muduo19-tcpconnection%2f&title=%e3%80%90%e9%87%8d%e5%86%99muduo%e3%80%9119%20-%20TcpConnection" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/network/><i class="fas fa-tag fa-fw"></i>&nbsp;network</a>&nbsp;
+</span><span class=tag><a href=https://xushun1221.github.io/tags/c++/><i class="fas fa-tag fa-fw"></i>&nbsp;C++</a>&nbsp;
+</span><span class=tag><a href=https://xushun1221.github.io/tags/muduo/><i class="fas fa-tag fa-fw"></i>&nbsp;muduo</a>&nbsp;</span></section><section><span><a href=javascript:window.history.back();>Back</a></span>&nbsp;|&nbsp;<span><a href=https://xushun1221.github.io>Home</a></span></section></div><div class=post-nav><a href=https://xushun1221.github.io/2022/%E9%87%8D%E5%86%99muduo15-socket%E7%B1%BB/ class=prev rel=prev title="【重写muduo】15 - Socket类"><i class="fas fa-angle-left fa-fw"></i>【重写muduo】15 - Socket类</a>
+<a href=https://xushun1221.github.io/2022/%E9%87%8D%E5%86%99muduo18-buffer%E7%BC%93%E5%86%B2%E5%8C%BA/ class=next rel=next title="【重写muduo】18 - Buffer缓冲区">【重写muduo】18 - Buffer缓冲区<i class="fas fa-angle-right fa-fw"></i></a></div><div class=post-comment></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2022</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=https://xushun1221.github.io/about/ target=_blank>xushun</a> | </span>Powered by <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> & <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer">LoveIt</a></div></div></footer></div><a href=# class=dynamic-to-top id=dynamic-to-top data-scroll><span>&nbsp;</span>
+</a><script src=/js/lib/jquery/jquery.slim.min.js></script><script src=/js/lib/lazysizes/lazysizes.min.js></script><script src=/js/lib/smooth-scroll/smooth-scroll.polyfills.min.js></script><script>window.scroll=new SmoothScroll('[data-scroll]',{speed:300,speedAsDuration:true});</script><link rel=stylesheet href=/css/lib/katex/katex.min.css><script src=/js/lib/katex/katex.min.js></script><script defer src=/js/lib/katex/auto-render.min.js></script><link rel=stylesheet href=/css/lib/katex/copy-tex.min.css><script defer src=/js/lib/katex/copy-tex.min.js></script><script defer src=/js/lib/katex/mhchem.min.js></script><script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true},{left:"$",right:"$",display:false},]});});</script><script src=/js/blog.min.js></script></body></html>
