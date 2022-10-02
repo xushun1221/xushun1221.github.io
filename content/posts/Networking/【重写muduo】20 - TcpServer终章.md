@@ -112,6 +112,7 @@ Option option)
     , threadPool_(new EventLoopThreadPool(loop, name_))
     , connectionCallback_()
     , messageCallback_()
+    , started_(0)
     , nextConnId_(1)
     {
         /* 新用户连接时执行TcpServer::newConnection 分配subloop */
