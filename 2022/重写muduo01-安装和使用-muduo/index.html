@@ -514,7 +514,7 @@ hello world
         <span class=n>_server</span><span class=p>.</span><span class=n>setMessageCallback</span><span class=p>(</span><span class=n>bind</span><span class=p>(</span><span class=o>&amp;</span><span class=n>EchoServer</span><span class=o>:</span><span class=o>:</span><span class=n>onMessage</span><span class=p>,</span> <span class=k>this</span><span class=p>,</span> <span class=n>_1</span><span class=p>,</span> <span class=n>_2</span><span class=p>,</span> <span class=n>_3</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
 <span class=cm>/* #5 */</span>
         <span class=cm>/* 设置服务器段线程数量 */</span>
-        <span class=n>_server</span><span class=p>.</span><span class=n>setThreadNum</span><span class=p>(</span><span class=mi>4</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* 1个IO线程 3个worker线程 */</span>
+        <span class=n>_server</span><span class=p>.</span><span class=n>setThreadNum</span><span class=p>(</span><span class=mi>4</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* 1个IO线程 4个worker线程 */</span>
     <span class=p>}</span>
 <span class=cm>/* #6 */</span>
     <span class=cm>/* 开启事件循环 */</span>
