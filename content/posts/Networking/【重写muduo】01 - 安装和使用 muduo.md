@@ -336,7 +336,7 @@ public:
         _server.setMessageCallback(bind(&EchoServer::onMessage, this, _1, _2, _3));
 /* #5 */
         /* 设置服务器段线程数量 */
-        _server.setThreadNum(4); /* 1个IO线程 3个worker线程 */
+        _server.setThreadNum(4); /* 1个IO线程 4个worker线程 */
     }
 /* #6 */
     /* 开启事件循环 */
