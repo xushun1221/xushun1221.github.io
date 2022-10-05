@@ -80,9 +80,10 @@ void Socket::listen() {
 int Socket::accept(InetAddress* peeraddr) {
     /* 接受新连接 peeraddr是传出参数 返回fd */
     sockaddr_in addr;
-    socklen_t len;
     ::bzero(&addr, sizeof(addr));
-    int connfd = ::accept(sockfd_, (sockaddr*)&addr, &len);
+    socklen_t len = sizeof(addr); /* 注意 初始化不能省略 */
+    /* 这里使用accept4可以直接设置非阻塞 */
+    int connfd = ::accept4(sockfd_, (sockaddr*)&addr, &len, SOCK_NONBLOCK | SOCK_CLOEXEC);
     if (connfd >= 0) {
         peeraddr->setSockAddr(addr);
     }
