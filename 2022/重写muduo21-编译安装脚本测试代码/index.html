@@ -1,0 +1,343 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【重写muduo】21 - 编译安装脚本&测试代码 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/%E9%87%8D%E5%86%99muduo20-tcpserver%E7%BB%88%E7%AB%A0/><link rel=canonical href=https://xushun1221.github.io/2022/%E9%87%8D%E5%86%99muduo21-%E7%BC%96%E8%AF%91%E5%AE%89%E8%A3%85%E8%84%9A%E6%9C%AC%E6%B5%8B%E8%AF%95%E4%BB%A3%E7%A0%81/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【重写muduo】21 - 编译安装脚本&测试代码"><meta name=twitter:description content="编译安装脚本 我们的项目使用cmake管理，需要编译为一个.so动态库，动态库安装到系统/usr/lib目录下，头文件拷贝到/usr/incl"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【重写muduo】21 - 编译安装脚本\x26测试代码","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/%E9%87%8D%E5%86%99muduo21-%E7%BC%96%E8%AF%91%E5%AE%89%E8%A3%85%E8%84%9A%E6%9C%AC%E6%B5%8B%E8%AF%95%E4%BB%A3%E7%A0%81\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"network, C\x2b\x2b, muduo","wordcount":1046,"url":"https:\/\/xushun1221.github.io\/2022\/%E9%87%8D%E5%86%99muduo21-%E7%BC%96%E8%AF%91%E5%AE%89%E8%A3%85%E8%84%9A%E6%9C%AC%E6%B5%8B%E8%AF%95%E4%BB%A3%E7%A0%81\/","datePublished":"2022-10-02T00:00:00\x2b00:00","dateModified":"2022-10-02T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【重写muduo】21 - 编译安装脚本&测试代码</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-10-02>2022-10-02</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 1046 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/networking/>Networking</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#编译安装脚本>编译安装脚本</a></li><li><a href=#测试代码>测试代码</a><ul><li><a href=#测试>测试</a></li></ul></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#编译安装脚本>编译安装脚本</a></li><li><a href=#测试代码>测试代码</a><ul><li><a href=#测试>测试</a></li></ul></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=编译安装脚本></a><h2>编译安装脚本</h2><p>我们的项目使用cmake管理，需要编译为一个.so动态库，动态库安装到系统<code>/usr/lib</code>目录下，头文件拷贝到<code>/usr/include/mymuduo</code>目录下，使用时包含头文件即可。</p><p>通过脚本自动编译安装。</p><p><code>autobuild.sh</code></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell><span class=cp>#!/bin/bash
+</span><span class=cp></span>
+<span class=nb>set</span> -e
+
+<span class=c1># 创建build目录</span>
+<span class=k>if</span> <span class=o>[</span> ! -d <span class=sb>`</span><span class=nb>pwd</span><span class=sb>`</span>/build <span class=o>]</span><span class=p>;</span> <span class=k>then</span>
+    mkdir <span class=sb>`</span><span class=nb>pwd</span><span class=sb>`</span>/build
+<span class=k>fi</span>
+
+<span class=c1># 清理</span>
+rm -rf <span class=sb>`</span><span class=nb>pwd</span><span class=sb>`</span>/build/*
+
+<span class=c1># 编译生成</span>
+<span class=nb>cd</span> <span class=sb>`</span><span class=nb>pwd</span><span class=sb>`</span>/build <span class=o>&amp;&amp;</span>
+    cmake .. <span class=o>&amp;&amp;</span>
+    make
+
+<span class=nb>cd</span> ..
+
+<span class=c1># 把头文件拷贝到/usr/include/mymuduo</span>
+<span class=k>if</span> <span class=o>[</span> ! -d /usr/include/mymuduo <span class=o>]</span><span class=p>;</span> <span class=k>then</span>
+    mkdir /usr/include/mymuduo
+<span class=k>fi</span>
+
+<span class=k>for</span> header in <span class=sb>`</span>ls *.hh<span class=sb>`</span>
+<span class=k>do</span>
+    cp <span class=nv>$header</span> /usr/include/mymuduo
+<span class=k>done</span>
+
+<span class=c1># so库拷贝到/usr/lib</span>
+cp <span class=sb>`</span><span class=nb>pwd</span><span class=sb>`</span>/lib/libmymuduo.so /usr/lib
+
+<span class=c1># 在环境变量中添加了新的so库 刷新一下动态库缓存</span>
+ldconfig
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=测试代码></a><h2>测试代码</h2><p>我们还是写一个简单的回显服务器来测试mymuduo库。</p><p><code>test_server.cc</code></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;mymuduo/TcpServer.hh&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;mymuduo/Logger.hh&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;functional&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=cm>/* test Echo Server using mymuduo */</span>
+
+<span class=k>class</span> <span class=nc>EchoServer</span> <span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>EchoServer</span><span class=p>(</span><span class=n>EventLoop</span><span class=o>*</span> <span class=n>loop</span><span class=p>,</span> <span class=k>const</span> <span class=n>InetAddress</span><span class=o>&amp;</span> <span class=n>addr</span><span class=p>,</span> <span class=k>const</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=o>&amp;</span> <span class=n>name</span><span class=p>)</span>
+        <span class=o>:</span> <span class=n>server_</span><span class=p>(</span><span class=n>loop</span><span class=p>,</span> <span class=n>addr</span><span class=p>,</span> <span class=n>name</span><span class=p>)</span>
+        <span class=p>,</span> <span class=n>loop_</span><span class=p>(</span><span class=n>loop</span><span class=p>)</span>
+        <span class=p>{</span>
+            <span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>placeholders</span><span class=p>;</span>
+            <span class=n>server_</span><span class=p>.</span><span class=n>setConnectionCallback</span><span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>bind</span><span class=p>(</span><span class=o>&amp;</span><span class=n>EchoServer</span><span class=o>:</span><span class=o>:</span><span class=n>onConnection</span><span class=p>,</span> <span class=k>this</span><span class=p>,</span> <span class=n>_1</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+            <span class=n>server_</span><span class=p>.</span><span class=n>setMessageCallback</span><span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>bind</span><span class=p>(</span><span class=o>&amp;</span><span class=n>EchoServer</span><span class=o>:</span><span class=o>:</span><span class=n>onMessage</span><span class=p>,</span> <span class=k>this</span><span class=p>,</span> <span class=n>_1</span><span class=p>,</span> <span class=n>_2</span><span class=p>,</span> <span class=n>_3</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+            <span class=n>server_</span><span class=p>.</span><span class=n>setThreadNum</span><span class=p>(</span><span class=mi>3</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* 3 subloop */</span>
+    <span class=p>}</span>
+    <span class=kt>void</span> <span class=nf>start</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>server_</span><span class=p>.</span><span class=n>start</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=p>}</span>
+<span class=k>private</span><span class=o>:</span>
+    <span class=cm>/* 连接建立和关闭事件回调 */</span>
+    <span class=kt>void</span> <span class=n>onConnection</span><span class=p>(</span><span class=k>const</span> <span class=n>TcpConnectionPtr</span><span class=o>&amp;</span> <span class=n>conn</span><span class=p>)</span> <span class=p>{</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>conn</span><span class=o>-</span><span class=o>&gt;</span><span class=n>connected</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+            <span class=n>LOG_INFO</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>Connection UP : %s</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>conn</span><span class=o>-</span><span class=o>&gt;</span><span class=n>peerAddress</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>toIpPort</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>c_str</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+            <span class=n>LOG_INFO</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>Connection DOWN : %s</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>conn</span><span class=o>-</span><span class=o>&gt;</span><span class=n>peerAddress</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>toIpPort</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>c_str</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=cm>/* 消息回调 */</span>
+    <span class=kt>void</span> <span class=nf>onMessage</span><span class=p>(</span><span class=k>const</span> <span class=n>TcpConnectionPtr</span><span class=o>&amp;</span> <span class=n>conn</span><span class=p>,</span> <span class=n>Buffer</span><span class=o>*</span> <span class=n>buffer</span><span class=p>,</span> <span class=n>Timestamp</span> <span class=n>time</span><span class=p>)</span> <span class=p>{</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>msg</span> <span class=o>=</span> <span class=n>buffer</span><span class=o>-</span><span class=o>&gt;</span><span class=n>retrieveAllAsString</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>conn</span><span class=o>-</span><span class=o>&gt;</span><span class=n>send</span><span class=p>(</span><span class=n>msg</span><span class=p>)</span><span class=p>;</span> <span class=cm>/* 回显 */</span>
+        <span class=n>conn</span><span class=o>-</span><span class=o>&gt;</span><span class=n>shutdown</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>EventLoop</span><span class=o>*</span> <span class=n>loop_</span><span class=p>;</span>  <span class=cm>/* mainloop */</span>
+    <span class=n>TcpServer</span> <span class=n>server_</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span>
+
+    <span class=n>EventLoop</span> <span class=n>loop</span><span class=p>;</span> <span class=cm>/* mainloop */</span><span class=p>;</span>
+    <span class=n>InetAddress</span> <span class=n>addr</span><span class=p>(</span><span class=mi>8000</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>EchoServer</span> <span class=n>server</span><span class=p>(</span><span class=o>&amp;</span><span class=n>loop</span><span class=p>,</span> <span class=n>addr</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>EchoServer-01</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>server</span><span class=p>.</span><span class=n>start</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>loop</span><span class=p>.</span><span class=n>loop</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>    <span class=cm>/* start mainloop epoll_wait */</span>
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><p>在写一个makefile文件方便用户编译测试代码。</p><p><code>makefile</code></p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-makefile data-lang=makefile><span class=nf>test_server </span><span class=o>:</span>
+	g++ -o test_server test_server.cc -lmymuduo -lpthread -g
+
+<span class=nf>clean </span><span class=o>:</span>
+	rm -f test_server
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=测试></a><h3>测试</h3><p>编译：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell>xushun@xushun-virtual-machine:~/mymuduo$ <span class=nb>cd</span> example/
+xushun@xushun-virtual-machine:~/mymuduo/example$ make
+g++ -o test_server test_server.cc -lmymuduo -lpthread
+xushun@xushun-virtual-machine:~/mymuduo/example$ 
+</code></pre></td></tr></table></div></div><p>测试(用另一个终端telnet连接该服务器)：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span><span class=lnt>59
+</span><span class=lnt>60
+</span><span class=lnt>61
+</span><span class=lnt>62
+</span><span class=lnt>63
+</span><span class=lnt>64
+</span><span class=lnt>65
+</span><span class=lnt>66
+</span><span class=lnt>67
+</span><span class=lnt>68
+</span><span class=lnt>69
+</span><span class=lnt>70
+</span><span class=lnt>71
+</span><span class=lnt>72
+</span><span class=lnt>73
+</span><span class=lnt>74
+</span><span class=lnt>75
+</span><span class=lnt>76
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell>xushun@xushun-virtual-machine:~/mymuduo/example$ ./test_server 
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:38 1664931338.569048 : <span class=nv>func</span><span class=o>=</span><span class=nv>updateChannel</span> <span class=o>=</span>&gt; <span class=nv>fd</span><span class=o>=</span><span class=m>4</span> <span class=nv>events</span><span class=o>=</span><span class=m>3</span> <span class=nv>index</span><span class=o>=</span>-1 
+
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:38 1664931338.569779 : <span class=nv>func</span><span class=o>=</span><span class=nv>updateChannel</span> <span class=o>=</span>&gt; <span class=nv>fd</span><span class=o>=</span><span class=m>7</span> <span class=nv>events</span><span class=o>=</span><span class=m>3</span> <span class=nv>index</span><span class=o>=</span>-1 
+
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:38 1664931338.569854 : EventLoop 0x7f51da5e4c40 start looping 
+
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:38 1664931338.569892 : <span class=nv>func</span><span class=o>=</span><span class=nv>poll</span> <span class=o>=</span>&gt; fd total count:1
+
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:38 1664931338.570076 : <span class=nv>func</span><span class=o>=</span><span class=nv>updateChannel</span> <span class=o>=</span>&gt; <span class=nv>fd</span><span class=o>=</span><span class=m>9</span> <span class=nv>events</span><span class=o>=</span><span class=m>3</span> <span class=nv>index</span><span class=o>=</span>-1 
+
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:38 1664931338.570144 : EventLoop 0x7f51d9de3c40 start looping 
+
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:38 1664931338.570179 : <span class=nv>func</span><span class=o>=</span><span class=nv>poll</span> <span class=o>=</span>&gt; fd total count:1
+
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:38 1664931338.570263 : <span class=nv>func</span><span class=o>=</span><span class=nv>updateChannel</span> <span class=o>=</span>&gt; <span class=nv>fd</span><span class=o>=</span><span class=m>11</span> <span class=nv>events</span><span class=o>=</span><span class=m>3</span> <span class=nv>index</span><span class=o>=</span>-1 
+
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:38 1664931338.570329 : EventLoop 0x7f51d95e2c40 start looping 
+
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:38 1664931338.570362 : <span class=nv>func</span><span class=o>=</span><span class=nv>poll</span> <span class=o>=</span>&gt; fd total count:1
+
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:38 1664931338.570389 : <span class=nv>func</span><span class=o>=</span><span class=nv>updateChannel</span> <span class=o>=</span>&gt; <span class=nv>fd</span><span class=o>=</span><span class=m>5</span> <span class=nv>events</span><span class=o>=</span><span class=m>3</span> <span class=nv>index</span><span class=o>=</span>-1 
+
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:38 1664931338.570446 : EventLoop 0x7ffc90426170 start looping 
+
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:38 1664931338.570477 : <span class=nv>func</span><span class=o>=</span><span class=nv>poll</span> <span class=o>=</span>&gt; fd total count:2
+
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:42 1664931342.089791 : <span class=nv>func</span><span class=o>=</span><span class=nv>poll</span> <span class=o>=</span>&gt; <span class=m>1</span> events happened
+
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:42 1664931342.089858 : Channel handleEvent revents: <span class=m>1</span>
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:42 1664931342.089947 : TcpServer::newConnection <span class=o>[</span>EchoServer-01<span class=o>]</span> - new connection <span class=o>[</span>EchoServer-01-127.0.0.1:8000#1<span class=o>]</span> from 127.0.0.1:51088 
+
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:42 1664931342.090077 : TcpConnection create<span class=o>[</span>EchoServer-01-127.0.0.1:8000#1<span class=o>]</span> at <span class=nv>fd</span><span class=o>=</span><span class=m>12</span> 
+
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:42 1664931342.090246 : <span class=nv>func</span><span class=o>=</span><span class=nv>poll</span> <span class=o>=</span>&gt; fd total count:2
+
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:42 1664931342.090273 : <span class=nv>func</span><span class=o>=</span><span class=nv>poll</span> <span class=o>=</span>&gt; <span class=m>1</span> events happened
+
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:42 1664931342.090298 : Channel handleEvent revents: <span class=m>1</span>
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:42 1664931342.090351 : <span class=nv>func</span><span class=o>=</span><span class=nv>updateChannel</span> <span class=o>=</span>&gt; <span class=nv>fd</span><span class=o>=</span><span class=m>12</span> <span class=nv>events</span><span class=o>=</span><span class=m>3</span> <span class=nv>index</span><span class=o>=</span>-1 
+
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:42 1664931342.090381 : Connection UP : 127.0.0.1:51088
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:42 1664931342.090396 : <span class=nv>func</span><span class=o>=</span><span class=nv>poll</span> <span class=o>=</span>&gt; fd total count:2
+
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:44 1664931344.086311 : <span class=nv>func</span><span class=o>=</span><span class=nv>poll</span> <span class=o>=</span>&gt; <span class=m>1</span> events happened
+
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:44 1664931344.086381 : Channel handleEvent revents: <span class=m>1</span>
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:44 1664931344.086564 : <span class=nv>func</span><span class=o>=</span><span class=nv>poll</span> <span class=o>=</span>&gt; fd total count:2
+
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:44 1664931344.086683 : <span class=nv>func</span><span class=o>=</span><span class=nv>poll</span> <span class=o>=</span>&gt; <span class=m>1</span> events happened
+
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:44 1664931344.086704 : Channel handleEvent revents: <span class=m>17</span>
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:44 1664931344.086723 : <span class=nv>fd</span><span class=o>=</span><span class=m>12</span> <span class=nv>state</span><span class=o>=</span><span class=m>3</span> 
+
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:44 1664931344.086737 : <span class=nv>func</span><span class=o>=</span><span class=nv>updateChannel</span> <span class=o>=</span>&gt; <span class=nv>fd</span><span class=o>=</span><span class=m>12</span> <span class=nv>events</span><span class=o>=</span><span class=m>0</span> <span class=nv>index</span><span class=o>=</span><span class=m>1</span> 
+
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:44 1664931344.086759 : Connection DOWN : 127.0.0.1:51088
+<span class=o>[</span>INFO<span class=o>]</span><span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:44 1664931344.086871 : <span class=nv>func</span><span class=o>=</span><span class=nv>poll</span> <span class=o>=</span>&gt; fd total count:2
+
+2022/10/05 08:55:44 1664931344.086877 : <span class=nv>func</span><span class=o>=</span><span class=nv>poll</span> <span class=o>=</span>&gt; <span class=m>1</span> events happened
+
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:44 1664931344.086931 : Channel handleEvent revents: <span class=m>1</span>
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:44 1664931344.086957 : TcpServer::removeConnectionInLoop <span class=o>[</span>EchoServer-01<span class=o>]</span> - connection EchoServer-01-127.0.0.1:8000#1
+
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:44 1664931344.087026 : <span class=nv>func</span><span class=o>=</span><span class=nv>poll</span> <span class=o>=</span>&gt; fd total count:2
+
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:44 1664931344.087060 : <span class=nv>func</span><span class=o>=</span><span class=nv>poll</span> <span class=o>=</span>&gt; <span class=m>1</span> events happened
+
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:44 1664931344.087097 : Channel handleEvent revents: <span class=m>1</span>
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:44 1664931344.087130 : <span class=nv>func</span><span class=o>=</span><span class=nv>removeChannel</span> <span class=o>=</span>&gt; <span class=nv>fd</span><span class=o>=</span><span class=m>12</span> 
+
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:44 1664931344.087166 : TcpConnection destroyed<span class=o>[</span>EchoServer-01-127.0.0.1:8000#1<span class=o>]</span> at <span class=nv>fd</span><span class=o>=</span><span class=m>12</span> <span class=nv>state</span><span class=o>=</span><span class=m>0</span> 
+
+<span class=o>[</span>INFO<span class=o>]</span>2022/10/05 08:55:44 1664931344.087223 : <span class=nv>func</span><span class=o>=</span><span class=nv>poll</span> <span class=o>=</span>&gt; fd total count:1
+
+^C
+</code></pre></td></tr></table></div></div><p>可以成功回显，多个客户端清空也测试成功。</p></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+<span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
+<span>2022-10-02</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
+<span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2f%25E9%2587%258D%25E5%2586%2599muduo21-%25E7%25BC%2596%25E8%25AF%2591%25E5%25AE%2589%25E8%25A3%2585%25E8%2584%259A%25E6%259C%25AC%25E6%25B5%258B%25E8%25AF%2595%25E4%25BB%25A3%25E7%25A0%2581%2f&text=%e3%80%90%e9%87%8d%e5%86%99muduo%e3%80%9121%20-%20%e7%bc%96%e8%af%91%e5%ae%89%e8%a3%85%e8%84%9a%e6%9c%ac%26%e6%b5%8b%e8%af%95%e4%bb%a3%e7%a0%81&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2f%25E9%2587%258D%25E5%2586%2599muduo21-%25E7%25BC%2596%25E8%25AF%2591%25E5%25AE%2589%25E8%25A3%2585%25E8%2584%259A%25E6%259C%25AC%25E6%25B5%258B%25E8%25AF%2595%25E4%25BB%25A3%25E7%25A0%2581%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2f%25E9%2587%258D%25E5%2586%2599muduo21-%25E7%25BC%2596%25E8%25AF%2591%25E5%25AE%2589%25E8%25A3%2585%25E8%2584%259A%25E6%259C%25AC%25E6%25B5%258B%25E8%25AF%2595%25E4%25BB%25A3%25E7%25A0%2581%2f&title=%e3%80%90%e9%87%8d%e5%86%99muduo%e3%80%9121%20-%20%e7%bc%96%e8%af%91%e5%ae%89%e8%a3%85%e8%84%9a%e6%9c%ac%26%e6%b5%8b%e8%af%95%e4%bb%a3%e7%a0%81" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/network/><i class="fas fa-tag fa-fw"></i>&nbsp;network</a>&nbsp;
+</span><span class=tag><a href=https://xushun1221.github.io/tags/c++/><i class="fas fa-tag fa-fw"></i>&nbsp;C++</a>&nbsp;
+</span><span class=tag><a href=https://xushun1221.github.io/tags/muduo/><i class="fas fa-tag fa-fw"></i>&nbsp;muduo</a>&nbsp;</span></section><section><span><a href=javascript:window.history.back();>Back</a></span>&nbsp;|&nbsp;<span><a href=https://xushun1221.github.io>Home</a></span></section></div><div class=post-nav><a href=https://xushun1221.github.io/2022/%E9%87%8D%E5%86%99muduo20-tcpserver%E7%BB%88%E7%AB%A0/ class=prev rel=prev title="【重写muduo】20 - TcpServer终章"><i class="fas fa-angle-left fa-fw"></i>【重写muduo】20 - TcpServer终章</a></div><div class=post-comment></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2022</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=https://xushun1221.github.io/about/ target=_blank>xushun</a> | </span>Powered by <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> & <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer">LoveIt</a></div></div></footer></div><a href=# class=dynamic-to-top id=dynamic-to-top data-scroll><span>&nbsp;</span>
+</a><script src=/js/lib/jquery/jquery.slim.min.js></script><script src=/js/lib/lazysizes/lazysizes.min.js></script><script src=/js/lib/smooth-scroll/smooth-scroll.polyfills.min.js></script><script>window.scroll=new SmoothScroll('[data-scroll]',{speed:300,speedAsDuration:true});</script><link rel=stylesheet href=/css/lib/katex/katex.min.css><script src=/js/lib/katex/katex.min.js></script><script defer src=/js/lib/katex/auto-render.min.js></script><link rel=stylesheet href=/css/lib/katex/copy-tex.min.css><script defer src=/js/lib/katex/copy-tex.min.js></script><script defer src=/js/lib/katex/mhchem.min.js></script><script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true},{left:"$",right:"$",display:false},]});});</script><script src=/js/blog.min.js></script></body></html>
