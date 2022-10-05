@@ -139,8 +139,13 @@ void EPollPoller::update(int operation, Channel* channel) {
     bzero(&event, sizeof(event));
     int fd = channel->fd();
     event.events = channel->events();
-    event.data.ptr = channel; /* 携带了一个参数 */
-    event.data.fd = fd;
+    // event.data.fd = fd;
+    /* 
+        注意 epoll_event.data中fd和ptr不能同时使用 
+        会相互覆盖掉的 
+        妈的这个把我坑惨了
+    */
+    event.data.ptr = static_cast<void*>(channel); /* 携带了一个参数 */
     /* 调用epoll_ctl执行operation对应的操作 */
     if (::epoll_ctl(epollfd_, operation, fd, &event) < 0) {
         if (operation == EPOLL_CTL_DEL) {
