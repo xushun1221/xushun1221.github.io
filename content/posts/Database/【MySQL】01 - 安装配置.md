@@ -1,7 +1,7 @@
 ---
 title: 【MySQL】01 - 安装配置
 date: 2022-10-11
-tags: [datebase]
+tags: [datebase, MySQL]
 categories: [DateBase]
 ---
 
