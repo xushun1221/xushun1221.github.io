@@ -32,5 +32,13 @@ categories: [DateBase]
   - `SELECT count(id),sex FROM user GROUP BY sex;`，性别分类，每种几个
   - `SELECT COUNT(id),age FROM user GROUP BY age HAVING age>30;`，年龄分类，统计大于30的，每个年龄的有几个
 - 分页查询
-  - `SELECT * FROM user LIMIT 10;`
+  - `LIMIT [offset,]lines`，按行数偏移再按行数取
+  - `SELECT * FROM user LIMIT 10;`，相当于`0,10`
   - `SELECT * FROM user LIMIT 2000,10;`
+
+
+
+
+
+
+
