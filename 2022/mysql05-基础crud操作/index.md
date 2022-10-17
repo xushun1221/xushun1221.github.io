@@ -39,7 +39,7 @@ SQL主要可以划分为以下3个类别：
 - 创建表（默认存储引擎和字符集可以在配置文件中定义）
   ```sql
   create table user(id int unsigned primary key not null auto_increment,
-                    name varchar(50) not null,
+                    name varchar(50) not null unique,
                     age tinyint unsigned not null,
                     sex enum('m','w') not null) engine=INNODB default charset=utf8;
   ```
