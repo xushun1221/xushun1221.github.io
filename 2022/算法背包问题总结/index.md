@@ -1,0 +1,135 @@
+# 【算法】背包问题总结
+
+
+## 0-1背包
+
+经典题目：[2. 01背包问题](https://www.acwing.com/problem/content/2/)
+
+相关题目：  
+- [LeetCode.416](https://leetcode.cn/problems/partition-equal-subset-sum/submissions/)
+- [LeetCode.1049](https://leetcode.cn/problems/last-stone-weight-ii/)
+- [LeetCode.494](https://leetcode.cn/problems/target-sum/submissions/)
+- [LeetCode.474](https://leetcode.cn/problems/ones-and-zeroes/)
+
+### 解法1：二维dp
+
+```cpp
+#include <iostream>
+#include <vector>
+using namespace std;
+
+int main() {
+    // input
+    int n;
+    int package;
+    cin >> n >> package;
+    vector<int> v(n);
+    vector<int> w(n);
+    for (int i = 0; i < n; ++ i) {
+        cin >> v[i] >> w[i];
+    }
+    // dp
+    //      dp[i][j] 表示0~i物品中进行选择 在j容量的情况下 最大重量
+    vector<vector<int>> dp(n, vector<int>(package + 1, 0));
+    // init
+    //      dp[i][0] = 0;
+    //      dp[0][j] = 0 or w[0];
+    for (int j = 1; j <= package; ++ j) {
+        dp[0][j] = j >= v[0] ? w[0] : 0;
+    }
+    // traverse
+    //      i 1~n-1
+    //      j 1~package
+    for (int i = 1; i < n; ++ i) {
+        for (int j = 1; j <= package; ++ j) {
+            // case 1  dp[i][j] = dp[i - 1][j];                 不选第i个物品
+            // case 2  dp[i][j] = dp[i - 1][j - v[i] + w[i];    选  第i个物品
+            //                                                  选了就要占空间 那么前面的物品要在减小的空间中考虑
+            if (j < v[i]) { dp[i][j] = dp[i - 1][j]; }
+            else { dp[i][j] = max(dp[i - 1][j], dp[i - 1][j - v[i]] + w[i]); }
+        }
+    }
+    cout << dp.back().back();
+    return 0;
+}
+```
+
+### 解法2：滚动数组
+
+```cpp
+#include <iostream>
+#include <vector>
+using namespace std;
+
+int main() {
+    // input
+    int n;
+    int package;
+    cin >> n >> package;
+    vector<int> v(n);
+    vector<int> w(n);
+    for (int i = 0; i < n; ++ i) {
+        cin >> v[i] >> w[i];
+    }
+    // dp
+    //      dp[j] 在j容量的情况下 最大重量
+    vector<int> dp(package + 1, 0);
+    // init
+    //      dp[0] = 0;
+    // traverse
+    //      i 0~n-1
+    //      j 1~package
+    for (int i = 0; i < n; ++ i) {
+        // j的遍历顺序从后向前 因为使用滚动数组 后面的依赖前面的
+        for (int j = package; j >= v[i]; -- j) { // j < v[i] 就不用选了
+            // case 1  dp[j] = dp[j];                 不选第i个物品
+            // case 2  dp[j] = dp[j - v[i] + w[i];    选  第i个物品
+            //                                        选了就要占空间 那么前面的物品要在减小的空间中考虑
+            dp[j] = max(dp[j], dp[j - v[i]] + w[i]);
+        }
+    }
+    cout << dp.back();
+    return 0;
+}
+```
+
+
+## 完全背包
+
+经典题目：[3. 完全背包问题](https://www.acwing.com/problem/content/3/)
+
+相关题目：  
+- [LeetCode.518](https://leetcode.cn/problems/coin-change-2/)
+- [LeetCode.377](https://leetcode.cn/problems/combination-sum-iv/)
+- [LeetCode.70](https://leetcode.cn/problems/climbing-stairs/)
+- [LeetCode.322](https://leetcode.cn/problems/coin-change/)
+- [LeetCode.279](https://leetcode.cn/problems/perfect-squares/)
+- [LeetCode.139](https://leetcode.cn/problems/word-break/)
+
+
+### 解法
+
+```cpp
+#include <iostream>
+#include <vector>
+using namespace std;
+
+int main() {
+    int n;
+    int package;
+    cin >> n >> package;
+    vector<int> v(n);
+    vector<int> w(n);
+    for (int i = 0; i < n; ++ i) {
+        cin >> v[i] >> w[i];
+    }
+    vector<int> dp(package + 1, 0);
+    for (int i = 0; i < n; ++ i) {
+        for (int j = v[i]; j <= package; ++ j) { // 正向遍历 相当于可以多次选取同一个物品
+            dp[j] = max(dp[j], dp[j - v[i]] + w[i]);
+        }
+    }
+    cout << dp[package];
+    return 0;
+}
+```
