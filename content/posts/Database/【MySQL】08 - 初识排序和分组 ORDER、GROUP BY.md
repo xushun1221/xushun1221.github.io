@@ -104,3 +104,23 @@ mysql> EXPLAIN SELECT name FROM user GROUP BY name;
 并没有使用临时表和外排序，而是直接使用索引。
 
 使用索引效率会得到很大的提高，所以，使用`GROUP BY`分组的字段，需要加索引。
+
+
+
+## 笔试题目
+
+下表`bank_bill`是某银行代缴话费的主流水表结构:
+
+|字段名|描述|
+|---|---|
+|serno|流水号|
+|date|交易日期|
+|accno|账号|
+|name|姓名|
+|amount|金额|
+|brno|缴费网点|
+
+1. 统计表中缴费的总笔数和总金额
+    `SELECT COUNT(serno),SUM(amount) FROM bank_bill;`
+2. 给出一个sql，按网点和日期统计每个网点每天的营业额，并按照营业额进行倒序排序
+    `SELECT brno,date,SUM(amount) AS money FROM bank_bill GROUP BY brno,date ORDER BY brno,money DESC;`
