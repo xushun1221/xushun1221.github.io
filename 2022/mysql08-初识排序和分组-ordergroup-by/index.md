@@ -66,13 +66,37 @@ mysql> EXPLAIN SELECT name FROM user ORDER BY name;
 - `SELECT sex FROM user GROUP BY sex;`，按`sex`字段分类
 - `SELECT sex,count(id) FROM user GROUP BY sex;`，统计两种性别各有多少人
 - `SELECT age,count(id) FROM user GROUP BY age HAVING age>25;`，统计大于25岁的，各年龄的人各有多少人
+- `SELECT sex,AVG(age) FROM user GROUP BY sex;`，统计各性别的人的平均年龄
+- `SELECT age,sex FROM user GROUP BY age,sex;`，按age和sex两个字段分组，age和sex完全相同的是一类
+- `SELECT age,sex,COUNT(*) FROM user GROUP BY age,sex ORDER BY age DESC;`，分组完排序，降序，ASC升序
 
 > 注意，`GROUP BY`一般用于统计，像`SELECT name FROM user GROUP BY sex;`这样的SQL没有意义。
 
 
+### 性能分析
 
+使用`GROUP BY`进行分组时是否存在性能问题呢？分析：  
+```sql
+mysql> EXPLAIN SELECT age FROM user GROUP BY age;
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+---------------------------------+
+| id | select_type | table | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra                           |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+---------------------------------+
+|  1 | SIMPLE      | user  | NULL       | ALL  | NULL          | NULL | NULL    | NULL |    3 |   100.00 | Using temporary; Using filesort |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+---------------------------------+
+1 row in set, 1 warning (0.00 sec)
+```
+`age`字段没有索引，对其进行分组，可以看到会使用临时表和外排序，`Using temporary`，`Using filesort`。
 
+再用有索引的字段进行分组试一下：  
+```sql
+mysql> EXPLAIN SELECT name FROM user GROUP BY name;
++----+-------------+-------+------------+-------+---------------+------+---------+------+------+----------+-------------+
+| id | select_type | table | partitions | type  | possible_keys | key  | key_len | ref  | rows | filtered | Extra       |
++----+-------------+-------+------------+-------+---------------+------+---------+------+------+----------+-------------+
+|  1 | SIMPLE      | user  | NULL       | index | name          | name | 152     | NULL |    3 |   100.00 | Using index |
++----+-------------+-------+------------+-------+---------------+------+---------+------+------+----------+-------------+
+1 row in set, 1 warning (0.00 sec)
+```
+并没有使用临时表和外排序，而是直接使用索引。
 
-
-
-
+使用索引效率会得到很大的提高，所以，使用`GROUP BY`分组的字段，需要加索引。
