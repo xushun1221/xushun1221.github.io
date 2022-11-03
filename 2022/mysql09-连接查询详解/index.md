@@ -27,7 +27,7 @@
 
 涉及多表连接查询时，应该使用别名。
 
-### 场景一 学生 课程 考试成绩
+### 场景： 学生 课程 考试成绩
 
 - 学生表student：`(uid,name,age,sex)`
 - 课程表course：`(cid,cname,credit)`
@@ -125,7 +125,8 @@ mysql> SELECT a.uid,a.name,a.age,a.sex,c.score FROM student a INNER JOIN exame c
 > 连接过程：  
 > 连接中会区分**大表**和**小表**，按照数据量来区分，**小表永远是整表扫描，然后去大表搜索**  
 > 这个sql查询，首先从student（小表）中取出所有的uid，然后用这些uid在exame（大表）中搜索  
-> 搜索结果需要进行过滤，对于INNER JOIN内连接，过滤条件写在WHERE后面和ON连接条件中，效果是一样的
+> 搜索结果需要进行过滤，对于INNER JOIN内连接，过滤条件写在WHERE后面和ON连接条件中，效果是一样的，（例如`SELECT a.*,b.* FROM student a INNER JOIN exame b on a.uid=b.uid AND b.cid=3;`和`SELECT a.*,b.* FROM student a INNER JOIN exame b on a.uid=b.uid WHERE b.cid=3;`，结果是相同的，是mysql server进行了优化）  
+> 如果大表在WHERE过滤后，记录数量小于小表了，那么大表就成为小表，也就是说，WHERE过滤是在搜索之前的。
 
 
 #### 问题3
@@ -270,3 +271,305 @@ mysql> SELECT b.cid,b.cname,b.credit,avg(c.score)
 4 rows in set (0.01 sec)
 ```
 
+
+
+### 内连接对LIMIT的优化
+
+带有偏移的LIMIT的查询效率和查询的字段是有关系的，例如：  
+```sql
+mysql> SELECT COUNT(*) FROM user_t;
++----------+
+| COUNT(*) |
++----------+
+|  2000000 |
++----------+
+1 row in set (0.16 sec)
+
+mysql> SELECT * FROM user_t LIMIT 1500000,10;
++---------+------------------+---------+
+| id      | email            | passwor |
++---------+------------------+---------+
+| 2500001 | 1500001@test.com | 1500001 |
+| 2500002 | 1500002@test.com | 1500002 |
+| 2500003 | 1500003@test.com | 1500003 |
+| 2500004 | 1500004@test.com | 1500004 |
+| 2500005 | 1500005@test.com | 1500005 |
+| 2500006 | 1500006@test.com | 1500006 |
+| 2500007 | 1500007@test.com | 1500007 |
+| 2500008 | 1500008@test.com | 1500008 |
+| 2500009 | 1500009@test.com | 1500009 |
+| 2500010 | 1500010@test.com | 1500010 |
++---------+------------------+---------+
+10 rows in set (0.18 sec)
+
+mysql> SELECT id FROM user_t LIMIT 1500000,10;
++---------+
+| id      |
++---------+
+| 2500001 |
+| 2500002 |
+| 2500003 |
+| 2500004 |
+| 2500005 |
+| 2500006 |
+| 2500007 |
+| 2500008 |
+| 2500009 |
+| 2500010 |
++---------+
+10 rows in set (0.12 sec)
+```
+查询所有字段用时0.18s，而仅查询id字段则用时0.12s。
+
+我们可以使用`WHERE`对id字段（有索引）进行过滤从而避免`LIMIT`偏移产生的花费。
+
+如果我们不能使用`WHERE`进行过滤，并且要查询所有的字段，而且要求查询效率和仅查询id字段相同，如何做到？
+
+使用内连接进行优化：  
+```sql
+mysql> SELECT a.id,a.email,a.passwor 
+    -> FROM user_t a
+    -> INNER JOIN (
+    -> SELECT id FROM user_t
+    -> LIMIT 1500000,10
+    -> ) b ON a.id=b.id;
++---------+------------------+---------+
+| id      | email            | passwor |
++---------+------------------+---------+
+| 2500001 | 1500001@test.com | 1500001 |
+| 2500002 | 1500002@test.com | 1500002 |
+| 2500003 | 1500003@test.com | 1500003 |
+| 2500004 | 1500004@test.com | 1500004 |
+| 2500005 | 1500005@test.com | 1500005 |
+| 2500006 | 1500006@test.com | 1500006 |
+| 2500007 | 1500007@test.com | 1500007 |
+| 2500008 | 1500008@test.com | 1500008 |
+| 2500009 | 1500009@test.com | 1500009 |
+| 2500010 | 1500010@test.com | 1500010 |
++---------+------------------+---------+
+10 rows in set (0.12 sec)
+```
+结果仅使用0.12s。
+
+如上所示，我们先查询我们想要的记录的id字段（带索引），然后用内连接INNER JOIN，连接这张临时表和user_t原表，很明显临时表是小表，所以会使用id字段在大表（原表）中进行搜索，因为id字段带索引，所以仅用常数时间，查询到其他的字段。
+
+这样，使用INNER JOIN可以对使用LIMIT的查询进行优化，查询字段更多的同时，耗时也没有增加。
+
+
+
+
+
+
+
+## 外连接查询
+
+我们还是用学生考试的场景来测试。
+
+在`student`表中添加一个学生`mysql> INSERT INTO student(name,age,sex) VALUES ('weiwei',20,'m');`。
+
+
+### 左连接 LEFT JOIN
+
+`SELECT a.属性名列表,b.属性名列表 FROM table_name1 a LEFT [OUTER] JOIN table_name2 b ON a.id=b.id;`  
+整表扫描左表`a`中数据，在右表中搜索，在右表中不存在相应的数据则显示`NULL`。
+
+```sql
+mysql> SELECT a.*,b.* FROM student a LEFT JOIN exame b ON a.uid=b.uid;
++-----+----------+-----+-----+------+------+------------+-------+
+| uid | name     | age | sex | uid  | cid  | time       | score |
++-----+----------+-----+-----+------+------+------------+-------+
+|   1 | zhangsan |  18 | m   |    1 |    1 | 2021-04-09 |    99 |
+|   1 | zhangsan |  18 | m   |    1 |    2 | 2021-04-09 |    80 |
+|   2 | gaoyang  |  20 | w   |    2 |    2 | 2021-04-09 |    90 |
+|   2 | gaoyang  |  20 | w   |    2 |    3 | 2021-04-09 |    85 |
+|   3 | chenwei  |  22 | m   |    3 |    1 | 2021-04-09 |    56 |
+|   3 | chenwei  |  22 | m   |    3 |    2 | 2021-04-09 |    93 |
+|   3 | chenwei  |  22 | m   |    3 |    3 | 2021-04-09 |    89 |
+|   3 | chenwei  |  22 | m   |    3 |    4 | 2021-04-09 |   100 |
+|   4 | linfeng  |  21 | w   |    4 |    4 | 2021-04-09 |    99 |
+|   5 | liuxiang |  19 | w   |    5 |    2 | 2021-04-09 |    59 |
+|   5 | liuxiang |  19 | w   |    5 |    3 | 2021-04-09 |    94 |
+|   5 | liuxiang |  19 | w   |    5 |    4 | 2021-04-09 |    95 |
+|   6 | weiwei   |  20 | m   | NULL | NULL | NULL       |  NULL |
++-----+----------+-----+-----+------+------+------------+-------+
+13 rows in set (0.00 sec)
+```
+新添加的`weiwei`没有考试记录，在`exame`表中查询不到，所以显示`NULL`。
+
+
+当然这种场景使用内连接也可以，它们没有什么区别：  
+```sql
+mysql> SELECT a.*,b.* FROM student a INNER JOIN exame b ON a.uid=b.uid;
++-----+----------+-----+-----+-----+-----+------------+-------+
+| uid | name     | age | sex | uid | cid | time       | score |
++-----+----------+-----+-----+-----+-----+------------+-------+
+|   1 | zhangsan |  18 | m   |   1 |   1 | 2021-04-09 |    99 |
+|   1 | zhangsan |  18 | m   |   1 |   2 | 2021-04-09 |    80 |
+|   2 | gaoyang  |  20 | w   |   2 |   2 | 2021-04-09 |    90 |
+|   2 | gaoyang  |  20 | w   |   2 |   3 | 2021-04-09 |    85 |
+|   3 | chenwei  |  22 | m   |   3 |   1 | 2021-04-09 |    56 |
+|   3 | chenwei  |  22 | m   |   3 |   2 | 2021-04-09 |    93 |
+|   3 | chenwei  |  22 | m   |   3 |   3 | 2021-04-09 |    89 |
+|   3 | chenwei  |  22 | m   |   3 |   4 | 2021-04-09 |   100 |
+|   4 | linfeng  |  21 | w   |   4 |   4 | 2021-04-09 |    99 |
+|   5 | liuxiang |  19 | w   |   5 |   2 | 2021-04-09 |    59 |
+|   5 | liuxiang |  19 | w   |   5 |   3 | 2021-04-09 |    94 |
+|   5 | liuxiang |  19 | w   |   5 |   4 | 2021-04-09 |    95 |
++-----+----------+-----+-----+-----+-----+------------+-------+
+12 rows in set (0.00 sec)
+
+mysql> EXPLAIN SELECT a.*,b.* FROM student a INNER JOIN exame b ON a.uid=b.uid;
++----+-------------+-------+------------+------+---------------+---------+---------+--------------+------+----------+-------+
+| id | select_type | table | partitions | type | possible_keys | key     | key_len | ref          | rows | filtered | Extra |
++----+-------------+-------+------------+------+---------------+---------+---------+--------------+------+----------+-------+
+|  1 | SIMPLE      | a     | NULL       | ALL  | PRIMARY       | NULL    | NULL    | NULL         |    6 |   100.00 | NULL  |
+|  1 | SIMPLE      | b     | NULL       | ref  | PRIMARY       | PRIMARY | 4       | school.a.uid |    2 |   100.00 | NULL  |
++----+-------------+-------+------------+------+---------------+---------+---------+--------------+------+----------+-------+
+2 rows in set, 1 warning (0.00 sec)
+
+mysql> EXPLAIN SELECT a.*,b.* FROM student a LEFT JOIN exame b ON a.uid=b.uid;
++----+-------------+-------+------------+------+---------------+---------+---------+--------------+------+----------+-------+
+| id | select_type | table | partitions | type | possible_keys | key     | key_len | ref          | rows | filtered | Extra |
++----+-------------+-------+------------+------+---------------+---------+---------+--------------+------+----------+-------+
+|  1 | SIMPLE      | a     | NULL       | ALL  | NULL          | NULL    | NULL    | NULL         |    6 |   100.00 | NULL  |
+|  1 | SIMPLE      | b     | NULL       | ref  | PRIMARY       | PRIMARY | 4       | school.a.uid |    2 |   100.00 | NULL  |
++----+-------------+-------+------------+------+---------------+---------+---------+--------------+------+----------+-------+
+2 rows in set, 1 warning (0.00 sec)
+```
+
+
+### 右连接 RIGHT JOIN
+
+`SELECT a.属性名列表,b.属性名列表 FROM table_name1 a RIGHT [OUTER] JOIN table_name2 b ON a.id=b.id;`  
+整表扫描右表`a`中数据，在左表中搜索，在左表中不存在相应的数据则显示`NULL`。
+
+```sql
+mysql> SELECT a.*,b.* FROM student a RIGHT JOIN exame b ON a.uid=b.uid;
++------+----------+------+------+-----+-----+------------+-------+
+| uid  | name     | age  | sex  | uid | cid | time       | score |
++------+----------+------+------+-----+-----+------------+-------+
+|    1 | zhangsan |   18 | m    |   1 |   1 | 2021-04-09 |    99 |
+|    1 | zhangsan |   18 | m    |   1 |   2 | 2021-04-09 |    80 |
+|    2 | gaoyang  |   20 | w    |   2 |   2 | 2021-04-09 |    90 |
+|    2 | gaoyang  |   20 | w    |   2 |   3 | 2021-04-09 |    85 |
+|    3 | chenwei  |   22 | m    |   3 |   1 | 2021-04-09 |    56 |
+|    3 | chenwei  |   22 | m    |   3 |   2 | 2021-04-09 |    93 |
+|    3 | chenwei  |   22 | m    |   3 |   3 | 2021-04-09 |    89 |
+|    3 | chenwei  |   22 | m    |   3 |   4 | 2021-04-09 |   100 |
+|    4 | linfeng  |   21 | w    |   4 |   4 | 2021-04-09 |    99 |
+|    5 | liuxiang |   19 | w    |   5 |   2 | 2021-04-09 |    59 |
+|    5 | liuxiang |   19 | w    |   5 |   3 | 2021-04-09 |    94 |
+|    5 | liuxiang |   19 | w    |   5 |   4 | 2021-04-09 |    95 |
++------+----------+------+------+-----+-----+------------+-------+
+12 rows in set (0.00 sec)
+```
+查询右表，`weiwei`没有考试记录，所以查不到，也不会在左表中查到。
+
+使用右连接查询和内连接在这里是不同的，会先对右表`exame`进行整表扫描：  
+```sql
+mysql> EXPLAIN SELECT a.*,b.* FROM student a RIGHT JOIN exame b ON a.uid=b.uid;
++----+-------------+-------+------------+--------+---------------+---------+---------+--------------+------+----------+-------+
+| id | select_type | table | partitions | type   | possible_keys | key     | key_len | ref          | rows | filtered | Extra |
++----+-------------+-------+------------+--------+---------------+---------+---------+--------------+------+----------+-------+
+|  1 | SIMPLE      | b     | NULL       | ALL    | NULL          | NULL    | NULL    | NULL         |   12 |   100.00 | NULL  |
+|  1 | SIMPLE      | a     | NULL       | eq_ref | PRIMARY       | PRIMARY | 4       | school.b.uid |    1 |   100.00 | NULL  |
++----+-------------+-------+------------+--------+---------------+---------+---------+--------------+------+----------+-------+
+2 rows in set, 1 warning (0.00 sec)
+```
+
+
+### 场景： 学生 课程 考试
+
+#### 问题1
+
+查询没参加过考试的学生的详细信息。
+
+可以使用带`IN`的子查询实现：  
+```sql
+mysql> SELECT * FROM student WHERE uid NOT IN (SELECT DISTINCT uid FROM exame);
++-----+--------+-----+-----+
+| uid | name   | age | sex |
++-----+--------+-----+-----+
+|   6 | weiwei |  20 | m   |
++-----+--------+-----+-----+
+1 row in set (0.00 sec)
+```
+这种方式*可能*会对`SELECT DISTINCT uid FROM exame`的结果产生一张中间表，以便外部的sql查询，查完释放。  
+而且`NOT IN`*可能*不会用到索引，效率可能较低。  
+所以，一般不使用带`IN`的子查询来做这类的查询。
+
+
+使用左连接实现：  
+```sql
+mysql> SELECT a.* 
+    -> FROM student a
+    -> LEFT JOIN exame b ON a.uid=b.uid
+    -> WHERE b.uid IS NULL;
++-----+--------+-----+-----+
+| uid | name   | age | sex |
++-----+--------+-----+-----+
+|   6 | weiwei |  20 | m   |
++-----+--------+-----+-----+
+1 row in set (0.00 sec)
+```
+`weiwei`没参加过考试，所以用`weiwei`的`uid`在`exame`表中查不到记录，用`WHERE b.uid IS NULL`过滤，即可得到。
+
+
+
+#### 问题2
+
+查询所有没参加课程cid=3的考试的学生的详细信息。
+
+正确写法：  
+```sql
+mysql> SELECT a.* FROM student a
+    -> LEFT JOIN exame b 
+    -> ON a.uid=b.uid AND b.cid=3
+    -> WHERE b.cid IS NULL;
++-----+----------+-----+-----+
+| uid | name     | age | sex |
++-----+----------+-----+-----+
+|   1 | zhangsan |  18 | m   |
+|   4 | linfeng  |  21 | w   |
+|   6 | weiwei   |  20 | m   |
++-----+----------+-----+-----+
+3 rows in set (0.00 sec)
+```
+
+注意！如果要查询cid=3的记录，左连接条件，**必须写在`ON`后面**，不可以在`WHERE`后面写。如果写在`WHERE`后，就和内连接相同了（右表`b`会先被`WHERE b.cid=3`过滤，然后用过滤后的`b`右表在左表`a`中进行搜索，这样就不能找到没有参加cid=3考试的学生了）。分析：  
+```sql
+mysql> SELECT a.*,b.* FROM student a INNER JOIN exame b ON a.uid=b.uid WHERE b.cid=3;
++-----+----------+-----+-----+-----+-----+------------+-------+
+| uid | name     | age | sex | uid | cid | time       | score |
++-----+----------+-----+-----+-----+-----+------------+-------+
+|   2 | gaoyang  |  20 | w   |   2 |   3 | 2021-04-09 |    85 |
+|   3 | chenwei  |  22 | m   |   3 |   3 | 2021-04-09 |    89 |
+|   5 | liuxiang |  19 | w   |   5 |   3 | 2021-04-09 |    94 |
++-----+----------+-----+-----+-----+-----+------------+-------+
+3 rows in set (0.00 sec)
+
+mysql> SELECT a.*,b.* FROM student a LEFT JOIN exame b ON a.uid=b.uid WHERE b.cid=3;
++-----+----------+-----+-----+------+------+------------+-------+
+| uid | name     | age | sex | uid  | cid  | time       | score |
++-----+----------+-----+-----+------+------+------------+-------+
+|   2 | gaoyang  |  20 | w   |    2 |    3 | 2021-04-09 |    85 |
+|   3 | chenwei  |  22 | m   |    3 |    3 | 2021-04-09 |    89 |
+|   5 | liuxiang |  19 | w   |    5 |    3 | 2021-04-09 |    94 |
++-----+----------+-----+-----+------+------+------------+-------+
+3 rows in set (0.00 sec)
+
+mysql> SELECT a.*,b.* FROM student a LEFT JOIN exame b ON a.uid=b.uid AND b.cid=3;
++-----+----------+-----+-----+------+------+------------+-------+
+| uid | name     | age | sex | uid  | cid  | time       | score |
++-----+----------+-----+-----+------+------+------------+-------+
+|   1 | zhangsan |  18 | m   | NULL | NULL | NULL       |  NULL |
+|   2 | gaoyang  |  20 | w   |    2 |    3 | 2021-04-09 |    85 |
+|   3 | chenwei  |  22 | m   |    3 |    3 | 2021-04-09 |    89 |
+|   4 | linfeng  |  21 | w   | NULL | NULL | NULL       |  NULL |
+|   5 | liuxiang |  19 | w   |    5 |    3 | 2021-04-09 |    94 |
+|   6 | weiwei   |  20 | m   | NULL | NULL | NULL       |  NULL |
++-----+----------+-----+-----+------+------+------------+-------+
+6 rows in set (0.00 sec)
+```
+
+> 外连接的连接条件，必须在`ON`后面写，不可以在`WHERE`后写。
