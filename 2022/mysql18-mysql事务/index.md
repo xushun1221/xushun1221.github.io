@@ -95,3 +95,17 @@ MySQL中最重要的是：**日志**！而不是数据。
 
 
 
+
+## MySQL事务处理命令
+
+1. `SELECT @@autocommit;`：查看自动提交事务
+2. `SET autocommit=0;`：0，手动提交，1，自动提交
+3. `BEGIN;`：开启一个事务
+4. `COMMIT;`：提交一个事务
+5. `ROLLBACK;`：回滚一个事务到初始位置
+6. `SAVEPOINT point1;`：设置一个名为point1的保存点
+7. `ROLLBACK TO point1;`：事务回滚到保存点point1，而不是初始状态
+8. `SET TX_ISOLATION='REPEATABLE-READ'`：设置事务的隔离级别
+9. `SELECT @@tx_isolation;`查询事务的隔离级别
+
+
