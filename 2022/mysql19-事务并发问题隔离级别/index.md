@@ -14,7 +14,94 @@
 
 为了数据的安全性，提出了数据的隔离级别，在不同的程度上，允许或不允许脏读、不可重复读、虚读的出现。
 
+
+
+
 ## 事务的隔离级别
 
+MySQL支持的四种隔离级别是：
+
+1. `TRANSACTION_READ_UNCOMMITTED`，**未提交读**。说明在提交前一个事务可以看到另一个事务的变化。这样读脏数据，不可重复读和虚读都是被允许的；
+2. `TRANSACTION_READ_COMMITTED`，**已提交读**。说明读取未提交的数据是不允许的。这个级别仍然允许不可重复读和虚读产生；
+3. `TRANSACTION_REPEATABLE_READ`，**可重复读**。说明事务保证能够再次读取相同的数据而不会失败，但虚读仍然会出现；（MySQL的默认隔离级别）
+4. `TRANSACTION_SERIALIZABLE`，**串行化**。不能并行，是最高的事务级别，它防止读脏数据，不可重复读和虚读。
+
+
+|隔离级别|脏读|不可重复读|虚读|
+|---|---|---|---|
+|未提交读|Y|Y|Y|
+|已提交读|N|Y|Y|
+|可重复读|N|N|Y|
+|串行化|N|N|N|
+
+
+> 事务隔离级别越高，为避免冲突所花费的性能也就越多。  
+> 在可重复读级别，实际上可以解决部分的虚读问题，但是不能防止update更新产生的虚读问题，要禁止虚读产生，还是需要设置串行化隔离级别。
+
+MySQL的默认隔离级别是：可重复读。
+
+
+
+
+
+## 示例
+
+用两个终端各自连接mysql server进行测试，记住要关闭自动提交事务（`SET autocommit=0;`）。
+
+用这个表：  
+```sql
+mysql> select * from user;
++----+----------+-----+-----+
+| id | name     | age | sex |
++----+----------+-----+-----+
+|  7 | zhangsan |  20 | m   |
+|  8 | gaoyang  |  22 | w   |
+|  9 | chenwei  |  20 | m   |
+| 10 | zhangfan |  21 | w   |
+| 11 | zhanglan |  22 | w   |
++----+----------+-----+-----+
+5 rows in set (0.00 sec)
+```
+
+### 未提交读
+
+<html>
+    <table style="margin: auto">
+        <tr>
+            <td>
+                <!--左侧内容-->
+                <pre><code>
+                    mysql> select * from user;
+                    +----+----------+-----+-----+
+                    | id | name     | age | sex |
+                    +----+----------+-----+-----+
+                    |  7 | zhangsan |  20 | m   |
+                    |  8 | gaoyang  |  22 | w   |
+                    |  9 | chenwei  |  20 | m   |
+                    | 10 | zhangfan |  21 | w   |
+                    | 11 | zhanglan |  22 | w   |
+                    +----+----------+-----+-----+
+                    5 rows in set (0.00 sec)
+                </code></pre>
+            </td>
+            <td>
+                <!--右侧内容-->
+                <pre><code>
+                    mysql> select * from user;
+                    +----+----------+-----+-----+
+                    | id | name     | age | sex |
+                    +----+----------+-----+-----+
+                    |  7 | zhangsan |  20 | m   |
+                    |  8 | gaoyang  |  22 | w   |
+                    |  9 | chenwei  |  20 | m   |
+                    | 10 | zhangfan |  21 | w   |
+                    | 11 | zhanglan |  22 | w   |
+                    +----+----------+-----+-----+
+                    5 rows in set (0.00 sec)
+                </code></pre>
+            </td>
+        </tr>
+    </table>
+</html>
 
 
