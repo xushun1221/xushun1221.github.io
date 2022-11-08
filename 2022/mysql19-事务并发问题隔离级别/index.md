@@ -23,7 +23,7 @@ MySQL支持的四种隔离级别是：
 
 1. `TRANSACTION_READ_UNCOMMITTED`，**未提交读**。说明在提交前一个事务可以看到另一个事务的变化。这样读脏数据，不可重复读和虚读都是被允许的；
 2. `TRANSACTION_READ_COMMITTED`，**已提交读**。说明读取未提交的数据是不允许的。这个级别仍然允许不可重复读和虚读产生；
-3. `TRANSACTION_REPEATABLE_READ`，**可重复读**。说明事务保证能够再次读取相同的数据而不会失败，但虚读仍然会出现；（MySQL的默认隔离级别）
+3. `TRANSACTION_REPEATABLE_READ`，**可重复读**。说明事务保证能够再次读取相同的数据而不会失败，但虚读仍然会出现（不是一定出现，一定程度上能防止虚读）；（MySQL的默认隔离级别）
 4. `TRANSACTION_SERIALIZABLE`，**串行化**。不能并行，是最高的事务级别，它防止读脏数据，不可重复读和虚读。
 
 
@@ -44,7 +44,7 @@ MySQL的默认隔离级别是：可重复读。
 
 
 
-## 示例
+## 测试示例
 
 用两个终端各自连接mysql server进行测试，记住要关闭自动提交事务（`SET autocommit=0;`）。
 
@@ -65,43 +65,355 @@ mysql> select * from user;
 
 ### 未提交读
 
+#### 脏读测试
+
 <html>
     <table style="margin: auto">
         <tr>
-            <td>
+            <td>A事务<br>
                 <!--左侧内容-->
                 <pre><code>
-                    mysql> select * from user;
-                    +----+----------+-----+-----+
-                    | id | name     | age | sex |
-                    +----+----------+-----+-----+
-                    |  7 | zhangsan |  20 | m   |
-                    |  8 | gaoyang  |  22 | w   |
-                    |  9 | chenwei  |  20 | m   |
-                    | 10 | zhangfan |  21 | w   |
-                    | 11 | zhanglan |  22 | w   |
-                    +----+----------+-----+-----+
-                    5 rows in set (0.00 sec)
+mysql> select * from user;
++----+----------+-----+-----+
+| id | name     | age | sex |
++----+----------+-----+-----+
+|  7 | zhangsan |  20 | m   |
+|  8 | gaoyang  |  22 | w   |
+|  9 | chenwei  |  20 | m   |
+| 10 | zhangfan |  21 | w   |
+| 11 | zhanglan |  22 | w   |
++----+----------+-----+-----+
+5 rows in set (0.00 sec)
+
+mysql> SET tx_isolation='READ-UNCOMMITTED';
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+mysql> BEGIN;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> UPDATE user SET age=21 WHERE name='zhangsan';
+Query OK, 1 row affected (0.01 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+mysql> ROLLBACK;
+Query OK, 0 rows affected (0.00 sec)
                 </code></pre>
             </td>
-            <td>
+            <td>B事务<br>
                 <!--右侧内容-->
                 <pre><code>
-                    mysql> select * from user;
-                    +----+----------+-----+-----+
-                    | id | name     | age | sex |
-                    +----+----------+-----+-----+
-                    |  7 | zhangsan |  20 | m   |
-                    |  8 | gaoyang  |  22 | w   |
-                    |  9 | chenwei  |  20 | m   |
-                    | 10 | zhangfan |  21 | w   |
-                    | 11 | zhanglan |  22 | w   |
-                    +----+----------+-----+-----+
-                    5 rows in set (0.00 sec)
+mysql> select * from user;
++----+----------+-----+-----+
+| id | name     | age | sex |
++----+----------+-----+-----+
+|  7 | zhangsan |  20 | m   |
+|  8 | gaoyang  |  22 | w   |
+|  9 | chenwei  |  20 | m   |
+| 10 | zhangfan |  21 | w   |
+| 11 | zhanglan |  22 | w   |
++----+----------+-----+-----+
+5 rows in set (0.00 sec)
+
+mysql> SET tx_isolation='READ-UNCOMMITTED';
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+mysql> BEGIN;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> SELECT * FROM user WHERE name='zhangsan';
++----+----------+-----+-----+
+| id | name     | age | sex |
++----+----------+-----+-----+
+|  7 | zhangsan |  20 | m   |
++----+----------+-----+-----+
+1 row in set (0.00 sec)
+
+mysql> SELECT * FROM user WHERE name='zhangsan';
++----+----------+-----+-----+
+| id | name     | age | sex |
++----+----------+-----+-----+
+|  7 | zhangsan |  21 | m   |
++----+----------+-----+-----+
+1 row in set (0.00 sec)
+
+mysql> ROLLBACK;
+Query OK, 0 rows affected (0.00 sec)
                 </code></pre>
             </td>
         </tr>
     </table>
 </html>
 
+可以看到，初始时，`zhangsan`的年龄为20，事务A将他的年龄改为21，但是并没有COMMIT的情况下，事务B，可以读取到他的年龄为21，事务B可能用21这个年龄进行一些操作，最终事务A回滚，导致事务B的执行是错误的。
 
+
+### 已提交读
+
+已提交读级别下，脏读不会发生了，但是不可重复读和虚读仍会发生。
+
+
+#### 脏读、不可重复读测试
+
+<html>
+    <table style="margin: auto">
+        <tr>
+            <td>A事务<br>
+                <!--左侧内容-->
+                <pre><code>
+mysql> SET tx_isolation='READ-COMMITTED';
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+mysql> BEGIN;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> UPDATE user SET age=21 WHERE name='zhangsan';
+Query OK, 1 row affected (0.00 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+mysql> COMMIT;
+Query OK, 0 rows affected (0.00 sec)
+                </code></pre>
+            </td>
+            <td>B事务<br>
+                <!--右侧内容-->
+                <pre><code>
+mysql> SET tx_isolation='READ-COMMITTED';
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+mysql> BEGIN;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> SELECT * from user WHERE name='zhangsan';
++----+----------+-----+-----+
+| id | name     | age | sex |
++----+----------+-----+-----+
+|  7 | zhangsan |  20 | m   |
++----+----------+-----+-----+
+1 row in set (0.00 sec)
+
+mysql> SELECT * from user WHERE name='zhangsan';
++----+----------+-----+-----+
+| id | name     | age | sex |
++----+----------+-----+-----+
+|  7 | zhangsan |  20 | m   |
++----+----------+-----+-----+
+1 row in set (0.00 sec)
+
+mysql> SELECT * from user WHERE name='zhangsan';
++----+----------+-----+-----+
+| id | name     | age | sex |
++----+----------+-----+-----+
+|  7 | zhangsan |  21 | m   |
++----+----------+-----+-----+
+1 row in set (0.00 sec)
+
+mysql> COMMIT;
+Query OK, 0 rows affected (0.00 sec)
+                </code></pre>
+            </td>
+        </tr>
+    </table>
+</html>
+
+可以看到，初始时事务B读`zhangsan`的年龄为20，事务A将其年龄改为21，未提交时，事务B再次读取，显示的年龄仍然为20，说明脏读未发生。事务A提交之后，事务B再次读取，显示年龄为21，对于事务B而言，两次读取数据不同，不可重复读发生了。
+
+
+### 可重复读
+
+可重复读级别下（MySQL默认工作级别），脏读、不可重复读被限制了，但是虚读仍然会发生（不是一定发生，一定程度上能防止虚读出现）。
+
+#### 脏读、不可重复读测试
+
+<html>
+    <table style="margin: auto">
+        <tr>
+            <td>A事务<br>
+                <!--左侧内容-->
+                <pre><code>
+mysql> SET tx_isolation='REPEATABLE-READ';
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+mysql> BEGIN;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> UPDATE user SET age=22 WHERE name='zhangsan';
+Query OK, 1 row affected (0.00 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+mysql> COMMIT;
+Query OK, 0 rows affected (0.00 sec)
+                </code></pre>
+            </td>
+            <td>B事务<br>
+                <!--右侧内容-->
+                <pre><code>
+mysql> SET tx_isolation='REPEATABLE-READ';
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+mysql> BEGIN;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> SELECT * FROM user WHERE name='zhangsan';
++----+----------+-----+-----+
+| id | name     | age | sex |
++----+----------+-----+-----+
+|  7 | zhangsan |  21 | m   |
++----+----------+-----+-----+
+1 row in set (0.00 sec)
+
+mysql> SELECT * FROM user WHERE name='zhangsan';
++----+----------+-----+-----+
+| id | name     | age | sex |
++----+----------+-----+-----+
+|  7 | zhangsan |  21 | m   |
++----+----------+-----+-----+
+1 row in set (0.00 sec)
+
+mysql> SELECT * FROM user WHERE name='zhangsan';
++----+----------+-----+-----+
+| id | name     | age | sex |
++----+----------+-----+-----+
+|  7 | zhangsan |  21 | m   |
++----+----------+-----+-----+
+1 row in set (0.00 sec)
+
+mysql> ROLLBACK;
+Query OK, 0 rows affected (0.00 sec)
+                </code></pre>
+            </td>
+        </tr>
+    </table>
+</html>
+
+可以看出，初始时事务B查询`zhangsan`的年龄为21，事务A修改其为22后，未提交时，事务B查询，仍为21，说明脏读未发生，事务A提交后，事务B再次查询，发现其年龄仍为21，说明不可重复读未发生。
+
+
+#### 虚读测试 - 事务A INSERT
+
+<html>
+    <table style="margin: auto">
+        <tr>
+            <td>A事务<br>
+                <!--左侧内容-->
+                <pre><code>
+mysql> BEGIN;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> INSERT INTO user(name,age,sex) VALUES('aaa',20,'m');
+Query OK, 1 row affected (0.00 sec)
+
+mysql> COMMIT;
+Query OK, 0 rows affected (0.00 sec)
+                </code></pre>
+            </td>
+            <td>B事务<br>
+                <!--右侧内容-->
+                <pre><code>
+mysql> BEGIN;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> SELECT * FROM user WHERE age=20;
++----+---------+-----+-----+
+| id | name    | age | sex |
++----+---------+-----+-----+
+|  9 | chenwei |  20 | m   |
++----+---------+-----+-----+
+1 row in set (0.00 sec)
+
+mysql> SELECT * FROM user WHERE age=20;
++----+---------+-----+-----+
+| id | name    | age | sex |
++----+---------+-----+-----+
+|  9 | chenwei |  20 | m   |
++----+---------+-----+-----+
+1 row in set (0.00 sec)
+
+mysql> SELECT * FROM user WHERE age=20;
++----+---------+-----+-----+
+| id | name    | age | sex |
++----+---------+-----+-----+
+|  9 | chenwei |  20 | m   |
++----+---------+-----+-----+
+1 row in set (0.00 sec)
+                </code></pre>
+            </td>
+        </tr>
+    </table>
+</html>
+
+可以看出，初始时事务B查询年龄为20的记录，只有一条，事务A在表中添加了一条年龄为20的数据，未提交时和提交后，事务B都不能查询到新添加的记录，说明虚读没有发生。
+
+这说明了，在可重复读级别下，虚读不是一定会发生的。
+
+
+#### 虚读测试 - 事务B UPDATE
+
+在上一节的事务B中继续执行
+
+```
+mysql> UPDATE user SET age=20 WHERE name='aaa';
+Query OK, 0 rows affected (0.00 sec)
+Rows matched: 1  Changed: 0  Warnings: 0
+
+mysql> SELECT * FROM user WHERE age=20;
++----+---------+-----+-----+
+| id | name    | age | sex |
++----+---------+-----+-----+
+|  9 | chenwei |  20 | m   |
+| 12 | aaa     |  20 | m   |
++----+---------+-----+-----+
+2 rows in set (0.00 sec)
+```
+
+可以看到，在事务B中，对新添加进来的记录进行UPDATE操作后，再次查询，就能查到该记录了，这说明，虚读还是发生了。
+
+所以，在可重复读级别下，对于UPDATE操作仍然没有限制虚读的发生。（这是由于并发控制决定的）
+
+
+### 串行化
+
+
+#### 虚读测试
+
+<html>
+    <table style="margin: auto">
+        <tr>
+            <td>A事务<br>
+                <!--左侧内容-->
+                <pre><code>
+mysql> SET tx_isolation='SERIALIZABLE';
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+mysql> BEGIN;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> INSERT INTO user(name,age,sex) VALUES('bbb',20,'w');
+ERROR 1205 (HY000): Lock wait timeout exceeded; try restarting transaction
+                </code></pre>
+            </td>
+            <td>B事务<br>
+                <!--右侧内容-->
+                <pre><code>
+mysql> SET tx_isolation='SERIALIZABLE';
+Query OK, 0 rows affected, 1 warning (0.00 sec)
+
+mysql> BEGIN;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> SELECT * FROM user WHERE age=20;
++----+---------+-----+-----+
+| id | name    | age | sex |
++----+---------+-----+-----+
+|  9 | chenwei |  20 | m   |
+| 12 | aaa     |  20 | m   |
++----+---------+-----+-----+
+2 rows in set (0.00 sec)
+                </code></pre>
+            </td>
+        </tr>
+    </table>
+</html>
+
+可以看到，事务B初始时，查询了user表中的数据，事务B未提交时，事务A对user表进行了插入，阻塞了，很明显这里有锁进行了控制，最终事务A插入的sql超时返回（mysql server为了防止线程死锁，设置了超时时间），虚读显然不能发生。
+
+关于锁相关的内容后面再介绍。
