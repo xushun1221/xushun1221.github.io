@@ -1,16 +1,248 @@
-<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【MySQL】21 - InnoDB间隙锁：解决幻读 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/mysql18-mysql%E4%BA%8B%E5%8A%A1/><link rel=canonical href=https://xushun1221.github.io/2022/mysql21-innodb%E9%97%B4%E9%9A%99%E9%94%81%E8%A7%A3%E5%86%B3%E5%B9%BB%E8%AF%BB/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【MySQL】21 - InnoDB间隙锁：解决幻读"><meta name=twitter:description content="串行化隔离级别下，如何解决虚读（幻读）问题？ 答：间隙锁（gap lock）。 幻读问题 回顾一下幻读问题。 A事务 begin; insert into xxx_table values(满足指定条件"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【MySQL】21 - InnoDB间隙锁：解决幻读","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/mysql21-innodb%E9%97%B4%E9%9A%99%E9%94%81%E8%A7%A3%E5%86%B3%E5%B9%BB%E8%AF%BB\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"datebase, MySQL","wordcount":112,"url":"https:\/\/xushun1221.github.io\/2022\/mysql21-innodb%E9%97%B4%E9%9A%99%E9%94%81%E8%A7%A3%E5%86%B3%E5%B9%BB%E8%AF%BB\/","datePublished":"2022-11-09T00:00:00\x2b00:00","dateModified":"2022-11-09T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【MySQL】21 - InnoDB间隙锁：解决幻读</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-11-09>2022-11-09</time>&nbsp;
-<i class="fas fa-pencil-alt fa-fw"></i>about 112 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/datebase/>Date base</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#幻读问题>幻读问题</a></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
-<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#幻读问题>幻读问题</a></li></ul></nav></div></details></div><div class=post-content><p>串行化隔离级别下，如何解决虚读（幻读）问题？</p><p>答：间隙锁（gap lock）。</p><a class=post-dummy-target id=幻读问题></a><h2>幻读问题</h2><p>回顾一下幻读问题。</p><html><table style=margin:auto><tr><td valign=top>A事务<br><pre><code>
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【MySQL】21 - InnoDB间隙锁：解决幻读 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/mysql18-mysql%E4%BA%8B%E5%8A%A1/><link rel=canonical href=https://xushun1221.github.io/2022/mysql21-innodb%E9%97%B4%E9%9A%99%E9%94%81%E8%A7%A3%E5%86%B3%E5%B9%BB%E8%AF%BB/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【MySQL】21 - InnoDB间隙锁：解决幻读"><meta name=twitter:description content="串行化隔离级别下，如何解决虚读（幻读）问题？ 答：间隙锁（gap lock）！ 本章内容是，串行化隔离级别的实现原理，即间隙锁解决幻读问题。 幻读问"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【MySQL】21 - InnoDB间隙锁：解决幻读","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/mysql21-innodb%E9%97%B4%E9%9A%99%E9%94%81%E8%A7%A3%E5%86%B3%E5%B9%BB%E8%AF%BB\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"datebase, MySQL","wordcount":3107,"url":"https:\/\/xushun1221.github.io\/2022\/mysql21-innodb%E9%97%B4%E9%9A%99%E9%94%81%E8%A7%A3%E5%86%B3%E5%B9%BB%E8%AF%BB\/","datePublished":"2022-11-09T00:00:00\x2b00:00","dateModified":"2022-11-09T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【MySQL】21 - InnoDB间隙锁：解决幻读</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-11-09>2022-11-09</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 3107 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/datebase/>Date base</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#幻读问题>幻读问题</a></li><li><a href=#使用的测试数据>使用的测试数据</a></li><li><a href=#范围查询-示例>范围查询 示例</a></li><li><a href=#innodb-间隙锁>InnoDB 间隙锁</a></li><li><a href=#间隙锁的控制范围b树叶子节点顺序索引>间隙锁的控制范围（B+树叶子节点顺序、索引）</a><ul><li><a href=#测试1--间隙锁的边界在哪里>测试1 间隙锁的边界在哪里？</a></li><li><a href=#测试2--索引何时使用>测试2 索引何时使用</a></li></ul></li><li><a href=#等值查询>等值查询</a><ul><li><a href=#测试1--唯一键>测试1 唯一键</a></li><li><a href=#测试2--非唯一键--next-key-lock->测试2 非唯一键 next-key lock ?!</a></li></ul></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#幻读问题>幻读问题</a></li><li><a href=#使用的测试数据>使用的测试数据</a></li><li><a href=#范围查询-示例>范围查询 示例</a></li><li><a href=#innodb-间隙锁>InnoDB 间隙锁</a></li><li><a href=#间隙锁的控制范围b树叶子节点顺序索引>间隙锁的控制范围（B+树叶子节点顺序、索引）</a><ul><li><a href=#测试1--间隙锁的边界在哪里>测试1 间隙锁的边界在哪里？</a></li><li><a href=#测试2--索引何时使用>测试2 索引何时使用</a></li></ul></li><li><a href=#等值查询>等值查询</a><ul><li><a href=#测试1--唯一键>测试1 唯一键</a></li><li><a href=#测试2--非唯一键--next-key-lock->测试2 非唯一键 next-key lock ?!</a></li></ul></li></ul></nav></div></details></div><div class=post-content><p>串行化隔离级别下，如何解决虚读（幻读）问题？</p><p>答：间隙锁（gap lock）！</p><blockquote><p>本章内容是，串行化隔离级别的实现原理，即间隙锁解决幻读问题。</p></blockquote><a class=post-dummy-target id=幻读问题></a><h2>幻读问题</h2><p>幻读问题在下面这种情况下，可能会发生。</p><html><table style=margin:auto><tr><td valign=top>A事务<br><pre><code>
 begin;
-<p>insert into xxx_table values(满足指定条件);
+<br>
+<br>
+insert into xxx_table values(满足指定条件);
 commit;
-</code></pre></td><td valign=top>B事务<br><pre><code>
+                </code></pre></td><td valign=top>B事务<br><pre><code>
 begin;
 select * from xxx_table where 指定条件;
-(原始数据)</p>
-<p>select * from xxx_table where 指定条件;
+(原始数据)
+<br>
+<br>
+select * from xxx_table where 指定条件;
 (出现一行新数据)
-</code></pre></td></tr></table></p></html></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+                </code></pre></td></tr></table></html><a class=post-dummy-target id=使用的测试数据></a><h2>使用的测试数据</h2><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-sql data-lang=sql><span class=n>mysql</span><span class=o>&gt;</span> <span class=k>set</span> <span class=n>tx_isolation</span><span class=o>=</span><span class=s1>&#39;</span><span class=s1>SERIALIZABLE</span><span class=s1>&#39;</span><span class=p>,</span> <span class=n>autocommit</span><span class=o>=</span><span class=mi>0</span><span class=p>;</span>
+<span class=n>Query</span> <span class=n>OK</span><span class=p>,</span> <span class=mi>0</span> <span class=k>rows</span> <span class=n>affected</span><span class=p>,</span> <span class=mi>1</span> <span class=n>warning</span> <span class=p>(</span><span class=mi>0</span><span class=p>.</span><span class=mi>00</span> <span class=n>sec</span><span class=p>)</span>
+
+<span class=n>mysql</span><span class=o>&gt;</span> <span class=k>select</span> <span class=o>*</span> <span class=k>from</span> <span class=k>user</span><span class=p>;</span>
+<span class=o>+</span><span class=c1>----+----------+-----+-----+
+</span><span class=c1></span><span class=o>|</span> <span class=n>id</span> <span class=o>|</span> <span class=n>name</span>     <span class=o>|</span> <span class=n>age</span> <span class=o>|</span> <span class=n>sex</span> <span class=o>|</span>
+<span class=o>+</span><span class=c1>----+----------+-----+-----+
+</span><span class=c1></span><span class=o>|</span>  <span class=mi>7</span> <span class=o>|</span> <span class=n>zhangsan</span> <span class=o>|</span>  <span class=mi>22</span> <span class=o>|</span> <span class=n>m</span>   <span class=o>|</span>
+<span class=o>|</span>  <span class=mi>8</span> <span class=o>|</span> <span class=n>gaoyang</span>  <span class=o>|</span>  <span class=mi>22</span> <span class=o>|</span> <span class=n>w</span>   <span class=o>|</span>
+<span class=o>|</span>  <span class=mi>9</span> <span class=o>|</span> <span class=n>chenwei</span>  <span class=o>|</span>  <span class=mi>20</span> <span class=o>|</span> <span class=n>m</span>   <span class=o>|</span>
+<span class=o>|</span> <span class=mi>10</span> <span class=o>|</span> <span class=n>zhangfan</span> <span class=o>|</span>  <span class=mi>21</span> <span class=o>|</span> <span class=n>w</span>   <span class=o>|</span>
+<span class=o>|</span> <span class=mi>11</span> <span class=o>|</span> <span class=n>zhanglan</span> <span class=o>|</span>  <span class=mi>22</span> <span class=o>|</span> <span class=n>w</span>   <span class=o>|</span>
+<span class=o>|</span> <span class=mi>12</span> <span class=o>|</span> <span class=n>aaa</span>      <span class=o>|</span>  <span class=mi>20</span> <span class=o>|</span> <span class=n>m</span>   <span class=o>|</span>
+<span class=o>|</span> <span class=mi>22</span> <span class=o>|</span> <span class=n>bbb</span>      <span class=o>|</span>  <span class=mi>25</span> <span class=o>|</span> <span class=n>m</span>   <span class=o>|</span>
+<span class=o>|</span> <span class=mi>23</span> <span class=o>|</span> <span class=n>ccc</span>      <span class=o>|</span>  <span class=mi>15</span> <span class=o>|</span> <span class=n>w</span>   <span class=o>|</span>
+<span class=o>+</span><span class=c1>----+----------+-----+-----+
+</span><span class=c1></span><span class=mi>8</span> <span class=k>rows</span> <span class=k>in</span> <span class=k>set</span> <span class=p>(</span><span class=mi>0</span><span class=p>.</span><span class=mi>00</span> <span class=n>sec</span><span class=p>)</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=范围查询-示例></a><h2>范围查询 示例</h2><html><table style=margin:auto><tr><td valign=top>A事务<br><pre><code>
+mysql> begin;
+Query OK, 0 rows affected (0.00 sec)
+<p>mysql&gt;
+mysql&gt;
+mysql&gt;
+mysql&gt;
+mysql&gt;
+mysql&gt;
+mysql&gt;
+mysql&gt;
+mysql&gt;
+mysql&gt; insert into user(name,age,sex) values(&lsquo;ddd&rsquo;,25,&lsquo;w&rsquo;);
+ERROR 1205 (HY000): Lock wait timeout exceeded; try restarting transaction
+</code></pre></td><td valign=top>B事务<br><pre><code>
+mysql&gt; begin;
+Query OK, 0 rows affected (0.00 sec)</p>
+<p>mysql&gt; select * from user where id&gt;11;
++&mdash;-+&mdash;&mdash;+&mdash;&ndash;+&mdash;&ndash;+
+| id | name | age | sex |
++&mdash;-+&mdash;&mdash;+&mdash;&ndash;+&mdash;&ndash;+
+| 12 | aaa  |  20 | m   |
+| 22 | bbb  |  25 | m   |
+| 23 | ccc  |  15 | w   |
++&mdash;-+&mdash;&mdash;+&mdash;&ndash;+&mdash;&ndash;+
+3 rows in set (0.00 sec)
+</code></pre></td></tr></table></p></html><p>很神奇（其实也不神奇），事务A对user表的插入被阻塞了！（在可重复读级别下，不会阻塞）</p><p>事务B查询<code>id>11</code>的记录时，很明显给<code>id=12,22,23</code>这些记录加上了共享锁（你先别急），但是事务B插入了一条数据，其<code>id</code>应为24，为什么不可以对<code>id=24</code>加排他锁呢？这就涉及到<strong>间隙锁</strong>了，事务B并不仅仅给<code>id=12,22,23</code>这三条记录加锁了。</p><a class=post-dummy-target id=innodb-间隙锁></a><h2>InnoDB 间隙锁</h2><p>当我们用范围条件而不是相等条件检索数据，并请求共享或排他锁时，InnoDB会给符合条件的<strong>已有数据记录</strong>的索引项加锁；对于键值在条件范围内但并不存在的记录，叫做“<strong>间隙（GAP)</strong>” ，InnoDB 也会对这个“间隙”加锁，这种锁机制就是所谓的间隙锁。</p><p>了解几个概念，<code>record lock</code>：记录锁（行锁），<code>gap lock</code>：间隙锁，<code>next-key lock</code>：<code>record lock + gap lock</code>，有些地方将间隙锁称为<code>next-key lock</code>。</p><p>分析上节的例子：</p><p>事务B，查询<code>id>11</code>的记录时，给<code>id=12,22,23</code>这3条记录加上了共享锁（<code>record lock</code>）。还需要对<strong>间隙</strong>加锁，间隙由左开右闭区间定义，在这个例子中间隙有：<code>(11,12], (12,22], (22,23], (23,∞]</code>。</p><p>所以，事务B不仅对已有的记录加锁，也对满足过滤条件的不存在的记录（间隙）加了锁。这样事务A就无法添加<code>id>11</code>的记录了。否则就会出现幻读的现象。</p><a class=post-dummy-target id=间隙锁的控制范围b树叶子节点顺序索引></a><h2>间隙锁的控制范围（B+树叶子节点顺序、索引）</h2><p>间隙锁了解的差不多了，但是！还存在一些小问题，做两个测试看一下。</p><p>测试用的表：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-sql data-lang=sql><span class=n>mysql</span><span class=o>&gt;</span> <span class=k>select</span> <span class=o>*</span> <span class=k>from</span> <span class=k>user</span><span class=p>;</span>
+<span class=o>+</span><span class=c1>----+----------+-----+-----+
+</span><span class=c1></span><span class=o>|</span> <span class=n>id</span> <span class=o>|</span> <span class=n>name</span>     <span class=o>|</span> <span class=n>age</span> <span class=o>|</span> <span class=n>sex</span> <span class=o>|</span>
+<span class=o>+</span><span class=c1>----+----------+-----+-----+
+</span><span class=c1></span><span class=o>|</span>  <span class=mi>7</span> <span class=o>|</span> <span class=n>zhangsan</span> <span class=o>|</span>  <span class=mi>22</span> <span class=o>|</span> <span class=n>m</span>   <span class=o>|</span>
+<span class=o>|</span>  <span class=mi>8</span> <span class=o>|</span> <span class=n>gaoyang</span>  <span class=o>|</span>  <span class=mi>22</span> <span class=o>|</span> <span class=n>w</span>   <span class=o>|</span>
+<span class=o>|</span>  <span class=mi>9</span> <span class=o>|</span> <span class=n>chenwei</span>  <span class=o>|</span>  <span class=mi>20</span> <span class=o>|</span> <span class=n>m</span>   <span class=o>|</span>
+<span class=o>|</span> <span class=mi>10</span> <span class=o>|</span> <span class=n>zhangfan</span> <span class=o>|</span>  <span class=mi>21</span> <span class=o>|</span> <span class=n>w</span>   <span class=o>|</span>
+<span class=o>|</span> <span class=mi>11</span> <span class=o>|</span> <span class=n>zhanglan</span> <span class=o>|</span>  <span class=mi>22</span> <span class=o>|</span> <span class=n>w</span>   <span class=o>|</span>
+<span class=o>|</span> <span class=mi>12</span> <span class=o>|</span> <span class=n>aaa</span>      <span class=o>|</span>  <span class=mi>20</span> <span class=o>|</span> <span class=n>m</span>   <span class=o>|</span>
+<span class=o>|</span> <span class=mi>22</span> <span class=o>|</span> <span class=n>bbb</span>      <span class=o>|</span>  <span class=mi>25</span> <span class=o>|</span> <span class=n>m</span>   <span class=o>|</span>
+<span class=o>|</span> <span class=mi>23</span> <span class=o>|</span> <span class=n>ccc</span>      <span class=o>|</span>  <span class=mi>15</span> <span class=o>|</span> <span class=n>w</span>   <span class=o>|</span>
+<span class=o>+</span><span class=c1>----+----------+-----+-----+
+</span><span class=c1></span><span class=mi>8</span> <span class=k>rows</span> <span class=k>in</span> <span class=k>set</span> <span class=p>(</span><span class=mi>0</span><span class=p>.</span><span class=mi>01</span> <span class=n>sec</span><span class=p>)</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=测试1--间隙锁的边界在哪里></a><h3>测试1 间隙锁的边界在哪里？</h3><html><table style=margin:auto><tr><td valign=top>A事务<br><pre><code>
+mysql> begin;
+Query OK, 0 rows affected (0.00 sec)
+<p>mysql&gt; insert into user(name,age,sex) values(&lsquo;ddd&rsquo;,22,&lsquo;m&rsquo;);
+ERROR 1205 (HY000): Lock wait timeout exceeded; try restarting transaction
+mysql&gt; insert into user(name,age,sex) values(&lsquo;ddd&rsquo;,21,&lsquo;m&rsquo;);
+Query OK, 1 row affected (0.00 sec)
+</code></pre></td><td valign=top>B事务<br><pre><code>
+mysql&gt; begin;
+Query OK, 0 rows affected (0.00 sec)</p>
+<p>mysql&gt; select * from user where age&gt;22;
++&mdash;-+&mdash;&mdash;+&mdash;&ndash;+&mdash;&ndash;+
+| id | name | age | sex |
++&mdash;-+&mdash;&mdash;+&mdash;&ndash;+&mdash;&ndash;+
+| 22 | bbb  |  25 | m   |
++&mdash;-+&mdash;&mdash;+&mdash;&ndash;+&mdash;&ndash;+
+1 row in set (0.00 sec)
+</code></pre></td></tr></table></p></html><p>事务B，查询<code>age>22</code>的记录，根据上面的分析，这里对于<code>age>22</code>的范围加上了间隙锁。但是，事务A添加<code>age=22</code>的记录时，阻塞了，添加<code>age=21</code>的记录能够成功。</p><p>这是为什么呢？<code>age>22</code>的间隙锁，为什么能阻止对<code>age=22</code>的记录的添加？</p><p>原因在于，<code>age</code>的二级索引树中，叶子节点的排列顺序。</p><p>在<code>age</code>的二级索引树中，叶子节点中存储<code>age,id</code>，按照<code>age</code>从小到大的顺序排列，<code>age</code>相同时，按照<code>id</code>从小到大的顺序排列，间隙锁的示意图如下：</p><table><thead><tr><th>age</th><th>15</th><th>20</th><th>20</th><th>21</th><th>22</th><th>22</th><th>22</th><th>间隙锁</th><th>25(行锁)</th><th>间隙锁</th></tr></thead><tbody><tr><td>id</td><td>23</td><td>9</td><td>12</td><td>10</td><td>7</td><td>8</td><td>11</td><td>间隙锁</td><td>22(行锁)</td><td>间隙锁</td></tr></tbody></table><p>当事务A，插入一个<code>age=22</code>的记录，该条记录的<code>id</code>应为<code>24</code>，按照叶子节点的排列顺序，它应该排在<code>(age=22,id=11)</code>后面，但是间隙锁把从<code>(age=22,id=11)</code>往后的位置全部锁住了，所以加排他锁失败。</p><a class=post-dummy-target id=测试2--索引何时使用></a><h3>测试2 索引何时使用</h3><p>现在我们知道了，在串行化级别下，尽管事务A查润的是<code>age>22</code>的记录，事务B也不能对<code>age=22</code>的记录加排他锁，这是由于B+树叶子节点排序顺序导致的。</p><p>我们再来看下面这种情况。</p><html><table style=margin:auto><tr><td valign=top>A事务<br><pre><code>
+mysql> begin;
+Query OK, 0 rows affected (0.00 sec)
+<p>mysql&gt; insert into user(name,age,sex) values(&lsquo;ddd&rsquo;,10,&lsquo;w&rsquo;);
+ERROR 1205 (HY000): Lock wait timeout exceeded; try restarting transaction
+</code></pre></td><td valign=top>B事务<br><pre><code>
+mysql&gt; begin;
+Query OK, 0 rows affected (0.00 sec)</p>
+<p>mysql&gt; select * from user where age&gt;20;
++&mdash;-+&mdash;&mdash;&mdash;-+&mdash;&ndash;+&mdash;&ndash;+
+| id | name     | age | sex |
++&mdash;-+&mdash;&mdash;&mdash;-+&mdash;&ndash;+&mdash;&ndash;+
+|  7 | zhangsan |  22 | m   |
+|  8 | gaoyang  |  22 | w   |
+| 10 | zhangfan |  21 | w   |
+| 11 | zhanglan |  22 | w   |
+| 22 | bbb      |  25 | m   |
++&mdash;-+&mdash;&mdash;&mdash;-+&mdash;&ndash;+&mdash;&ndash;+
+5 rows in set (0.00 sec)
+</code></pre></td></tr></table></p></html><p>这就奇怪了，事务B加锁的明明是<code>age>20</code>的记录，为什么事务A插入的<code>age=10</code>的记录也被阻塞了呢？</p><p>其实这里和间隙锁无关，事务B查询<code>age>20</code>的记录时，mysql server认为，不使用索引，直接扫描整表效率更高，所以，事务B给这张表加了共享锁。</p><p>遇到这种搞不明白的情况，不要慌，<code>EXPLAIN</code>分析一下先。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-sql data-lang=sql><span class=n>mysql</span><span class=o>&gt;</span> <span class=k>explain</span> <span class=k>select</span> <span class=o>*</span> <span class=k>from</span> <span class=k>user</span> <span class=k>where</span> <span class=n>age</span><span class=o>&gt;</span><span class=mi>22</span><span class=err>\</span><span class=k>G</span>
+<span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span> <span class=mi>1</span><span class=p>.</span> <span class=k>row</span> <span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span>
+           <span class=n>id</span><span class=p>:</span> <span class=mi>1</span>
+  <span class=n>select_type</span><span class=p>:</span> <span class=k>SIMPLE</span>
+        <span class=k>table</span><span class=p>:</span> <span class=k>user</span>
+   <span class=n>partitions</span><span class=p>:</span> <span class=k>NULL</span>
+         <span class=k>type</span><span class=p>:</span> <span class=n>range</span>
+<span class=n>possible_keys</span><span class=p>:</span> <span class=n>ageidx</span>
+          <span class=k>key</span><span class=p>:</span> <span class=n>ageidx</span>
+      <span class=n>key_len</span><span class=p>:</span> <span class=mi>1</span>
+          <span class=k>ref</span><span class=p>:</span> <span class=k>NULL</span>
+         <span class=k>rows</span><span class=p>:</span> <span class=mi>1</span>
+     <span class=n>filtered</span><span class=p>:</span> <span class=mi>100</span><span class=p>.</span><span class=mi>00</span>
+        <span class=n>Extra</span><span class=p>:</span> <span class=k>Using</span> <span class=k>index</span> <span class=n>condition</span>
+<span class=mi>1</span> <span class=k>row</span> <span class=k>in</span> <span class=k>set</span><span class=p>,</span> <span class=mi>1</span> <span class=n>warning</span> <span class=p>(</span><span class=mi>0</span><span class=p>.</span><span class=mi>00</span> <span class=n>sec</span><span class=p>)</span>
+
+<span class=n>mysql</span><span class=o>&gt;</span> <span class=k>explain</span> <span class=k>select</span> <span class=o>*</span> <span class=k>from</span> <span class=k>user</span> <span class=k>where</span> <span class=n>age</span><span class=o>&gt;</span><span class=mi>20</span><span class=err>\</span><span class=k>G</span>
+<span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span> <span class=mi>1</span><span class=p>.</span> <span class=k>row</span> <span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span><span class=o>*</span>
+           <span class=n>id</span><span class=p>:</span> <span class=mi>1</span>
+  <span class=n>select_type</span><span class=p>:</span> <span class=k>SIMPLE</span>
+        <span class=k>table</span><span class=p>:</span> <span class=k>user</span>
+   <span class=n>partitions</span><span class=p>:</span> <span class=k>NULL</span>
+         <span class=k>type</span><span class=p>:</span> <span class=k>ALL</span>
+<span class=n>possible_keys</span><span class=p>:</span> <span class=n>ageidx</span>
+          <span class=k>key</span><span class=p>:</span> <span class=k>NULL</span>
+      <span class=n>key_len</span><span class=p>:</span> <span class=k>NULL</span>
+          <span class=k>ref</span><span class=p>:</span> <span class=k>NULL</span>
+         <span class=k>rows</span><span class=p>:</span> <span class=mi>9</span>
+     <span class=n>filtered</span><span class=p>:</span> <span class=mi>55</span><span class=p>.</span><span class=mi>56</span>
+        <span class=n>Extra</span><span class=p>:</span> <span class=k>Using</span> <span class=k>where</span>
+<span class=mi>1</span> <span class=k>row</span> <span class=k>in</span> <span class=k>set</span><span class=p>,</span> <span class=mi>1</span> <span class=n>warning</span> <span class=p>(</span><span class=mi>0</span><span class=p>.</span><span class=mi>00</span> <span class=n>sec</span><span class=p>)</span>
+</code></pre></td></tr></table></div></div><p>看出来了，<code>age>22</code>时，搜索的记录很少，使用了索引，而<code>age>20</code>时，搜索的记录和整表的数量差不多，所以mysql server没有使用索引。</p><a class=post-dummy-target id=等值查询></a><h2>等值查询</h2><p>等值查询的情况下，避免幻读现象，有两种情况。</p><ol><li>使用主键索引（唯一键）作为过滤条件，使用<code>record lock</code>行锁（共享锁）；</li><li>使用辅助索引作为过滤条件，使用<code>record lock + gap lock</code>行锁和间隙锁。</li></ol><p>这两种情况表现完全不同。</p><a class=post-dummy-target id=测试1--唯一键></a><h3>测试1 唯一键</h3><html><table style=margin:auto><tr><td valign=top>A事务<br><pre><code>
+mysql> begin;
+Query OK, 0 rows affected (0.01 sec)
+<p>mysql&gt; insert into user(name,age,sex) values(&lsquo;ddd&rsquo;,16,&lsquo;w&rsquo;);
+Query OK, 1 row affected (0.00 sec)</p>
+<p>mysql&gt; insert into user(id,name,age,sex) values(7,&lsquo;eee&rsquo;,17,&lsquo;w&rsquo;);
+ERROR 1062 (23000): Duplicate entry &lsquo;7&rsquo; for key &lsquo;PRIMARY&rsquo;
+</code></pre></td><td valign=top>B事务<br><pre><code>
+mysql&gt; begin;
+Query OK, 0 rows affected (0.00 sec)</p>
+<p>mysql&gt; select * from user where id=7;
++&mdash;-+&mdash;&mdash;&mdash;-+&mdash;&ndash;+&mdash;&ndash;+
+| id | name     | age | sex |
++&mdash;-+&mdash;&mdash;&mdash;-+&mdash;&ndash;+&mdash;&ndash;+
+|  7 | zhangsan |  22 | m   |
++&mdash;-+&mdash;&mdash;&mdash;-+&mdash;&ndash;+&mdash;&ndash;+
+1 row in set (0.00 sec)
+</code></pre></td></tr></table></p></html><p>事务B，以主键（唯一键）为过滤条件进行查询时，为该行数据加上了行锁（共享锁），事务A，仍然可以插入记录行到该表中，原因是唯一键是过滤条件，不可能插入一行记录和它的主键相同，所以不可能产生幻读。</p><a class=post-dummy-target id=测试2--非唯一键--next-key-lock-></a><h3>测试2 非唯一键 next-key lock ?!</h3><html><table style=margin:auto><tr><td valign=top>A事务<br><pre><code>
+mysql> begin;
+Query OK, 0 rows affected (0.00 sec)
+<p>mysql&gt; insert into user(name,age,sex) values(&lsquo;ddd&rsquo;,21,&lsquo;w&rsquo;);
+^C^C &ndash; query aborted
+ERROR 1317 (70100): Query execution was interrupted
+mysql&gt; insert into user(name,age,sex) values(&lsquo;ddd&rsquo;,20,&lsquo;w&rsquo;);
+^C^C &ndash; query aborted
+ERROR 1317 (70100): Query execution was interrupted
+mysql&gt; insert into user(name,age,sex) values(&lsquo;ddd&rsquo;,19,&lsquo;w&rsquo;);
+Query OK, 1 row affected (0.00 sec)</p>
+<p>mysql&gt; insert into user(name,age,sex) values(&lsquo;ddd&rsquo;,18,&lsquo;w&rsquo;);
+Query OK, 1 row affected (0.00 sec)</p>
+<p>mysql&gt; insert into user(name,age,sex) values(&lsquo;ddd&rsquo;,22,&lsquo;w&rsquo;);
+Query OK, 1 row affected (0.00 sec)
+</code></pre></td><td valign=top>B事务<br><pre><code>
+mysql&gt; begin;
+Query OK, 0 rows affected (0.00 sec)</p>
+<p>mysql&gt; select * from user where age=21;
++&mdash;-+&mdash;&mdash;&mdash;-+&mdash;&ndash;+&mdash;&ndash;+
+| id | name     | age | sex |
++&mdash;-+&mdash;&mdash;&mdash;-+&mdash;&ndash;+&mdash;&ndash;+
+| 10 | zhangfan |  21 | w   |
++&mdash;-+&mdash;&mdash;&mdash;-+&mdash;&ndash;+&mdash;&ndash;+
+1 row in set (0.01 sec)
+</code></pre></td></tr></table></p></html><p>事务B查询<code>age=21</code>的记录，事务A插入一行<code>age=21</code>的记录，被阻塞了，这很合理。但是，为什么插入<code>age=20</code>会被阻塞呢？又为什么插入<code>age=19,18</code>就能成功呢？又又为什么<code>age=22</code>也能成功呢？</p><p>还是和<code>age</code>二级索引树的叶子节点顺序有关：</p><table><thead><tr><th>age</th><th>15</th><th>20</th><th>20</th><th>gap lock</th><th>21(record lock)</th><th>gap lock</th><th>22</th><th>22</th><th>22</th><th>25</th></tr></thead><tbody><tr><td>id</td><td>23</td><td>9</td><td>12</td><td>gap lock</td><td>10(record lock)</td><td>gap lock</td><td>7</td><td>8</td><td>11</td><td>22</td></tr></tbody></table><p>如图，<code>next-key lock = gap lock + record lock</code>。</p><p>如果，只使用一个行锁（共享锁），锁住<code>(age=21,id=10)</code>，无法阻止其他的事务再插入<code>age=21</code>的记录，所以需要在<code>(age=21,id=10)</code>的左右两侧使用间隙锁（gap lock），这样一来<code>(20,21], (21,22]</code>这两个范围就被间隙锁锁住了。</p><p>又为什么<code>age=20</code>的记录不能插入呢？因为<code>age</code>相同的情况下<code>id</code>升序排列，新的<code>age=20</code>的记录<code>id</code>肯定大于<code>10</code>所以无法插入到<code>(20,21]</code>这个范围中。</p><p>为什么<code>age=22</code>的记录可以插入呢？因为新的<code>age=22</code>的记录的<code>id</code>肯定大于已经插入的<code>age=22</code>的记录，所以新的记录应该插在<code>(22,25]</code>中，这个范围并没有被锁住。</p><p>从上面这个例子也可以看出，在串行化的隔离级别下，锁冲突的情况下，串行执行，锁不冲突的情况下，并行执行。</p></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
 <span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
 <span>2022-11-09</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
 <span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fmysql21-innodb%25E9%2597%25B4%25E9%259A%2599%25E9%2594%2581%25E8%25A7%25A3%25E5%2586%25B3%25E5%25B9%25BB%25E8%25AF%25BB%2f&text=%e3%80%90MySQL%e3%80%9121%20-%20InnoDB%e9%97%b4%e9%9a%99%e9%94%81%ef%bc%9a%e8%a7%a3%e5%86%b3%e5%b9%bb%e8%af%bb&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2fmysql21-innodb%25E9%2597%25B4%25E9%259A%2599%25E9%2594%2581%25E8%25A7%25A3%25E5%2586%25B3%25E5%25B9%25BB%25E8%25AF%25BB%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fmysql21-innodb%25E9%2597%25B4%25E9%259A%2599%25E9%2594%2581%25E8%25A7%25A3%25E5%2586%25B3%25E5%25B9%25BB%25E8%25AF%25BB%2f&title=%e3%80%90MySQL%e3%80%9121%20-%20InnoDB%e9%97%b4%e9%9a%99%e9%94%81%ef%bc%9a%e8%a7%a3%e5%86%b3%e5%b9%bb%e8%af%bb" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/datebase/><i class="fas fa-tag fa-fw"></i>&nbsp;datebase</a>&nbsp;
