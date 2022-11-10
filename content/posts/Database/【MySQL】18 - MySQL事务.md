@@ -95,7 +95,7 @@ mysql> SELECT @@autocommit;
 MySQL中最重要的是：**日志**！而不是数据。
 
 - MySQL的ACD特性，是由redo log和undo log机制来保证的；
-- MySQL的I特性，是由锁机制来保证的。
+- MySQL的I特性，是由锁机制和MVCC来保证的。
 
 
 
