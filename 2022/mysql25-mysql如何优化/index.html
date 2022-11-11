@@ -1,0 +1,121 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【MySQL】25 - MySQL如何优化？ | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/centos7%E5%AE%89%E8%A3%85cmake/><link rel=next href=https://xushun1221.github.io/2022/mysql24-redo-log-%E9%87%8D%E5%81%9A%E6%97%A5%E5%BF%97/><link rel=canonical href=https://xushun1221.github.io/2022/mysql25-mysql%E5%A6%82%E4%BD%95%E4%BC%98%E5%8C%96/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【MySQL】25 - MySQL如何优化？"><meta name=twitter:description content="无论是在实际工程项目中，还是面试中，对MySQL的优化都是一个比较常见的问题。这里分几个方面来谈一下MySQL的优化方法。 MySQL需要优化"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【MySQL】25 - MySQL如何优化？","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/mysql25-mysql%E5%A6%82%E4%BD%95%E4%BC%98%E5%8C%96\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"datebase, MySQL","wordcount":2242,"url":"https:\/\/xushun1221.github.io\/2022\/mysql25-mysql%E5%A6%82%E4%BD%95%E4%BC%98%E5%8C%96\/","datePublished":"2022-11-11T00:00:00\x2b00:00","dateModified":"2022-11-11T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【MySQL】25 - MySQL如何优化？</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-11-11>2022-11-11</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 2242 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/datebase/>Date base</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#mysql需要优化的方面有哪些>MySQL需要优化的方面有哪些？</a></li><li><a href=#应用优化>应用优化</a><ul><li><a href=#连接池>连接池</a></li><li><a href=#增加cache缓存层>增加cache缓存层</a></li></ul></li><li><a href=#mysql-server优化>MySQL Server优化</a><ul><li><a href=#mysql查询缓存>MySQL查询缓存</a></li><li><a href=#索引和数据缓存>索引和数据缓存</a></li><li><a href=#mysql线程缓存>MySQL线程缓存</a></li><li><a href=#并发连接数量和超时时间>并发连接数量和超时时间</a></li></ul></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#mysql需要优化的方面有哪些>MySQL需要优化的方面有哪些？</a></li><li><a href=#应用优化>应用优化</a><ul><li><a href=#连接池>连接池</a></li><li><a href=#增加cache缓存层>增加cache缓存层</a></li></ul></li><li><a href=#mysql-server优化>MySQL Server优化</a><ul><li><a href=#mysql查询缓存>MySQL查询缓存</a></li><li><a href=#索引和数据缓存>索引和数据缓存</a></li><li><a href=#mysql线程缓存>MySQL线程缓存</a></li><li><a href=#并发连接数量和超时时间>并发连接数量和超时时间</a></li></ul></li></ul></nav></div></details></div><div class=post-content><p>无论是在实际工程项目中，还是面试中，对MySQL的优化都是一个比较常见的问题。这里分几个方面来谈一下MySQL的优化方法。</p><a class=post-dummy-target id=mysql需要优化的方面有哪些></a><h2>MySQL需要优化的方面有哪些？</h2><ol><li>SQL和索引的优化：<a href=https://xushun1221.github.io/2022/mysql17-sql%E5%92%8C%E7%B4%A2%E5%BC%95%E4%BC%98%E5%8C%96%E6%85%A2%E6%9F%A5%E8%AF%A2%E6%97%A5%E5%BF%97/ target=_blank>SQL和索引的优化</a></li><li>应用上的优化<ol><li>引入<strong>连接池</strong></li><li>引入<strong>缓存层</strong>，存储热点数据，redis、memcache等</li></ol></li><li>mysql server上的优化：根据服务器性能设置各种参数的配置</li></ol><a class=post-dummy-target id=应用优化></a><h2>应用优化</h2><p>除了优化SQL和索引，很多时候，在实际生产环境中，由于数据库服务器本身的性能局限，就必须要对上层的应用来进行一些优化，使得上层应用访问数据库的压力能够减到最小。</p><a class=post-dummy-target id=连接池></a><h3>连接池</h3><p>应用上一般访问数据库，都是先和MySQL Server创建连接，然后发送SQL语句，Server处理完成后，再把结果通过网络返回给应用，然后关闭和MySQL Server的连接，因此短时间大量的数据库访问，消耗的TCP三次握手和四次挥手所花费的时间就很大了，稍微大一点的项目，我们都会在应用访问数据库的那一层上，添加连接池模块，相当于应用和MySQL Server事先创建一组连接，当应用需要请求MySQL Server时，不需要再进行TCP连接和释放连接了，一般连接池都会维护以下资源：</p><ol><li>连接池里面保持固定数量的活跃TCP连接，供应用使用。</li><li>如果应用瞬间访问MySQL的量比较大，那么连接池会实时创建更多的连接给应用使用。</li><li>当连接池里面的TCP连接一段时间内没有被用到，连接池会释放多余的连接资源，保留它设置的最大空闲连接量就可以了。</li><li></li></ol><p>连接池可以自己实现，也可以用第三方写好的库。</p><a class=post-dummy-target id=增加cache缓存层></a><h3>增加cache缓存层</h3><p>业务上增加redis、memcache，一般用缓存把经常访问的数据缓存起来。</p><a class=post-dummy-target id=mysql-server优化></a><h2>MySQL Server优化</h2><p>对于MySQL Server端的优化，主要指的就是MySQL Server启动时加载的配置文件的配置项内容的优化（就是那个<code>my.ini</code>或者<code>my.cnf</code>），下面我们看看它的配置文件中有哪些是我们需要重点关注的优化参数。</p><a class=post-dummy-target id=mysql查询缓存></a><h3>MySQL查询缓存</h3><p>MySQL的查询缓存是把select查询语句上一次的查询结果记录下来放在缓存当中，下一次再查询相同内容的时候，直接从缓存中取出来就可以了，不用再进行一遍真正的SQL查询。但是当两个select查询中间出现insert，update，delete语句的时候，查询缓存就会被清空。查询缓存适用更新不频繁的表，因为当表更新频繁的话，查询缓存也总是被清空，过多的查询缓存的数据添加和删除，就会影响MySQL的执行效率，还不如每次都从磁盘上查来得快（缓存指的就是一块内存，内存I/O比磁盘I/O快很多）。</p><p>可以在MySQL上通过以下命令，来查看查询缓存的设置：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-sql data-lang=sql><span class=n>mysql</span><span class=o>&gt;</span> <span class=k>SHOW</span> <span class=n>VARIABLES</span> <span class=k>LIKE</span> <span class=s1>&#39;</span><span class=s1>%query_cache%</span><span class=s1>&#39;</span><span class=p>;</span>
+<span class=o>+</span><span class=c1>------------------------------+---------+
+</span><span class=c1></span><span class=o>|</span> <span class=n>Variable_name</span>                <span class=o>|</span> <span class=n>Value</span>   <span class=o>|</span>
+<span class=o>+</span><span class=c1>------------------------------+---------+
+</span><span class=c1></span><span class=o>|</span> <span class=n>have_query_cache</span>             <span class=o>|</span> <span class=n>YES</span>     <span class=o>|</span>
+<span class=o>|</span> <span class=n>query_cache_limit</span>            <span class=o>|</span> <span class=mi>1048576</span> <span class=o>|</span>
+<span class=o>|</span> <span class=n>query_cache_min_res_unit</span>     <span class=o>|</span> <span class=mi>4096</span>    <span class=o>|</span>
+<span class=o>|</span> <span class=n>query_cache_size</span>             <span class=o>|</span> <span class=mi>1048576</span> <span class=o>|</span>
+<span class=o>|</span> <span class=n>query_cache_type</span>             <span class=o>|</span> <span class=k>OFF</span>     <span class=o>|</span>
+<span class=o>|</span> <span class=n>query_cache_wlock_invalidate</span> <span class=o>|</span> <span class=k>OFF</span>     <span class=o>|</span>
+<span class=o>+</span><span class=c1>------------------------------+---------+
+</span></code></pre></td></tr></table></div></div><p>通过show status命令，可以查看MySQL查询缓存的使用状况，如下：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-sql data-lang=sql><span class=n>mysql</span><span class=o>&gt;</span> <span class=k>SHOW</span> <span class=n>STATUS</span> <span class=k>LIKE</span> <span class=s1>&#39;</span><span class=s1>Qcache%</span><span class=s1>&#39;</span><span class=p>;</span>
+<span class=o>+</span><span class=c1>-------------------------+---------+
+</span><span class=c1></span><span class=o>|</span> <span class=n>Variable_name</span>           <span class=o>|</span> <span class=n>Value</span>   <span class=o>|</span>
+<span class=o>+</span><span class=c1>-------------------------+---------+
+</span><span class=c1></span><span class=o>|</span> <span class=n>Qcache_free_blocks</span>      <span class=o>|</span> <span class=mi>1</span>       <span class=o>|</span>
+<span class=o>|</span> <span class=n>Qcache_free_memory</span>      <span class=o>|</span> <span class=mi>1031832</span> <span class=o>|</span>
+<span class=o>|</span> <span class=n>Qcache_hits</span>             <span class=o>|</span> <span class=mi>0</span>       <span class=o>|</span>
+<span class=o>|</span> <span class=n>Qcache_inserts</span>          <span class=o>|</span> <span class=mi>0</span>       <span class=o>|</span>
+<span class=o>|</span> <span class=n>Qcache_lowmem_prunes</span>    <span class=o>|</span> <span class=mi>0</span>       <span class=o>|</span>
+<span class=o>|</span> <span class=n>Qcache_not_cached</span>       <span class=o>|</span> <span class=mi>1</span>       <span class=o>|</span>
+<span class=o>|</span> <span class=n>Qcache_queries_in_cache</span> <span class=o>|</span> <span class=mi>0</span>       <span class=o>|</span>
+<span class=o>|</span> <span class=n>Qcache_total_blocks</span>     <span class=o>|</span> <span class=mi>1</span>       <span class=o>|</span>
+<span class=o>+</span><span class=c1>-------------------------+---------+
+</span></code></pre></td></tr></table></div></div><p>可以通过set命令设置上面的缓存参数开启MySQL查询缓存功能，也可以找到MySQL的配置文件（windows是my.ini，linux是my.cnf），修改query_cache_type参数为1就可以了，然后重启MySQLServer就可以使用了。</p><a class=post-dummy-target id=索引和数据缓存></a><h3>索引和数据缓存</h3><p>主要指的就是innodb_buffer_pool_size配置项，从名字上就能看到，该配置项是针对InnoDB存储引擎起作用的，这个参数定义了InnoDB 存储引擎的表数据和索引数据的最大内存缓冲区大小。innodb_buffer_pool_size是同时为数据块和索引块做缓存，这个值设得越高，访问表中数据需要的磁盘 I/O 就越少。</p><a class=post-dummy-target id=mysql线程缓存></a><h3>MySQL线程缓存</h3><p>主要指配置文件中thread_cache_size配置项。给大家讲过MySQL Server网络模块采用经典的I/O复用+线程池模型，之所以引入线程池，主要就是为了在业务执行的过程中，不会因为临时创建和销毁线程，造成系统性能降低，因为线程的创建和销毁是很耗费性能的，所以线程池就是在业务使用之前，先创建一组固定数量的线程，等待事件发生，当有SQL请求到达MySQL Server的时候，在线程池中取一个线程来执行该SQL请求就可以了，执行完成后，不销毁线程，而是把线程再归还到线程池中，等待下一次任务的处理（MySQL会根据连接量，自动加大线程池的数量）。</p><p>可以根据服务器的配置，为其设置相适应的线程缓存数量。</p><a class=post-dummy-target id=并发连接数量和超时时间></a><h3>并发连接数量和超时时间</h3><p>MySQL Server作为一个服务器，可以设置客户端的最大连接量和连接超时时间，如果数据库连接统计数量比较大，这两个参数的值需要设置大一些。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-sql data-lang=sql><span class=n>mysql</span><span class=o>&gt;</span> <span class=k>SHOW</span> <span class=n>VARIABLES</span> <span class=k>LIKE</span> <span class=s1>&#39;</span><span class=s1>%connect%</span><span class=s1>&#39;</span><span class=p>;</span>
+<span class=o>+</span><span class=c1>-----------------------------------------------+-----------------+
+</span><span class=c1></span><span class=o>|</span> <span class=n>Variable_name</span>                                 <span class=o>|</span> <span class=n>Value</span>           <span class=o>|</span>
+<span class=o>+</span><span class=c1>-----------------------------------------------+-----------------+
+</span><span class=c1></span><span class=o>|</span> <span class=n>character_set_connection</span>                      <span class=o>|</span> <span class=n>utf8</span>            <span class=o>|</span>
+<span class=o>|</span> <span class=n>collation_connection</span>                          <span class=o>|</span> <span class=n>utf8_general_ci</span> <span class=o>|</span>
+<span class=o>|</span> <span class=n>connect_timeout</span>                               <span class=o>|</span> <span class=mi>10</span>              <span class=o>|</span>
+<span class=o>|</span> <span class=n>disconnect_on_expired_password</span>                <span class=o>|</span> <span class=k>ON</span>              <span class=o>|</span>
+<span class=o>|</span> <span class=n>init_connect</span>                                  <span class=o>|</span>                 <span class=o>|</span>
+<span class=o>|</span> <span class=n>max_connect_errors</span>                            <span class=o>|</span> <span class=mi>100</span>             <span class=o>|</span>
+<span class=o>|</span> <span class=n>max_connections</span>                               <span class=o>|</span> <span class=mi>151</span>             <span class=o>|</span>
+<span class=o>|</span> <span class=n>max_user_connections</span>                          <span class=o>|</span> <span class=mi>0</span>               <span class=o>|</span>
+<span class=o>|</span> <span class=n>performance_schema_session_connect_attrs_size</span> <span class=o>|</span> <span class=mi>512</span>             <span class=o>|</span>
+<span class=o>+</span><span class=c1>-----------------------------------------------+-----------------+
+</span></code></pre></td></tr></table></div></div><p>在配置文件（my.cnf或my.ini）最下面，添加配置：max_connections=2000，然后重启MySQLServer，设置生效。</p><p>MySQL Server对于超时未通信的连接，进行主动关闭操作。设置超时时间，超过设置时间没有请求就主动断开，单位是秒，在配置文件中添加配置：wait_timeout = 600。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-sql data-lang=sql><span class=n>mysql</span><span class=o>&gt;</span> <span class=k>SHOW</span> <span class=k>GLOBAL</span> <span class=n>VARIABLES</span> <span class=k>LIKE</span> <span class=s1>&#39;</span><span class=s1>%timeout%</span><span class=s1>&#39;</span><span class=p>;</span>
+<span class=o>+</span><span class=c1>-----------------------------+----------+
+</span><span class=c1></span><span class=o>|</span> <span class=n>Variable_name</span>               <span class=o>|</span> <span class=n>Value</span>    <span class=o>|</span>
+<span class=o>+</span><span class=c1>-----------------------------+----------+
+</span><span class=c1></span><span class=o>|</span> <span class=n>connect_timeout</span>             <span class=o>|</span> <span class=mi>10</span>       <span class=o>|</span>
+<span class=o>|</span> <span class=n>delayed_insert_timeout</span>      <span class=o>|</span> <span class=mi>300</span>      <span class=o>|</span>
+<span class=o>|</span> <span class=n>have_statement_timeout</span>      <span class=o>|</span> <span class=n>YES</span>      <span class=o>|</span>
+<span class=o>|</span> <span class=n>innodb_flush_log_at_timeout</span> <span class=o>|</span> <span class=mi>1</span>        <span class=o>|</span>
+<span class=o>|</span> <span class=n>innodb_lock_wait_timeout</span>    <span class=o>|</span> <span class=mi>50</span>       <span class=o>|</span>
+<span class=o>|</span> <span class=n>innodb_rollback_on_timeout</span>  <span class=o>|</span> <span class=k>OFF</span>      <span class=o>|</span>
+<span class=o>|</span> <span class=n>interactive_timeout</span>         <span class=o>|</span> <span class=mi>28800</span>    <span class=o>|</span>
+<span class=o>|</span> <span class=n>lock_wait_timeout</span>           <span class=o>|</span> <span class=mi>31536000</span> <span class=o>|</span>
+<span class=o>|</span> <span class=n>net_read_timeout</span>            <span class=o>|</span> <span class=mi>30</span>       <span class=o>|</span>
+<span class=o>|</span> <span class=n>net_write_timeout</span>           <span class=o>|</span> <span class=mi>60</span>       <span class=o>|</span>
+<span class=o>|</span> <span class=n>rpl_stop_slave_timeout</span>      <span class=o>|</span> <span class=mi>31536000</span> <span class=o>|</span>
+<span class=o>|</span> <span class=n>slave_net_timeout</span>           <span class=o>|</span> <span class=mi>60</span>       <span class=o>|</span>
+<span class=o>|</span> <span class=n>wait_timeout</span>                <span class=o>|</span> <span class=mi>28800</span>    <span class=o>|</span>
+<span class=o>+</span><span class=c1>-----------------------------+----------+
+</span></code></pre></td></tr></table></div></div></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+<span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
+<span>2022-11-11</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
+<span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fmysql25-mysql%25E5%25A6%2582%25E4%25BD%2595%25E4%25BC%2598%25E5%258C%2596%2f&text=%e3%80%90MySQL%e3%80%9125%20-%20MySQL%e5%a6%82%e4%bd%95%e4%bc%98%e5%8c%96%ef%bc%9f&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2fmysql25-mysql%25E5%25A6%2582%25E4%25BD%2595%25E4%25BC%2598%25E5%258C%2596%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fmysql25-mysql%25E5%25A6%2582%25E4%25BD%2595%25E4%25BC%2598%25E5%258C%2596%2f&title=%e3%80%90MySQL%e3%80%9125%20-%20MySQL%e5%a6%82%e4%bd%95%e4%bc%98%e5%8c%96%ef%bc%9f" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/datebase/><i class="fas fa-tag fa-fw"></i>&nbsp;datebase</a>&nbsp;
+</span><span class=tag><a href=https://xushun1221.github.io/tags/mysql/><i class="fas fa-tag fa-fw"></i>&nbsp;MySQL</a>&nbsp;</span></section><section><span><a href=javascript:window.history.back();>Back</a></span>&nbsp;|&nbsp;<span><a href=https://xushun1221.github.io>Home</a></span></section></div><div class=post-nav><a href=https://xushun1221.github.io/2022/centos7%E5%AE%89%E8%A3%85cmake/ class=prev rel=prev title=CentOS7安装Cmake><i class="fas fa-angle-left fa-fw"></i>CentOS7安装Cmake</a>
+<a href=https://xushun1221.github.io/2022/mysql24-redo-log-%E9%87%8D%E5%81%9A%E6%97%A5%E5%BF%97/ class=next rel=next title="【MySQL】24 - redo log 重做日志">【MySQL】24 - redo log 重做日志<i class="fas fa-angle-right fa-fw"></i></a></div><div class=post-comment></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2022</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=https://xushun1221.github.io/about/ target=_blank>xushun</a> | </span>Powered by <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> & <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer">LoveIt</a></div></div></footer></div><a href=# class=dynamic-to-top id=dynamic-to-top data-scroll><span>&nbsp;</span>
+</a><script src=/js/lib/jquery/jquery.slim.min.js></script><script src=/js/lib/lazysizes/lazysizes.min.js></script><script src=/js/lib/smooth-scroll/smooth-scroll.polyfills.min.js></script><script>window.scroll=new SmoothScroll('[data-scroll]',{speed:300,speedAsDuration:true});</script><link rel=stylesheet href=/css/lib/katex/katex.min.css><script src=/js/lib/katex/katex.min.js></script><script defer src=/js/lib/katex/auto-render.min.js></script><link rel=stylesheet href=/css/lib/katex/copy-tex.min.css><script defer src=/js/lib/katex/copy-tex.min.js></script><script defer src=/js/lib/katex/mhchem.min.js></script><script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true},{left:"$",right:"$",display:false},]});});</script><script src=/js/blog.min.js></script></body></html>
