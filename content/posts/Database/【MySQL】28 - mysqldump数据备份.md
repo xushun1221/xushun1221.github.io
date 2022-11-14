@@ -9,8 +9,6 @@ categories: [DateBase]
 
 使用方法：  
 ```sql
-[root@localhost mysql]# mysql dump
-ERROR 1045 (28000): Access denied for user 'root'@'localhost' (using password: NO)
 [root@localhost mysql]# mysqldump
 Usage: mysqldump [OPTIONS] database [tables]
 OR     mysqldump [OPTIONS] --databases [OPTIONS] DB1 [DB2 DB3...]
