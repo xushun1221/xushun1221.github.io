@@ -11,6 +11,7 @@
 
 查看日志相关全局变量：  
 ```sql
+mysql> show variables like 'log_%';
 +----------------------------------------+---------------------+
 | Variable_name                          | Value               |
 +----------------------------------------+---------------------+
@@ -38,7 +39,7 @@
 +----------------------------------------+---------------------+
 ```
 
-设置配置，可以在终端中set，但是这种方法只能针对当前的session，在配置文件`my.ini`中添加并重启(`service mysqld restart`)才能持久生效。  
+设置配置，可以在终端中set，但是这种方法只能针对当前的session，在配置文件`/etc/my.cnf`中添加并重启(`service mysqld restart`)才能持久生效。  
 ```
 #Enter a name for the error log file. Otherwise a default name will be used.
 log-error=err.log
@@ -52,6 +53,15 @@ used.
 #Enter a name for the binary log. Otherwise a default name will be used.
 #log-bin=
 ```
+
+注意，要使用二进制日志的话，要加上server-id。如  
+```
+server-id=1
+expire_logs_days=7
+log-bin=mysql-bin
+```
+
+
 
 ## 错误日志
 

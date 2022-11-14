@@ -1,0 +1,626 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【MySQL】27 - binlog数据恢复 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/mysql28-mysqldump%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD/><link rel=canonical href=https://xushun1221.github.io/2022/mysql27-binlog%E6%95%B0%E6%8D%AE%E6%81%A2%E5%A4%8D/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【MySQL】27 - binlog数据恢复"><meta name=twitter:description content="使用binlog 默认binlog文件位置 1 2 3 4 5 6 7 8 [xushun@localhost ~]$ sudo ls /var/lib/mysql auto.cnf ib_logfile0 mysql-bin.000003 school ca-key.pem ib_logfile1 mysql-bin.index server-cert.pem ca.pem ibtmp1 mysql.sock server-key.pem client-cert.pem localhost-slow.log mysql.sock.lock sys client-key.pem mysql performance_schema ib_buffer_pool mysql-bin.000001 private_key.pem ibdata1 mysql-bin.000002 public_key.pem 查看和刷新binlog，"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【MySQL】27 - binlog数据恢复","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/mysql27-binlog%E6%95%B0%E6%8D%AE%E6%81%A2%E5%A4%8D\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"datebase, MySQL","wordcount":2006,"url":"https:\/\/xushun1221.github.io\/2022\/mysql27-binlog%E6%95%B0%E6%8D%AE%E6%81%A2%E5%A4%8D\/","datePublished":"2022-11-14T00:00:00\x2b00:00","dateModified":"2022-11-14T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【MySQL】27 - binlog数据恢复</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-11-14>2022-11-14</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 2006 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/datebase/>Date base</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#使用binlog>使用binlog</a></li><li><a href=#mysqlbinlog工具-恢复数据>mysqlbinlog工具 恢复数据</a></li><li><a href=#binlog数据恢复-示例>binlog数据恢复 示例</a></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#使用binlog>使用binlog</a></li><li><a href=#mysqlbinlog工具-恢复数据>mysqlbinlog工具 恢复数据</a></li><li><a href=#binlog数据恢复-示例>binlog数据恢复 示例</a></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=使用binlog></a><h2>使用binlog</h2><p>默认binlog文件位置</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell><span class=o>[</span>xushun@localhost ~<span class=o>]</span>$ sudo ls /var/lib/mysql
+auto.cnf	 ib_logfile0	     mysql-bin.000003	 school
+ca-key.pem	 ib_logfile1	     mysql-bin.index	 server-cert.pem
+ca.pem		 ibtmp1		     mysql.sock		 server-key.pem
+client-cert.pem  localhost-slow.log  mysql.sock.lock	 sys
+client-key.pem	 mysql		     performance_schema
+ib_buffer_pool	 mysql-bin.000001    private_key.pem
+ibdata1		 mysql-bin.000002    public_key.pem
+</code></pre></td></tr></table></div></div><p>查看和刷新binlog，flush命令会生成新binlog</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-sql data-lang=sql><span class=n>mysql</span><span class=o>&gt;</span> <span class=k>show</span> <span class=n>master</span> <span class=n>logs</span><span class=p>;</span>
+<span class=o>+</span><span class=c1>------------------+-----------+
+</span><span class=c1></span><span class=o>|</span> <span class=n>Log_name</span>         <span class=o>|</span> <span class=n>File_size</span> <span class=o>|</span>
+<span class=o>+</span><span class=c1>------------------+-----------+
+</span><span class=c1></span><span class=o>|</span> <span class=n>mysql</span><span class=o>-</span><span class=n>bin</span><span class=p>.</span><span class=mi>000001</span> <span class=o>|</span>       <span class=mi>177</span> <span class=o>|</span>
+<span class=o>|</span> <span class=n>mysql</span><span class=o>-</span><span class=n>bin</span><span class=p>.</span><span class=mi>000002</span> <span class=o>|</span>       <span class=mi>154</span> <span class=o>|</span>
+<span class=o>+</span><span class=c1>------------------+-----------+
+</span><span class=c1></span><span class=mi>2</span> <span class=k>rows</span> <span class=k>in</span> <span class=k>set</span> <span class=p>(</span><span class=mi>0</span><span class=p>.</span><span class=mi>00</span> <span class=n>sec</span><span class=p>)</span>
+
+<span class=n>mysql</span><span class=o>&gt;</span> <span class=n>flush</span> <span class=n>logs</span><span class=p>;</span>
+<span class=n>Query</span> <span class=n>OK</span><span class=p>,</span> <span class=mi>0</span> <span class=k>rows</span> <span class=n>affected</span> <span class=p>(</span><span class=mi>0</span><span class=p>.</span><span class=mi>00</span> <span class=n>sec</span><span class=p>)</span>
+
+<span class=n>mysql</span><span class=o>&gt;</span> <span class=k>show</span> <span class=n>master</span> <span class=n>logs</span><span class=p>;</span>
+<span class=o>+</span><span class=c1>------------------+-----------+
+</span><span class=c1></span><span class=o>|</span> <span class=n>Log_name</span>         <span class=o>|</span> <span class=n>File_size</span> <span class=o>|</span>
+<span class=o>+</span><span class=c1>------------------+-----------+
+</span><span class=c1></span><span class=o>|</span> <span class=n>mysql</span><span class=o>-</span><span class=n>bin</span><span class=p>.</span><span class=mi>000001</span> <span class=o>|</span>       <span class=mi>177</span> <span class=o>|</span>
+<span class=o>|</span> <span class=n>mysql</span><span class=o>-</span><span class=n>bin</span><span class=p>.</span><span class=mi>000002</span> <span class=o>|</span>       <span class=mi>201</span> <span class=o>|</span>
+<span class=o>|</span> <span class=n>mysql</span><span class=o>-</span><span class=n>bin</span><span class=p>.</span><span class=mi>000003</span> <span class=o>|</span>       <span class=mi>154</span> <span class=o>|</span>
+<span class=o>+</span><span class=c1>------------------+-----------+
+</span><span class=c1></span><span class=mi>3</span> <span class=k>rows</span> <span class=k>in</span> <span class=k>set</span> <span class=p>(</span><span class=mi>0</span><span class=p>.</span><span class=mi>00</span> <span class=n>sec</span><span class=p>)</span>
+</code></pre></td></tr></table></div></div><p>测试日志是否生效，修改数据后，新生成的binlog大小变大了：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-sql data-lang=sql><span class=n>mysql</span><span class=o>&gt;</span> <span class=k>show</span> <span class=n>master</span> <span class=n>logs</span><span class=p>;</span>
+<span class=o>+</span><span class=c1>------------------+-----------+
+</span><span class=c1></span><span class=o>|</span> <span class=n>Log_name</span>         <span class=o>|</span> <span class=n>File_size</span> <span class=o>|</span>
+<span class=o>+</span><span class=c1>------------------+-----------+
+</span><span class=c1></span><span class=o>|</span> <span class=n>mysql</span><span class=o>-</span><span class=n>bin</span><span class=p>.</span><span class=mi>000001</span> <span class=o>|</span>       <span class=mi>177</span> <span class=o>|</span>
+<span class=o>|</span> <span class=n>mysql</span><span class=o>-</span><span class=n>bin</span><span class=p>.</span><span class=mi>000002</span> <span class=o>|</span>       <span class=mi>201</span> <span class=o>|</span>
+<span class=o>|</span> <span class=n>mysql</span><span class=o>-</span><span class=n>bin</span><span class=p>.</span><span class=mi>000003</span> <span class=o>|</span>       <span class=mi>154</span> <span class=o>|</span>
+<span class=o>+</span><span class=c1>------------------+-----------+
+</span><span class=c1></span><span class=mi>3</span> <span class=k>rows</span> <span class=k>in</span> <span class=k>set</span> <span class=p>(</span><span class=mi>0</span><span class=p>.</span><span class=mi>00</span> <span class=n>sec</span><span class=p>)</span>
+
+<span class=n>mysql</span><span class=o>&gt;</span> <span class=n>use</span> <span class=n>school</span><span class=p>;</span>
+<span class=n>Reading</span> <span class=k>table</span> <span class=n>information</span> <span class=k>for</span> <span class=k>completion</span> <span class=k>of</span> <span class=k>table</span> <span class=k>and</span> <span class=k>column</span> <span class=k>names</span>
+<span class=n>You</span> <span class=n>can</span> <span class=n>turn</span> <span class=k>off</span> <span class=n>this</span> <span class=n>feature</span> <span class=k>to</span> <span class=k>get</span> <span class=n>a</span> <span class=n>quicker</span> <span class=n>startup</span> <span class=k>with</span> <span class=o>-</span><span class=n>A</span>
+
+<span class=k>Database</span> <span class=n>changed</span>
+<span class=n>mysql</span><span class=o>&gt;</span> <span class=k>select</span> <span class=o>*</span> <span class=k>from</span> <span class=k>user</span><span class=p>;</span>
+<span class=o>+</span><span class=c1>----+----------+-----+-----+
+</span><span class=c1></span><span class=o>|</span> <span class=n>id</span> <span class=o>|</span> <span class=n>name</span>     <span class=o>|</span> <span class=n>age</span> <span class=o>|</span> <span class=n>sex</span> <span class=o>|</span>
+<span class=o>+</span><span class=c1>----+----------+-----+-----+
+</span><span class=c1></span><span class=o>|</span>  <span class=mi>7</span> <span class=o>|</span> <span class=n>zhangsan</span> <span class=o>|</span>  <span class=mi>22</span> <span class=o>|</span> <span class=n>m</span>   <span class=o>|</span>
+<span class=o>|</span>  <span class=mi>8</span> <span class=o>|</span> <span class=n>gaoyang</span>  <span class=o>|</span>  <span class=mi>22</span> <span class=o>|</span> <span class=n>w</span>   <span class=o>|</span>
+<span class=o>|</span>  <span class=mi>9</span> <span class=o>|</span> <span class=n>chenwei</span>  <span class=o>|</span>  <span class=mi>20</span> <span class=o>|</span> <span class=n>m</span>   <span class=o>|</span>
+<span class=o>|</span> <span class=mi>10</span> <span class=o>|</span> <span class=n>zhangfan</span> <span class=o>|</span>  <span class=mi>21</span> <span class=o>|</span> <span class=n>w</span>   <span class=o>|</span>
+<span class=o>|</span> <span class=mi>11</span> <span class=o>|</span> <span class=n>zhanglan</span> <span class=o>|</span>  <span class=mi>22</span> <span class=o>|</span> <span class=n>w</span>   <span class=o>|</span>
+<span class=o>|</span> <span class=mi>12</span> <span class=o>|</span> <span class=n>aaa</span>      <span class=o>|</span>  <span class=mi>20</span> <span class=o>|</span> <span class=n>m</span>   <span class=o>|</span>
+<span class=o>|</span> <span class=mi>22</span> <span class=o>|</span> <span class=n>bbb</span>      <span class=o>|</span>  <span class=mi>25</span> <span class=o>|</span> <span class=n>m</span>   <span class=o>|</span>
+<span class=o>|</span> <span class=mi>23</span> <span class=o>|</span> <span class=n>ccc</span>      <span class=o>|</span>  <span class=mi>15</span> <span class=o>|</span> <span class=n>w</span>   <span class=o>|</span>
+<span class=o>+</span><span class=c1>----+----------+-----+-----+
+</span><span class=c1></span><span class=mi>8</span> <span class=k>rows</span> <span class=k>in</span> <span class=k>set</span> <span class=p>(</span><span class=mi>0</span><span class=p>.</span><span class=mi>00</span> <span class=n>sec</span><span class=p>)</span>
+
+<span class=n>mysql</span><span class=o>&gt;</span> <span class=k>insert</span> <span class=k>into</span> <span class=k>user</span><span class=p>(</span><span class=n>name</span><span class=p>,</span><span class=n>age</span><span class=p>,</span><span class=n>sex</span><span class=p>)</span> <span class=k>values</span><span class=p>(</span><span class=s1>&#39;</span><span class=s1>eee</span><span class=s1>&#39;</span><span class=p>,</span><span class=mi>25</span><span class=p>,</span><span class=s1>&#39;</span><span class=s1>w</span><span class=s1>&#39;</span><span class=p>)</span><span class=p>;</span>
+<span class=n>Query</span> <span class=n>OK</span><span class=p>,</span> <span class=mi>1</span> <span class=k>row</span> <span class=n>affected</span> <span class=p>(</span><span class=mi>0</span><span class=p>.</span><span class=mi>00</span> <span class=n>sec</span><span class=p>)</span>
+
+<span class=n>mysql</span><span class=o>&gt;</span> <span class=k>update</span> <span class=k>user</span> <span class=k>set</span> <span class=n>age</span><span class=o>=</span><span class=mi>18</span> <span class=k>where</span> <span class=n>name</span><span class=o>=</span><span class=s1>&#39;</span><span class=s1>ccc</span><span class=s1>&#39;</span><span class=p>;</span>
+<span class=n>Query</span> <span class=n>OK</span><span class=p>,</span> <span class=mi>1</span> <span class=k>row</span> <span class=n>affected</span> <span class=p>(</span><span class=mi>0</span><span class=p>.</span><span class=mi>00</span> <span class=n>sec</span><span class=p>)</span>
+<span class=k>Rows</span> <span class=n>matched</span><span class=p>:</span> <span class=mi>1</span>  <span class=n>Changed</span><span class=p>:</span> <span class=mi>1</span>  <span class=n>Warnings</span><span class=p>:</span> <span class=mi>0</span>
+
+<span class=n>mysql</span><span class=o>&gt;</span> <span class=k>show</span> <span class=n>master</span> <span class=n>logs</span><span class=p>;</span>
+<span class=o>+</span><span class=c1>------------------+-----------+
+</span><span class=c1></span><span class=o>|</span> <span class=n>Log_name</span>         <span class=o>|</span> <span class=n>File_size</span> <span class=o>|</span>
+<span class=o>+</span><span class=c1>------------------+-----------+
+</span><span class=c1></span><span class=o>|</span> <span class=n>mysql</span><span class=o>-</span><span class=n>bin</span><span class=p>.</span><span class=mi>000001</span> <span class=o>|</span>       <span class=mi>177</span> <span class=o>|</span>
+<span class=o>|</span> <span class=n>mysql</span><span class=o>-</span><span class=n>bin</span><span class=p>.</span><span class=mi>000002</span> <span class=o>|</span>       <span class=mi>201</span> <span class=o>|</span>
+<span class=o>|</span> <span class=n>mysql</span><span class=o>-</span><span class=n>bin</span><span class=p>.</span><span class=mi>000003</span> <span class=o>|</span>       <span class=mi>710</span> <span class=o>|</span>
+<span class=o>+</span><span class=c1>------------------+-----------+
+</span><span class=c1></span><span class=mi>3</span> <span class=k>rows</span> <span class=k>in</span> <span class=k>set</span> <span class=p>(</span><span class=mi>0</span><span class=p>.</span><span class=mi>00</span> <span class=n>sec</span><span class=p>)</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=mysqlbinlog工具-恢复数据></a><h2>mysqlbinlog工具 恢复数据</h2><p>使用<code>mysqlbinlog</code>查看binlog的内容。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-sql data-lang=sql><span class=p>[</span><span class=n>root</span><span class=o>@</span><span class=n>localhost</span> <span class=n>mysql</span><span class=p>]</span><span class=o>#</span> <span class=n>mysqlbinlog</span> <span class=c1>--no-defaults --database=school --base64-output=decode-rows -v --start-datetime=&#39;2022-11-14 00:00:00&#39; --stop-datetime=&#39;2022-11-14 17:00:00&#39; mysql-bin.000003 | more
+</span><span class=c1></span><span class=n>WARNING</span><span class=p>:</span> <span class=n>The</span> <span class=k>option</span> <span class=c1>--database has been used. It may filter parts of transactions, but will include the GTIDs in any case. If you want to exclude or include transactions, you should use the options --exclude-gtids or --include-gtids, respectively, instead.
+</span><span class=c1></span><span class=cm>/*</span><span class=cm>!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=1</span><span class=cm>*/</span><span class=p>;</span>
+<span class=cm>/*</span><span class=cm>!50003 SET @OLD_COMPLETION_TYPE=@@COMPLETION_TYPE,COMPLETION_TYPE=0</span><span class=cm>*/</span><span class=p>;</span>
+<span class=k>DELIMITER</span> <span class=cm>/*</span><span class=cm>!</span><span class=cm>*/</span><span class=p>;</span>
+<span class=o>#</span> <span class=k>at</span> <span class=mi>4</span>
+<span class=o>#</span><span class=mi>221114</span>  <span class=mi>0</span><span class=p>:</span><span class=mi>15</span><span class=p>:</span><span class=mi>11</span> <span class=n>server</span> <span class=n>id</span> <span class=mi>1</span>  <span class=n>end_log_pos</span> <span class=mi>123</span> <span class=n>CRC32</span> <span class=mi>0</span><span class=n>xc5fd429d</span> 	<span class=k>Start</span><span class=p>:</span> <span class=n>binlog</span> <span class=n>v</span> 
+<span class=mi>4</span><span class=p>,</span> <span class=n>server</span> <span class=n>v</span> <span class=mi>5</span><span class=p>.</span><span class=mi>7</span><span class=p>.</span><span class=mi>40</span><span class=o>-</span><span class=n>log</span> <span class=n>created</span> <span class=mi>221114</span>  <span class=mi>0</span><span class=p>:</span><span class=mi>15</span><span class=p>:</span><span class=mi>11</span>
+<span class=o>#</span> <span class=n>Warning</span><span class=p>:</span> <span class=n>this</span> <span class=n>binlog</span> <span class=k>is</span> <span class=n>either</span> <span class=k>in</span> <span class=n>use</span> <span class=k>or</span> <span class=n>was</span> <span class=k>not</span> <span class=n>closed</span> <span class=n>properly</span><span class=p>.</span>
+<span class=o>#</span> <span class=k>at</span> <span class=mi>123</span>
+<span class=o>#</span><span class=mi>221114</span>  <span class=mi>0</span><span class=p>:</span><span class=mi>15</span><span class=p>:</span><span class=mi>11</span> <span class=n>server</span> <span class=n>id</span> <span class=mi>1</span>  <span class=n>end_log_pos</span> <span class=mi>154</span> <span class=n>CRC32</span> <span class=mi>0</span><span class=n>x170d6bda</span> 	<span class=n>Previous</span><span class=o>-</span><span class=n>GTIDs</span>
+<span class=o>#</span> <span class=p>[</span><span class=n>empty</span><span class=p>]</span>
+<span class=o>#</span> <span class=k>at</span> <span class=mi>154</span>
+<span class=o>#</span><span class=mi>221114</span>  <span class=mi>0</span><span class=p>:</span><span class=mi>18</span><span class=p>:</span><span class=mi>26</span> <span class=n>server</span> <span class=n>id</span> <span class=mi>1</span>  <span class=n>end_log_pos</span> <span class=mi>219</span> <span class=n>CRC32</span> <span class=mi>0</span><span class=n>x4b0ed958</span> 	<span class=n>Anonymous_GTID</span>	
+<span class=n>last_committed</span><span class=o>=</span><span class=mi>0</span>	<span class=n>sequence_number</span><span class=o>=</span><span class=mi>1</span>	<span class=n>rbr_only</span><span class=o>=</span><span class=n>yes</span>
+<span class=cm>/*</span><span class=cm>!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED</span><span class=cm>*/</span><span class=cm>/*</span><span class=cm>!</span><span class=cm>*/</span><span class=p>;</span>
+<span class=k>SET</span> <span class=o>@</span><span class=o>@</span><span class=k>SESSION</span><span class=p>.</span><span class=n>GTID_NEXT</span><span class=o>=</span> <span class=s1>&#39;</span><span class=s1>ANONYMOUS</span><span class=s1>&#39;</span><span class=cm>/*</span><span class=cm>!</span><span class=cm>*/</span><span class=p>;</span>
+<span class=o>#</span> <span class=k>at</span> <span class=mi>219</span>
+<span class=o>#</span><span class=mi>221114</span>  <span class=mi>0</span><span class=p>:</span><span class=mi>18</span><span class=p>:</span><span class=mi>26</span> <span class=n>server</span> <span class=n>id</span> <span class=mi>1</span>  <span class=n>end_log_pos</span> <span class=mi>293</span> <span class=n>CRC32</span> <span class=mi>0</span><span class=n>xbf79bbe5</span> 	<span class=n>Query</span>	<span class=n>thread_i</span>
+<span class=n>d</span><span class=o>=</span><span class=mi>2</span>	<span class=n>exec_time</span><span class=o>=</span><span class=mi>0</span>	<span class=n>error_code</span><span class=o>=</span><span class=mi>0</span>
+<span class=k>SET</span> <span class=k>TIMESTAMP</span><span class=o>=</span><span class=mi>1668413906</span><span class=cm>/*</span><span class=cm>!</span><span class=cm>*/</span><span class=p>;</span>
+<span class=k>SET</span> <span class=o>@</span><span class=o>@</span><span class=k>session</span><span class=p>.</span><span class=n>pseudo_thread_id</span><span class=o>=</span><span class=mi>2</span><span class=cm>/*</span><span class=cm>!</span><span class=cm>*/</span><span class=p>;</span>
+<span class=k>SET</span> <span class=o>@</span><span class=o>@</span><span class=k>session</span><span class=p>.</span><span class=n>foreign_key_checks</span><span class=o>=</span><span class=mi>1</span><span class=p>,</span> <span class=o>@</span><span class=o>@</span><span class=k>session</span><span class=p>.</span><span class=n>sql_auto_is_null</span><span class=o>=</span><span class=mi>0</span><span class=p>,</span> <span class=o>@</span><span class=o>@</span><span class=k>session</span><span class=p>.</span><span class=n>uniq</span>
+<span class=n>ue_checks</span><span class=o>=</span><span class=mi>1</span><span class=p>,</span> <span class=o>@</span><span class=o>@</span><span class=k>session</span><span class=p>.</span><span class=n>autocommit</span><span class=o>=</span><span class=mi>1</span><span class=cm>/*</span><span class=cm>!</span><span class=cm>*/</span><span class=p>;</span>
+<span class=k>SET</span> <span class=o>@</span><span class=o>@</span><span class=k>session</span><span class=p>.</span><span class=n>sql_mode</span><span class=o>=</span><span class=mi>1436549152</span><span class=cm>/*</span><span class=cm>!</span><span class=cm>*/</span><span class=p>;</span>
+<span class=c1>--More--
+</span></code></pre></td></tr></table></div></div><p>往下翻，可以找到刚刚进行的insert和update操作。</p><a class=post-dummy-target id=binlog数据恢复-示例></a><h2>binlog数据恢复 示例</h2><p>创建测试用的数据库表：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-sql data-lang=sql><span class=n>mysql</span><span class=o>&gt;</span> <span class=k>create</span> <span class=k>database</span> <span class=n>mytest</span><span class=p>;</span>
+<span class=n>Query</span> <span class=n>OK</span><span class=p>,</span> <span class=mi>1</span> <span class=k>row</span> <span class=n>affected</span> <span class=p>(</span><span class=mi>0</span><span class=p>.</span><span class=mi>00</span> <span class=n>sec</span><span class=p>)</span>
+
+<span class=n>mysql</span><span class=o>&gt;</span> <span class=n>use</span> <span class=n>mytest</span><span class=p>;</span>
+<span class=k>Database</span> <span class=n>changed</span>
+<span class=n>mysql</span><span class=o>&gt;</span> <span class=k>create</span> <span class=k>table</span> <span class=k>user</span><span class=p>(</span><span class=n>id</span> <span class=nb>int</span><span class=p>,</span> <span class=n>name</span> <span class=nb>varchar</span><span class=p>(</span><span class=mi>20</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+<span class=n>Query</span> <span class=n>OK</span><span class=p>,</span> <span class=mi>0</span> <span class=k>rows</span> <span class=n>affected</span> <span class=p>(</span><span class=mi>0</span><span class=p>.</span><span class=mi>01</span> <span class=n>sec</span><span class=p>)</span>
+
+<span class=n>mysql</span><span class=o>&gt;</span> <span class=k>insert</span> <span class=k>into</span> <span class=k>user</span> <span class=k>values</span><span class=p>(</span><span class=mi>1</span><span class=p>,</span><span class=s1>&#39;</span><span class=s1>aaa</span><span class=s1>&#39;</span><span class=p>)</span><span class=p>,</span><span class=p>(</span><span class=mi>2</span><span class=p>,</span><span class=s1>&#39;</span><span class=s1>bbb</span><span class=s1>&#39;</span><span class=p>)</span><span class=p>,</span><span class=p>(</span><span class=mi>3</span><span class=p>,</span><span class=s1>&#39;</span><span class=s1>ccc</span><span class=s1>&#39;</span><span class=p>)</span><span class=p>;</span>
+<span class=n>Query</span> <span class=n>OK</span><span class=p>,</span> <span class=mi>3</span> <span class=k>rows</span> <span class=n>affected</span> <span class=p>(</span><span class=mi>0</span><span class=p>.</span><span class=mi>00</span> <span class=n>sec</span><span class=p>)</span>
+<span class=n>Records</span><span class=p>:</span> <span class=mi>3</span>  <span class=n>Duplicates</span><span class=p>:</span> <span class=mi>0</span>  <span class=n>Warnings</span><span class=p>:</span> <span class=mi>0</span>
+
+<span class=n>mysql</span><span class=o>&gt;</span> <span class=k>select</span> <span class=o>*</span> <span class=k>from</span> <span class=k>user</span><span class=p>;</span>
+<span class=o>+</span><span class=c1>------+------+
+</span><span class=c1></span><span class=o>|</span> <span class=n>id</span>   <span class=o>|</span> <span class=n>name</span> <span class=o>|</span>
+<span class=o>+</span><span class=c1>------+------+
+</span><span class=c1></span><span class=o>|</span>    <span class=mi>1</span> <span class=o>|</span> <span class=n>aaa</span>  <span class=o>|</span>
+<span class=o>|</span>    <span class=mi>2</span> <span class=o>|</span> <span class=n>bbb</span>  <span class=o>|</span>
+<span class=o>|</span>    <span class=mi>3</span> <span class=o>|</span> <span class=n>ccc</span>  <span class=o>|</span>
+<span class=o>+</span><span class=c1>------+------+
+</span><span class=c1></span><span class=mi>3</span> <span class=k>rows</span> <span class=k>in</span> <span class=k>set</span> <span class=p>(</span><span class=mi>0</span><span class=p>.</span><span class=mi>00</span> <span class=n>sec</span><span class=p>)</span>
+</code></pre></td></tr></table></div></div><p>假设这个库被误删了：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-sql data-lang=sql><span class=n>mysql</span><span class=o>&gt;</span> <span class=k>drop</span> <span class=k>database</span> <span class=n>mytest</span><span class=p>;</span>
+<span class=n>Query</span> <span class=n>OK</span><span class=p>,</span> <span class=mi>1</span> <span class=k>row</span> <span class=n>affected</span> <span class=p>(</span><span class=mi>0</span><span class=p>.</span><span class=mi>01</span> <span class=n>sec</span><span class=p>)</span>
+
+<span class=n>mysql</span><span class=o>&gt;</span> <span class=k>show</span> <span class=n>databases</span><span class=p>;</span>
+<span class=o>+</span><span class=c1>--------------------+
+</span><span class=c1></span><span class=o>|</span> <span class=k>Database</span>           <span class=o>|</span>
+<span class=o>+</span><span class=c1>--------------------+
+</span><span class=c1></span><span class=o>|</span> <span class=n>information_schema</span> <span class=o>|</span>
+<span class=o>|</span> <span class=n>mysql</span>              <span class=o>|</span>
+<span class=o>|</span> <span class=n>performance_schema</span> <span class=o>|</span>
+<span class=o>|</span> <span class=n>school</span>             <span class=o>|</span>
+<span class=o>|</span> <span class=n>sys</span>                <span class=o>|</span>
+<span class=o>+</span><span class=c1>--------------------+
+</span><span class=c1></span><span class=mi>5</span> <span class=k>rows</span> <span class=k>in</span> <span class=k>set</span> <span class=p>(</span><span class=mi>0</span><span class=p>.</span><span class=mi>00</span> <span class=n>sec</span><span class=p>)</span>
+</code></pre></td></tr></table></div></div><p>刷新一下binlog，恢复数据的操作存在04文件中</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-sql data-lang=sql><span class=n>mysql</span><span class=o>&gt;</span> <span class=k>show</span> <span class=n>master</span> <span class=n>logs</span><span class=p>;</span>
+<span class=o>+</span><span class=c1>------------------+-----------+
+</span><span class=c1></span><span class=o>|</span> <span class=n>Log_name</span>         <span class=o>|</span> <span class=n>File_size</span> <span class=o>|</span>
+<span class=o>+</span><span class=c1>------------------+-----------+
+</span><span class=c1></span><span class=o>|</span> <span class=n>mysql</span><span class=o>-</span><span class=n>bin</span><span class=p>.</span><span class=mi>000001</span> <span class=o>|</span>       <span class=mi>177</span> <span class=o>|</span>
+<span class=o>|</span> <span class=n>mysql</span><span class=o>-</span><span class=n>bin</span><span class=p>.</span><span class=mi>000002</span> <span class=o>|</span>       <span class=mi>201</span> <span class=o>|</span>
+<span class=o>|</span> <span class=n>mysql</span><span class=o>-</span><span class=n>bin</span><span class=p>.</span><span class=mi>000003</span> <span class=o>|</span>      <span class=mi>1508</span> <span class=o>|</span>
+<span class=o>+</span><span class=c1>------------------+-----------+
+</span><span class=c1></span><span class=mi>3</span> <span class=k>rows</span> <span class=k>in</span> <span class=k>set</span> <span class=p>(</span><span class=mi>0</span><span class=p>.</span><span class=mi>00</span> <span class=n>sec</span><span class=p>)</span>
+
+<span class=n>mysql</span><span class=o>&gt;</span> <span class=n>flush</span> <span class=n>logs</span><span class=p>;</span>
+<span class=n>Query</span> <span class=n>OK</span><span class=p>,</span> <span class=mi>0</span> <span class=k>rows</span> <span class=n>affected</span> <span class=p>(</span><span class=mi>0</span><span class=p>.</span><span class=mi>01</span> <span class=n>sec</span><span class=p>)</span>
+
+<span class=n>mysql</span><span class=o>&gt;</span> <span class=k>show</span> <span class=n>master</span> <span class=n>logs</span><span class=p>;</span>
+<span class=o>+</span><span class=c1>------------------+-----------+
+</span><span class=c1></span><span class=o>|</span> <span class=n>Log_name</span>         <span class=o>|</span> <span class=n>File_size</span> <span class=o>|</span>
+<span class=o>+</span><span class=c1>------------------+-----------+
+</span><span class=c1></span><span class=o>|</span> <span class=n>mysql</span><span class=o>-</span><span class=n>bin</span><span class=p>.</span><span class=mi>000001</span> <span class=o>|</span>       <span class=mi>177</span> <span class=o>|</span>
+<span class=o>|</span> <span class=n>mysql</span><span class=o>-</span><span class=n>bin</span><span class=p>.</span><span class=mi>000002</span> <span class=o>|</span>       <span class=mi>201</span> <span class=o>|</span>
+<span class=o>|</span> <span class=n>mysql</span><span class=o>-</span><span class=n>bin</span><span class=p>.</span><span class=mi>000003</span> <span class=o>|</span>      <span class=mi>1555</span> <span class=o>|</span>
+<span class=o>|</span> <span class=n>mysql</span><span class=o>-</span><span class=n>bin</span><span class=p>.</span><span class=mi>000004</span> <span class=o>|</span>       <span class=mi>154</span> <span class=o>|</span>
+<span class=o>+</span><span class=c1>------------------+-----------+
+</span><span class=c1></span><span class=mi>4</span> <span class=k>rows</span> <span class=k>in</span> <span class=k>set</span> <span class=p>(</span><span class=mi>0</span><span class=p>.</span><span class=mi>00</span> <span class=n>sec</span><span class=p>)</span>
+</code></pre></td></tr></table></div></div><p>我们已经知道了，要恢复的数据操作，在000003文件中：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>  1
+</span><span class=lnt>  2
+</span><span class=lnt>  3
+</span><span class=lnt>  4
+</span><span class=lnt>  5
+</span><span class=lnt>  6
+</span><span class=lnt>  7
+</span><span class=lnt>  8
+</span><span class=lnt>  9
+</span><span class=lnt> 10
+</span><span class=lnt> 11
+</span><span class=lnt> 12
+</span><span class=lnt> 13
+</span><span class=lnt> 14
+</span><span class=lnt> 15
+</span><span class=lnt> 16
+</span><span class=lnt> 17
+</span><span class=lnt> 18
+</span><span class=lnt> 19
+</span><span class=lnt> 20
+</span><span class=lnt> 21
+</span><span class=lnt> 22
+</span><span class=lnt> 23
+</span><span class=lnt> 24
+</span><span class=lnt> 25
+</span><span class=lnt> 26
+</span><span class=lnt> 27
+</span><span class=lnt> 28
+</span><span class=lnt> 29
+</span><span class=lnt> 30
+</span><span class=lnt> 31
+</span><span class=lnt> 32
+</span><span class=lnt> 33
+</span><span class=lnt> 34
+</span><span class=lnt> 35
+</span><span class=lnt> 36
+</span><span class=lnt> 37
+</span><span class=lnt> 38
+</span><span class=lnt> 39
+</span><span class=lnt> 40
+</span><span class=lnt> 41
+</span><span class=lnt> 42
+</span><span class=lnt> 43
+</span><span class=lnt> 44
+</span><span class=lnt> 45
+</span><span class=lnt> 46
+</span><span class=lnt> 47
+</span><span class=lnt> 48
+</span><span class=lnt> 49
+</span><span class=lnt> 50
+</span><span class=lnt> 51
+</span><span class=lnt> 52
+</span><span class=lnt> 53
+</span><span class=lnt> 54
+</span><span class=lnt> 55
+</span><span class=lnt> 56
+</span><span class=lnt> 57
+</span><span class=lnt> 58
+</span><span class=lnt> 59
+</span><span class=lnt> 60
+</span><span class=lnt> 61
+</span><span class=lnt> 62
+</span><span class=lnt> 63
+</span><span class=lnt> 64
+</span><span class=lnt> 65
+</span><span class=lnt> 66
+</span><span class=lnt> 67
+</span><span class=lnt> 68
+</span><span class=lnt> 69
+</span><span class=lnt> 70
+</span><span class=lnt> 71
+</span><span class=lnt> 72
+</span><span class=lnt> 73
+</span><span class=lnt> 74
+</span><span class=lnt> 75
+</span><span class=lnt> 76
+</span><span class=lnt> 77
+</span><span class=lnt> 78
+</span><span class=lnt> 79
+</span><span class=lnt> 80
+</span><span class=lnt> 81
+</span><span class=lnt> 82
+</span><span class=lnt> 83
+</span><span class=lnt> 84
+</span><span class=lnt> 85
+</span><span class=lnt> 86
+</span><span class=lnt> 87
+</span><span class=lnt> 88
+</span><span class=lnt> 89
+</span><span class=lnt> 90
+</span><span class=lnt> 91
+</span><span class=lnt> 92
+</span><span class=lnt> 93
+</span><span class=lnt> 94
+</span><span class=lnt> 95
+</span><span class=lnt> 96
+</span><span class=lnt> 97
+</span><span class=lnt> 98
+</span><span class=lnt> 99
+</span><span class=lnt>100
+</span><span class=lnt>101
+</span><span class=lnt>102
+</span><span class=lnt>103
+</span><span class=lnt>104
+</span><span class=lnt>105
+</span><span class=lnt>106
+</span><span class=lnt>107
+</span><span class=lnt>108
+</span><span class=lnt>109
+</span><span class=lnt>110
+</span><span class=lnt>111
+</span><span class=lnt>112
+</span><span class=lnt>113
+</span><span class=lnt>114
+</span><span class=lnt>115
+</span><span class=lnt>116
+</span><span class=lnt>117
+</span><span class=lnt>118
+</span><span class=lnt>119
+</span><span class=lnt>120
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell><span class=o>[</span>root@localhost mysql<span class=o>]</span><span class=c1># mysqlbinlog mysql-bin.000003</span>
+/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE<span class=o>=</span>1*/<span class=p>;</span>
+/*!50003 SET @OLD_COMPLETION_TYPE<span class=o>=</span>@@COMPLETION_TYPE,COMPLETION_TYPE<span class=o>=</span>0*/<span class=p>;</span>
+DELIMITER /*!*/<span class=p>;</span>
+<span class=c1># at 4</span>
+<span class=c1>#221114  0:15:11 server id 1  end_log_pos 123 CRC32 0xc5fd429d 	Start: binlog v 4, server v 5.7.40-log created 221114  0:15:11</span>
+BINLOG <span class=s1>&#39;
+</span><span class=s1>D/lxYw8BAAAAdwAAAHsAAAAAAAQANS43LjQwLWxvZwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+</span><span class=s1>AAAAAAAAAAAAAAAAAAAAAAAAEzgNAAgAEgAEBAQEEgAAXwAEGggAAAAICAgCAAAACgoKKioAEjQA
+</span><span class=s1>AZ1C/cU=
+</span><span class=s1>&#39;</span>/*!*/<span class=p>;</span>
+<span class=c1># at 123</span>
+<span class=c1>#221114  0:15:11 server id 1  end_log_pos 154 CRC32 0x170d6bda 	Previous-GTIDs</span>
+<span class=c1># [empty]</span>
+<span class=c1># at 154</span>
+<span class=c1>#221114  0:18:26 server id 1  end_log_pos 219 CRC32 0x4b0ed958 	Anonymous_GTID	last_committed=0	sequence_number=1	rbr_only=yes</span>
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/<span class=p>;</span>
+SET @@SESSION.GTID_NEXT<span class=o>=</span> <span class=s1>&#39;ANONYMOUS&#39;</span>/*!*/<span class=p>;</span>
+<span class=c1># at 219</span>
+<span class=c1>#221114  0:18:26 server id 1  end_log_pos 293 CRC32 0xbf79bbe5 	Query	thread_id=2	exec_time=0	error_code=0</span>
+SET <span class=nv>TIMESTAMP</span><span class=o>=</span>1668413906/*!*/<span class=p>;</span>
+SET @@session.pseudo_thread_id<span class=o>=</span>2/*!*/<span class=p>;</span>
+SET @@session.foreign_key_checks<span class=o>=</span>1, @@session.sql_auto_is_null<span class=o>=</span>0, @@session.unique_checks<span class=o>=</span>1, @@session.autocommit<span class=o>=</span>1/*!*/<span class=p>;</span>
+SET @@session.sql_mode<span class=o>=</span>1436549152/*!*/<span class=p>;</span>
+SET @@session.auto_increment_increment<span class=o>=</span>1, @@session.auto_increment_offset<span class=o>=</span>1/*!*/<span class=p>;</span>
+/*!<span class=se>\C</span> utf8 *//*!*/<span class=p>;</span>
+SET @@session.character_set_client<span class=o>=</span>33,@@session.collation_connection<span class=o>=</span>33,@@session.collation_server<span class=o>=</span>33/*!*/<span class=p>;</span>
+SET @@session.lc_time_names<span class=o>=</span>0/*!*/<span class=p>;</span>
+SET @@session.collation_database<span class=o>=</span>DEFAULT/*!*/<span class=p>;</span>
+BEGIN
+/*!*/<span class=p>;</span>
+<span class=c1># at 293</span>
+<span class=c1>#221114  0:18:26 server id 1  end_log_pos 349 CRC32 0x0e309230 	Table_map: `school`.`user` mapped to number 112</span>
+<span class=c1># at 349</span>
+<span class=c1>#221114  0:18:26 server id 1  end_log_pos 395 CRC32 0x23ba6fff 	Write_rows: table id 112 flags: STMT_END_F</span>
+
+BINLOG <span class=s1>&#39;
+</span><span class=s1>0vlxYxMBAAAAOAAAAF0BAAAAAHAAAAAAAAEABnNjaG9vbAAEdXNlcgAEAw8B/gSWAPcBADCSMA4=
+</span><span class=s1>0vlxYx4BAAAALgAAAIsBAAAAAHAAAAAAAAEAAgAE//AYAAAAA2VlZRkC/2+6Iw==
+</span><span class=s1>&#39;</span>/*!*/<span class=p>;</span>
+<span class=c1># at 395</span>
+<span class=c1>#221114  0:18:26 server id 1  end_log_pos 426 CRC32 0xed858b13 	Xid = 17</span>
+COMMIT/*!*/<span class=p>;</span>
+<span class=c1># at 426</span>
+<span class=c1>#221114  0:18:48 server id 1  end_log_pos 491 CRC32 0x1fc7a1d0 	Anonymous_GTID	last_committed=1	sequence_number=2	rbr_only=yes</span>
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/<span class=p>;</span>
+SET @@SESSION.GTID_NEXT<span class=o>=</span> <span class=s1>&#39;ANONYMOUS&#39;</span>/*!*/<span class=p>;</span>
+<span class=c1># at 491</span>
+<span class=c1>#221114  0:18:48 server id 1  end_log_pos 565 CRC32 0xbd58af08 	Query	thread_id=2	exec_time=0	error_code=0</span>
+SET <span class=nv>TIMESTAMP</span><span class=o>=</span>1668413928/*!*/<span class=p>;</span>
+BEGIN
+/*!*/<span class=p>;</span>
+<span class=c1># at 565</span>
+<span class=c1>#221114  0:18:48 server id 1  end_log_pos 621 CRC32 0x42901722 	Table_map: `school`.`user` mapped to number 112</span>
+<span class=c1># at 621</span>
+<span class=c1>#221114  0:18:48 server id 1  end_log_pos 679 CRC32 0xab2df0ff 	Update_rows: table id 112 flags: STMT_END_F</span>
+
+BINLOG <span class=s1>&#39;
+</span><span class=s1>6PlxYxMBAAAAOAAAAG0CAAAAAHAAAAAAAAEABnNjaG9vbAAEdXNlcgAEAw8B/gSWAPcBACIXkEI=
+</span><span class=s1>6PlxYx8BAAAAOgAAAKcCAAAAAHAAAAAAAAEAAgAE///wFwAAAANjY2MPAvAXAAAAA2NjYxIC//At
+</span><span class=s1>qw==
+</span><span class=s1>&#39;</span>/*!*/<span class=p>;</span>
+<span class=c1># at 679</span>
+<span class=c1>#221114  0:18:48 server id 1  end_log_pos 710 CRC32 0x85efe3cd 	Xid = 18</span>
+COMMIT/*!*/<span class=p>;</span>
+<span class=c1># at 710</span>
+<span class=c1>#221114  0:27:19 server id 1  end_log_pos 775 CRC32 0x9b6548cf 	Anonymous_GTID	last_committed=2	sequence_number=3	rbr_only=no</span>
+SET @@SESSION.GTID_NEXT<span class=o>=</span> <span class=s1>&#39;ANONYMOUS&#39;</span>/*!*/<span class=p>;</span>
+<span class=c1># at 775</span>
+<span class=c1>#221114  0:27:19 server id 1  end_log_pos 875 CRC32 0xdaccd1f1 	Query	thread_id=2	exec_time=0	error_code=0</span>
+SET <span class=nv>TIMESTAMP</span><span class=o>=</span>1668414439/*!*/<span class=p>;</span>
+create database mytest
+/*!*/<span class=p>;</span>
+<span class=c1># at 875</span>
+<span class=c1>#221114  0:28:19 server id 1  end_log_pos 940 CRC32 0x59f5f533 	Anonymous_GTID	last_committed=3	sequence_number=4	rbr_only=no</span>
+SET @@SESSION.GTID_NEXT<span class=o>=</span> <span class=s1>&#39;ANONYMOUS&#39;</span>/*!*/<span class=p>;</span>
+<span class=c1># at 940</span>
+<span class=c1>#221114  0:28:19 server id 1  end_log_pos 1061 CRC32 0xaa6fe273 	Query	thread_id=2	exec_time=0	error_code=0</span>
+use <span class=sb>`</span>mytest<span class=sb>`</span>/*!*/<span class=p>;</span>
+SET <span class=nv>TIMESTAMP</span><span class=o>=</span>1668414499/*!*/<span class=p>;</span>
+create table user<span class=o>(</span>id int, name varchar<span class=o>(</span>20<span class=o>)</span><span class=o>)</span>
+/*!*/<span class=p>;</span>
+<span class=c1># at 1061</span>
+<span class=c1>#221114  0:28:52 server id 1  end_log_pos 1126 CRC32 0x4e0954c8 	Anonymous_GTID	last_committed=4	sequence_number=5	rbr_only=yes</span>
+/*!50718 SET TRANSACTION ISOLATION LEVEL READ COMMITTED*//*!*/<span class=p>;</span>
+SET @@SESSION.GTID_NEXT<span class=o>=</span> <span class=s1>&#39;ANONYMOUS&#39;</span>/*!*/<span class=p>;</span>
+<span class=c1># at 1126</span>
+<span class=c1>#221114  0:28:52 server id 1  end_log_pos 1200 CRC32 0xa59fd4b4 	Query	thread_id=2	exec_time=0	error_code=0</span>
+SET <span class=nv>TIMESTAMP</span><span class=o>=</span>1668414532/*!*/<span class=p>;</span>
+BEGIN
+/*!*/<span class=p>;</span>
+<span class=c1># at 1200</span>
+<span class=c1>#221114  0:28:52 server id 1  end_log_pos 1252 CRC32 0x8862e282 	Table_map: `mytest`.`user` mapped to number 114</span>
+<span class=c1># at 1252</span>
+<span class=c1>#221114  0:28:52 server id 1  end_log_pos 1314 CRC32 0xb9a20212 	Write_rows: table id 114 flags: STMT_END_F</span>
+
+BINLOG <span class=s1>&#39;
+</span><span class=s1>RPxxYxMBAAAANAAAAOQEAAAAAHIAAAAAAAEABm15dGVzdAAEdXNlcgACAw8CPAADguJiiA==
+</span><span class=s1>RPxxYx4BAAAAPgAAACIFAAAAAHIAAAAAAAEAAgAC//wBAAAAA2FhYfwCAAAAA2JiYvwDAAAAA2Nj
+</span><span class=s1>YxICork=
+</span><span class=s1>&#39;</span>/*!*/<span class=p>;</span>
+<span class=c1># at 1314</span>
+<span class=c1>#221114  0:28:52 server id 1  end_log_pos 1345 CRC32 0x4df830db 	Xid = 27</span>
+COMMIT/*!*/<span class=p>;</span>
+<span class=c1># at 1345</span>
+<span class=c1>#221114  0:30:26 server id 1  end_log_pos 1410 CRC32 0x71992700 	Anonymous_GTID	last_committed=5	sequence_number=6	rbr_only=no</span>
+SET @@SESSION.GTID_NEXT<span class=o>=</span> <span class=s1>&#39;ANONYMOUS&#39;</span>/*!*/<span class=p>;</span>
+<span class=c1># at 1410</span>
+<span class=c1>#221114  0:30:26 server id 1  end_log_pos 1508 CRC32 0xb3c31c9b 	Query	thread_id=2	exec_time=0	error_code=0</span>
+SET <span class=nv>TIMESTAMP</span><span class=o>=</span>1668414626/*!*/<span class=p>;</span>
+drop database mytest
+/*!*/<span class=p>;</span>
+<span class=c1># at 1508</span>
+<span class=c1>#221114  0:37:00 server id 1  end_log_pos 1555 CRC32 0x7c5eeaf5 	Rotate to mysql-bin.000004  pos: 4</span>
+SET @@SESSION.GTID_NEXT<span class=o>=</span> <span class=s1>&#39;AUTOMATIC&#39;</span> /* added by mysqlbinlog */ /*!*/<span class=p>;</span>
+DELIMITER <span class=p>;</span>
+<span class=c1># End of log file</span>
+/*!50003 SET <span class=nv>COMPLETION_TYPE</span><span class=o>=</span>@OLD_COMPLETION_TYPE*/<span class=p>;</span>
+/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE<span class=o>=</span>0*/<span class=p>;</span>
+<span class=o>[</span>root@localhost mysql<span class=o>]</span># 
+</code></pre></td></tr></table></div></div><p>在这个文件中，找到创建库和删除库的位置，775，1410。</p><p>恢复，把创建库表到删除库的操作拿出来再执行一遍：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell><span class=o>[</span>root@localhost mysql<span class=o>]</span><span class=c1># mysqlbinlog --start-position=775 --stop-position=1410 mysql-bin.000003 | mysql -u root -p</span>
+Enter password: 
+<span class=o>[</span>root@localhost mysql<span class=o>]</span># 
+</code></pre></td></tr></table></div></div><p>查看恢复的数据，成功恢复：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-sql data-lang=sql><span class=n>mysql</span><span class=o>&gt;</span> <span class=k>show</span> <span class=n>databases</span><span class=p>;</span>
+<span class=o>+</span><span class=c1>--------------------+
+</span><span class=c1></span><span class=o>|</span> <span class=k>Database</span>           <span class=o>|</span>
+<span class=o>+</span><span class=c1>--------------------+
+</span><span class=c1></span><span class=o>|</span> <span class=n>information_schema</span> <span class=o>|</span>
+<span class=o>|</span> <span class=n>mysql</span>              <span class=o>|</span>
+<span class=o>|</span> <span class=n>mytest</span>             <span class=o>|</span>
+<span class=o>|</span> <span class=n>performance_schema</span> <span class=o>|</span>
+<span class=o>|</span> <span class=n>school</span>             <span class=o>|</span>
+<span class=o>|</span> <span class=n>sys</span>                <span class=o>|</span>
+<span class=o>+</span><span class=c1>--------------------+
+</span><span class=c1></span><span class=mi>6</span> <span class=k>rows</span> <span class=k>in</span> <span class=k>set</span> <span class=p>(</span><span class=mi>0</span><span class=p>.</span><span class=mi>00</span> <span class=n>sec</span><span class=p>)</span>
+
+<span class=n>mysql</span><span class=o>&gt;</span> <span class=n>use</span> <span class=n>mytest</span><span class=p>;</span>
+<span class=n>Reading</span> <span class=k>table</span> <span class=n>information</span> <span class=k>for</span> <span class=k>completion</span> <span class=k>of</span> <span class=k>table</span> <span class=k>and</span> <span class=k>column</span> <span class=k>names</span>
+<span class=n>You</span> <span class=n>can</span> <span class=n>turn</span> <span class=k>off</span> <span class=n>this</span> <span class=n>feature</span> <span class=k>to</span> <span class=k>get</span> <span class=n>a</span> <span class=n>quicker</span> <span class=n>startup</span> <span class=k>with</span> <span class=o>-</span><span class=n>A</span>
+
+<span class=k>Database</span> <span class=n>changed</span>
+<span class=n>mysql</span><span class=o>&gt;</span> <span class=k>select</span> <span class=o>*</span> <span class=k>from</span> <span class=k>user</span><span class=p>;</span>
+<span class=o>+</span><span class=c1>------+------+
+</span><span class=c1></span><span class=o>|</span> <span class=n>id</span>   <span class=o>|</span> <span class=n>name</span> <span class=o>|</span>
+<span class=o>+</span><span class=c1>------+------+
+</span><span class=c1></span><span class=o>|</span>    <span class=mi>1</span> <span class=o>|</span> <span class=n>aaa</span>  <span class=o>|</span>
+<span class=o>|</span>    <span class=mi>2</span> <span class=o>|</span> <span class=n>bbb</span>  <span class=o>|</span>
+<span class=o>|</span>    <span class=mi>3</span> <span class=o>|</span> <span class=n>ccc</span>  <span class=o>|</span>
+<span class=o>+</span><span class=c1>------+------+
+</span><span class=c1></span><span class=mi>3</span> <span class=k>rows</span> <span class=k>in</span> <span class=k>set</span> <span class=p>(</span><span class=mi>0</span><span class=p>.</span><span class=mi>00</span> <span class=n>sec</span><span class=p>)</span>
+</code></pre></td></tr></table></div></div><p>当然，不通过position来恢复，可以通过datetime来恢复。</p></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+<span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
+<span>2022-11-14</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
+<span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fmysql27-binlog%25E6%2595%25B0%25E6%258D%25AE%25E6%2581%25A2%25E5%25A4%258D%2f&text=%e3%80%90MySQL%e3%80%9127%20-%20binlog%e6%95%b0%e6%8d%ae%e6%81%a2%e5%a4%8d&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2fmysql27-binlog%25E6%2595%25B0%25E6%258D%25AE%25E6%2581%25A2%25E5%25A4%258D%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fmysql27-binlog%25E6%2595%25B0%25E6%258D%25AE%25E6%2581%25A2%25E5%25A4%258D%2f&title=%e3%80%90MySQL%e3%80%9127%20-%20binlog%e6%95%b0%e6%8d%ae%e6%81%a2%e5%a4%8d" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/datebase/><i class="fas fa-tag fa-fw"></i>&nbsp;datebase</a>&nbsp;
+</span><span class=tag><a href=https://xushun1221.github.io/tags/mysql/><i class="fas fa-tag fa-fw"></i>&nbsp;MySQL</a>&nbsp;</span></section><section><span><a href=javascript:window.history.back();>Back</a></span>&nbsp;|&nbsp;<span><a href=https://xushun1221.github.io>Home</a></span></section></div><div class=post-nav><a href=https://xushun1221.github.io/2022/mysql28-mysqldump%E6%95%B0%E6%8D%AE%E5%A4%87%E4%BB%BD/ class=prev rel=prev title="【MySQL】28 - mysqldump数据备份"><i class="fas fa-angle-left fa-fw"></i>【MySQL】28 - mysqldump数据备份</a></div><div class=post-comment></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2022</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=https://xushun1221.github.io/about/ target=_blank>xushun</a> | </span>Powered by <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> & <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer">LoveIt</a></div></div></footer></div><a href=# class=dynamic-to-top id=dynamic-to-top data-scroll><span>&nbsp;</span>
+</a><script src=/js/lib/jquery/jquery.slim.min.js></script><script src=/js/lib/lazysizes/lazysizes.min.js></script><script src=/js/lib/smooth-scroll/smooth-scroll.polyfills.min.js></script><script>window.scroll=new SmoothScroll('[data-scroll]',{speed:300,speedAsDuration:true});</script><link rel=stylesheet href=/css/lib/katex/katex.min.css><script src=/js/lib/katex/katex.min.js></script><script defer src=/js/lib/katex/auto-render.min.js></script><link rel=stylesheet href=/css/lib/katex/copy-tex.min.css><script defer src=/js/lib/katex/copy-tex.min.js></script><script defer src=/js/lib/katex/mhchem.min.js></script><script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true},{left:"$",right:"$",display:false},]});});</script><script src=/js/blog.min.js></script></body></html>
