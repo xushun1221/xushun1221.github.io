@@ -232,6 +232,8 @@ Bye
 
 我们可以使用`MySQL 5.7 Command Line Client - Unicode`来使用MySQL。
 
+可以将`C:\Program Files\MySQL\MySQL Server 5.7\bin`路径添加到系统环境变量中，就可以使用powershell或者cmd使用mysql了。
+
 ### 配置文件
 
 MySQL Server 5.7 默认的安装目录是`C:/Program Files/MySQL/MySQL Server 5.7`。
