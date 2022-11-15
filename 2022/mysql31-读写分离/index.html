@@ -1,6 +1,214 @@
-<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【MySQL】31 - 读写分离 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/mysql32-%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8/><link rel=next href=https://xushun1221.github.io/2022/mysql30-%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/><link rel=canonical href=https://xushun1221.github.io/2022/mysql31-%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【MySQL】31 - 读写分离"><meta name=twitter:description content><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【MySQL】31 - 读写分离","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/mysql31-%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"datebase, MySQL","wordcount":0,"url":"https:\/\/xushun1221.github.io\/2022\/mysql31-%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB\/","datePublished":"2022-11-15T00:00:00\x2b00:00","dateModified":"2022-11-15T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【MySQL】31 - 读写分离</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-11-15>2022-11-15</time>&nbsp;
-<i class="fas fa-pencil-alt fa-fw"></i>about 0 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/datebase/>Date base</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
-<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile></nav></div></details></div><div class=post-content></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【MySQL】31 - 读写分离 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/mysql32-%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8/><link rel=next href=https://xushun1221.github.io/2022/mysql30-%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/><link rel=canonical href=https://xushun1221.github.io/2022/mysql31-%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【MySQL】31 - 读写分离"><meta name=twitter:description content="读写分离 原理 读写分离就是在主服务器上修改，数据会同步到从服务器，从服务器只能提供读取数据，不能写入，实现备份的同时也实现了数据库性能的优化，"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【MySQL】31 - 读写分离","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/mysql31-%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"datebase, MySQL","wordcount":3059,"url":"https:\/\/xushun1221.github.io\/2022\/mysql31-%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB\/","datePublished":"2022-11-15T00:00:00\x2b00:00","dateModified":"2022-11-15T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【MySQL】31 - 读写分离</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-11-15>2022-11-15</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 3059 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/datebase/>Date base</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#读写分离--原理>读写分离 原理</a></li><li><a href=#读写分离--实践配置>读写分离 实践配置</a><ul><li><a href=#mycat-读写分离配置>Mycat 读写分离配置</a><ul><li><a href=#安装mycat>安装Mycat</a></li><li><a href=#配置文件>配置文件</a></li><li><a href=#启动-mycat>启动 Mycat</a></li><li><a href=#查看日志>查看日志</a></li></ul></li><li><a href=#使用-mycat>使用 mycat</a><ul><li><a href=#管理端口>管理端口</a></li><li><a href=#数据端口>数据端口</a></li><li><a href=#验证mycat的使用>验证mycat的使用</a></li></ul></li></ul></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#读写分离--原理>读写分离 原理</a></li><li><a href=#读写分离--实践配置>读写分离 实践配置</a><ul><li><a href=#mycat-读写分离配置>Mycat 读写分离配置</a><ul><li><a href=#安装mycat>安装Mycat</a></li><li><a href=#配置文件>配置文件</a></li><li><a href=#启动-mycat>启动 Mycat</a></li><li><a href=#查看日志>查看日志</a></li></ul></li><li><a href=#使用-mycat>使用 mycat</a><ul><li><a href=#管理端口>管理端口</a></li><li><a href=#数据端口>数据端口</a></li><li><a href=#验证mycat的使用>验证mycat的使用</a></li></ul></li></ul></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=读写分离--原理></a><h2>读写分离 原理</h2><p>读写分离就是在主服务器上修改，数据会同步到从服务器，从服务器只能提供读取数据，不能写入，实现备份的同时也实现了数据库性能的优化，以及提升了服务器安全。单机服务器性能瓶颈后可以采用这种方法。</p><p><figure><img src=/svg/loading.min.svg data-sizes=auto data-src=/post_images/posts/Database/MySQL/%e8%af%bb%e5%86%99%e5%88%86%e7%a6%bb.jpg alt title=读写分离 class=lazyload><figcaption class=image-caption>读写分离</figcaption></figure></p><p>较为常见的MySQL读写分离的方式有两种：</p><ol><li>在程序代码中实现，这种方式有很明显的缺点，程序代码和服务器环境强相关；</li><li>使用中间代理层，如Mycat等中间件，这也是主流做法。</li></ol><p>客户端不会直接向主、从服务器请求服务，而是将sql请求发送至代理服务器（Mycat中间件），读写分离的配置在代理服务器中进行，由代理服务器对客户请求进行转发，写操作转发给主服务器，读操作转发给从服务器。主服务器和从服务器之间使用主从复制进行数据同步。</p><p>对于开发而言，引入了mycat中间件之后，我们只需要关注mycat，由它作为代理，只需要操作逻辑库表，逻辑库表映射到哪一个主从库上，这些都由mycat来负责。</p><p>Mycat中支持多种配置方式，包括：一主一从、一主多从、多主多从等等，支持多种功能，包括容灾等。</p><p>Mycat的数据端口为<code>8066</code>，客户端向该端口发送请求，代理服务器在转发到主、从服务器的<code>3306</code>端口；<br>Mycat的管理端口为<code>9066</code>，用于管理代理服务器的工作状态。</p><a class=post-dummy-target id=读写分离--实践配置></a><h2>读写分离 实践配置</h2><p>读写分离显然需要先开启主从复制。</p><ul><li>master主服务器：CentOS7 虚拟机（192.168.131.130）</li><li>slave从服务器： Win10 主机（本机IP：192.168.11.164，虚拟网关：192.168.131.1）</li><li>Mycat代理服务器：CentOS7 虚拟机（192.168.131.130）</li></ul><a class=post-dummy-target id=mycat-读写分离配置></a><h3>Mycat 读写分离配置</h3><p>要求：</p><ol><li>Mycat需要JDK1.7以上的版本（<code>java -versjion</code>检查jdk环境）</li><li>MySQL的root用户需要远程访问权限（主从都要）</li></ol><a class=post-dummy-target id=安装mycat></a><h4>安装Mycat</h4><ol><li>下载解压<code>Mycat-server-1.6-RELEASE-20161028204710-linux.tar.gz</code>文件</li><li>解压后的文件放在<code>/usr/local/mycat</code>目录下</li><li><code>./mycat start</code>启动服务，通过8066和9066端口使用（先不要急着启动）</li></ol><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell><span class=o>[</span>xushun@localhost mycat<span class=o>]</span>$ <span class=nb>pwd</span>
+/usr/local/mycat
+<span class=o>[</span>xushun@localhost mycat<span class=o>]</span>$ ls
+bin  catlet  conf  lib  logs  version.txt
+</code></pre></td></tr></table></div></div><p><code>bin</code>中是可执行文件，<code>conf</code>中是配置文件，<code>logs</code>中是日志文件。</p><p>为了方便使用，在<code>/usr/bin</code>中建一个软连接，可以直接<code>mycat</code>执行了：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell><span class=o>[</span>root@localhost bin<span class=o>]</span><span class=c1># pwd</span>
+/usr/bin
+<span class=o>[</span>root@localhost bin<span class=o>]</span><span class=c1># ln -s /usr/local/mycat/bin/mycat .</span>
+<span class=o>[</span>root@localhost bin<span class=o>]</span># 
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=配置文件></a><h4>配置文件</h4><p><code>server.xml</code>：配置登录Mycat的账号信息。</p><p>把用户相关的删掉，留这个</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-xml data-lang=xml><span class=nt>&lt;user</span> <span class=na>name=</span><span class=s>&#34;root&#34;</span><span class=nt>&gt;</span>
+	<span class=nt>&lt;property</span> <span class=na>name=</span><span class=s>&#34;password&#34;</span><span class=nt>&gt;</span>666666<span class=nt>&lt;/property&gt;</span>
+	<span class=nt>&lt;property</span> <span class=na>name=</span><span class=s>&#34;schemas&#34;</span><span class=nt>&gt;</span>USERDB<span class=nt>&lt;/property&gt;</span>
+<span class=nt>&lt;/user&gt;</span>
+</code></pre></td></tr></table></div></div><p>这里的<code>schemas</code>标签中的<code>USERDB</code>是逻辑库，看上去在Mycat一台服务器上，实际上它可能映射到mysql服务器上的某个库，或者进行了分库，映射到不同的机器上，或者库里的表也映射到不同的机器上。</p><p>有多个逻辑库的话，就用逗号隔开。</p><p><code>schema.xml</code>：配置逻辑库和数据源、读写分离、分库分表信息等。</p><p>这个文件改为：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-xml data-lang=xml><span class=cp>&lt;?xml version=&#34;1.0&#34;?&gt;</span>
+<span class=cp>&lt;!DOCTYPE mycat:schema SYSTEM &#34;schema.dtd&#34;&gt;</span>
+<span class=nt>&lt;mycat:schema</span> <span class=na>xmlns:mycat=</span><span class=s>&#34;http://io.mycat/&#34;</span><span class=nt>&gt;</span>
+    <span class=c>&lt;!--</span><span class=c> 逻辑数据库 </span><span class=c>--&gt;</span>
+	<span class=nt>&lt;schema</span> <span class=na>name=</span><span class=s>&#34;USERDB&#34;</span> <span class=na>checkSQLschema=</span><span class=s>&#34;false&#34;</span> <span class=na>sqlMaxLimit=</span><span class=s>&#34;100&#34;</span> <span class=na>dataNode=</span><span class=s>&#34;dn1&#34;</span><span class=nt>&gt;</span><span class=nt>&lt;/schema&gt;</span>
+	<span class=c>&lt;!--</span><span class=c> 存储节点 </span><span class=c>--&gt;</span>
+    <span class=nt>&lt;dataNode</span> <span class=na>name=</span><span class=s>&#34;dn1&#34;</span> <span class=na>dataHost=</span><span class=s>&#34;node1&#34;</span> <span class=na>database=</span><span class=s>&#34;mytest&#34;</span> <span class=nt>/&gt;</span>
+	<span class=c>&lt;!--</span><span class=c> 数据库主机 </span><span class=c>--&gt;</span>
+    <span class=nt>&lt;dataHost</span> <span class=na>name=</span><span class=s>&#34;node1&#34;</span> <span class=na>maxCon=</span><span class=s>&#34;1000&#34;</span> <span class=na>minCon=</span><span class=s>&#34;10&#34;</span> <span class=na>balance=</span><span class=s>&#34;3&#34;</span> <span class=na>writeType=</span><span class=s>&#34;0&#34;</span> <span class=na>dbType=</span><span class=s>&#34;mysql&#34;</span> <span class=na>dbDriver=</span><span class=s>&#34;native&#34;</span> <span class=na>switchType=</span><span class=s>&#34;1&#34;</span> <span class=na>slaveThreshold=</span><span class=s>&#34;100&#34;</span><span class=nt>&gt;</span>
+        <span class=c>&lt;!--</span><span class=c> 心跳：检测mysql服务器是否存活，发送select user();查询 </span><span class=c>--&gt;</span>
+		<span class=nt>&lt;heartbeat</span><span class=nt>&gt;</span>select user()<span class=nt>&lt;/heartbeat&gt;</span>
+        <span class=c>&lt;!--</span><span class=c> 主 </span><span class=c>--&gt;</span>
+		<span class=nt>&lt;writeHost</span> <span class=na>host=</span><span class=s>&#34;192.168.131.130&#34;</span> <span class=na>url=</span><span class=s>&#34;192.168.131.130:3306&#34;</span> <span class=na>user=</span><span class=s>&#34;root&#34;</span> <span class=na>password=</span><span class=s>&#34;666666&#34;</span><span class=nt>&gt;</span>
+            <span class=c>&lt;!--</span><span class=c> 从 </span><span class=c>--&gt;</span>
+			<span class=nt>&lt;readHost</span> <span class=na>host=</span><span class=s>&#34;192.168.11.164&#34;</span> <span class=na>url=</span><span class=s>&#34;192.168.11.164:3306&#34;</span> <span class=na>user=</span><span class=s>&#34;root&#34;</span> <span class=na>password=</span><span class=s>&#34;666666&#34;</span> <span class=nt>/&gt;</span>
+		<span class=nt>&lt;/writeHost&gt;</span>
+        <span class=c>&lt;!--</span><span class=c> 主库宕机后启用备份数据库 </span><span class=c>--&gt;</span>
+		<span class=nt>&lt;writeHost</span> <span class=na>host=</span><span class=s>&#34;192.168.11.164&#34;</span> <span class=na>url=</span><span class=s>&#34;192.168.11.164:3306&#34;</span> <span class=na>user=</span><span class=s>&#34;root&#34;</span> <span class=na>password=</span><span class=s>&#34;666666&#34;</span> <span class=nt>/&gt;</span>
+	<span class=nt>&lt;/dataHost&gt;</span>
+<span class=nt>&lt;/mycat:schema&gt;</span>
+</code></pre></td></tr></table></div></div><p>注意，VMware的虚拟网关是虚拟机接收win10向虚拟机发送数据时使用的，虚拟机向win10发送数据，直接使用本机ip即可，win10向虚拟机发送数据也应该使用虚拟机ip而不是虚拟网关。</p><p>重要参数说明：</p><p>maxCon、minCon：最大最小连接数量（mycat使用连接池和mysql服务器通信）</p><p>balance：</p><ul><li>&ldquo;0&rdquo;：不开启读写分离</li><li>&ldquo;1&rdquo;：全部的readHost和stand by writeHost参与select语句的负载</li><li>&ldquo;2&rdquo;：所有读操作随机在readHost和writeHost上分发</li><li>&ldquo;3&rdquo;：所有读请求随机分发到writeHost对应的readHost上执行</li><li></li></ul><p>writeType="0&rdquo;：所有写操作发送到配置的第一个writeHost，第一个挂掉切换到还生存的第二个writeHost</p><p>switchType：</p><ul><li>&ldquo;-1&rdquo;：不自动切换</li><li>&ldquo;1&rdquo;：自动切换，根据心跳select user()</li><li>&ldquo;2&rdquo;：基于MySQL的主从同步状态决定是否进行切换 show slave status</li></ul><a class=post-dummy-target id=启动-mycat></a><h4>启动 Mycat</h4><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell><span class=o>[</span>xushun@localhost ~<span class=o>]</span>$ mycat start
+Starting Mycat-server...
+<span class=o>[</span>xushun@localhost ~<span class=o>]</span>$ netstat -tanp <span class=p>|</span> grep <span class=m>66</span>
+<span class=o>(</span>Not all processes could be identified, non-owned process info
+ will not be shown, you would have to be root to see it all.<span class=o>)</span>
+tcp6       <span class=m>0</span>      <span class=m>0</span> :::8066                 :::*                    LISTEN      18907/java          
+tcp6       <span class=m>0</span>      <span class=m>0</span> :::9066                 :::*                    LISTEN      18907/java          
+<span class=o>[</span>xushun@localhost ~<span class=o>]</span>$ 
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=查看日志></a><h4>查看日志</h4><p>日志目录：<code>/usr/local/mycat/logs/</code></p><p><code>mycat.log</code>是运行日志，<code>wrapper.log</code>是启动日志。</p><p>查看启动日志最后的几十行，可以看到启动成功了：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell><span class=o>[</span>xushun@localhost logs<span class=o>]</span>$ tail wrapper.log 
+INFO   <span class=p>|</span> jvm <span class=m>1</span>    <span class=p>|</span> 2022/11/15 03:50:36 <span class=p>|</span> 2022-11-15 03:50:36,093 <span class=o>[</span>INFO <span class=o>]</span><span class=o>[</span><span class=nv>$_NIOREACTOR</span>-2-RW<span class=o>]</span> connected successfuly MySQLConnection <span class=o>[</span><span class=nv>id</span><span class=o>=</span>10, <span class=nv>lastTime</span><span class=o>=</span>1668513036093, <span class=nv>user</span><span class=o>=</span>root, <span class=nv>schema</span><span class=o>=</span>mytest, old <span class=nv>shema</span><span class=o>=</span>mytest, <span class=nv>borrowed</span><span class=o>=</span>true, <span class=nv>fromSlaveDB</span><span class=o>=</span>false, <span class=nv>threadId</span><span class=o>=</span>69, <span class=nv>charset</span><span class=o>=</span>utf8, <span class=nv>txIsolation</span><span class=o>=</span>3, <span class=nv>autocommit</span><span class=o>=</span>true, <span class=nv>attachment</span><span class=o>=</span>null, <span class=nv>respHandler</span><span class=o>=</span>null, <span class=nv>host</span><span class=o>=</span>192.168.131.130, <span class=nv>port</span><span class=o>=</span>3306, <span class=nv>statusSync</span><span class=o>=</span>null, <span class=nv>writeQueue</span><span class=o>=</span>0, <span class=nv>modifiedSQLExecuted</span><span class=o>=</span>false<span class=o>]</span>  <span class=o>(</span>io.mycat.backend.mysql.nio.handler.GetConnectionHandler:GetConnectionHandler.java:67<span class=o>)</span> 
+INFO   <span class=p>|</span> jvm <span class=m>1</span>    <span class=p>|</span> 2022/11/15 03:50:36 <span class=p>|</span> 2022-11-15 03:50:36,187 <span class=o>[</span>INFO <span class=o>]</span><span class=o>[</span>WrapperSimpleAppMain<span class=o>]</span> init result :finished <span class=m>10</span> success <span class=m>10</span> target count:10  <span class=o>(</span>io.mycat.backend.datasource.PhysicalDBPool:PhysicalDBPool.java:319<span class=o>)</span> 
+INFO   <span class=p>|</span> jvm <span class=m>1</span>    <span class=p>|</span> 2022/11/15 03:50:36 <span class=p>|</span> 2022-11-15 03:50:36,187 <span class=o>[</span>INFO <span class=o>]</span><span class=o>[</span>WrapperSimpleAppMain<span class=o>]</span> node1 index:0 init success  <span class=o>(</span>io.mycat.backend.datasource.PhysicalDBPool:PhysicalDBPool.java:265<span class=o>)</span> 
+INFO   <span class=p>|</span> jvm <span class=m>1</span>    <span class=p>|</span> 2022/11/15 03:50:36 <span class=p>|</span> 2022-11-15 03:50:36,189 <span class=o>[</span>INFO <span class=o>]</span><span class=o>[</span>Timer0<span class=o>]</span> create connections ,because idle connection not enough ,cur is 0, minCon is <span class=m>10</span> <span class=k>for</span> 192.168.11.164  <span class=o>(</span>io.mycat.backend.datasource.PhysicalDatasource:PhysicalDatasource.java:299<span class=o>)</span> 
+INFO   <span class=p>|</span> jvm <span class=m>1</span>    <span class=p>|</span> 2022/11/15 03:50:36 <span class=p>|</span> 2022-11-15 03:50:36,193 <span class=o>[</span>INFO <span class=o>]</span><span class=o>[</span>Timer1<span class=o>]</span> no ilde connection in pool,create new connection <span class=k>for</span> 192.168.11.164 of schema mytest  <span class=o>(</span>io.mycat.backend.datasource.PhysicalDatasource:PhysicalDatasource.java:413<span class=o>)</span> 
+INFO   <span class=p>|</span> jvm <span class=m>1</span>    <span class=p>|</span> 2022/11/15 03:50:36 <span class=p>|</span> 2022-11-15 03:50:36,193 <span class=o>[</span>INFO <span class=o>]</span><span class=o>[</span>Timer1<span class=o>]</span> no ilde connection in pool,create new connection <span class=k>for</span> 192.168.11.164 of schema mytest  <span class=o>(</span>io.mycat.backend.datasource.PhysicalDatasource:PhysicalDatasource.java:413<span class=o>)</span> 
+INFO   <span class=p>|</span> jvm <span class=m>1</span>    <span class=p>|</span> 2022/11/15 03:50:36 <span class=p>|</span> 2022-11-15 03:50:36,195 <span class=o>[</span>INFO <span class=o>]</span><span class=o>[</span><span class=nv>$_NIOREACTOR</span>-4-RW<span class=o>]</span> connectionAcquired MySQLConnection <span class=o>[</span><span class=nv>id</span><span class=o>=</span>12, <span class=nv>lastTime</span><span class=o>=</span>1668513036187, <span class=nv>user</span><span class=o>=</span>root, <span class=nv>schema</span><span class=o>=</span>mytest, old <span class=nv>shema</span><span class=o>=</span>mytest, <span class=nv>borrowed</span><span class=o>=</span>false, <span class=nv>fromSlaveDB</span><span class=o>=</span>true, <span class=nv>threadId</span><span class=o>=</span>612, <span class=nv>charset</span><span class=o>=</span>utf8, <span class=nv>txIsolation</span><span class=o>=</span>3, <span class=nv>autocommit</span><span class=o>=</span>true, <span class=nv>attachment</span><span class=o>=</span>null, <span class=nv>respHandler</span><span class=o>=</span>null, <span class=nv>host</span><span class=o>=</span>192.168.11.164, <span class=nv>port</span><span class=o>=</span>3306, <span class=nv>statusSync</span><span class=o>=</span>null, <span class=nv>writeQueue</span><span class=o>=</span>0, <span class=nv>modifiedSQLExecuted</span><span class=o>=</span>false<span class=o>]</span>  <span class=o>(</span>io.mycat.backend.mysql.nio.handler.NewConnectionRespHandler:NewConnectionRespHandler.java:45<span class=o>)</span> 
+INFO   <span class=p>|</span> jvm <span class=m>1</span>    <span class=p>|</span> 2022/11/15 03:50:36 <span class=p>|</span> 2022-11-15 03:50:36,196 <span class=o>[</span>INFO <span class=o>]</span><span class=o>[</span><span class=nv>$_NIOREACTOR</span>-5-RW<span class=o>]</span> connectionAcquired MySQLConnection <span class=o>[</span><span class=nv>id</span><span class=o>=</span>13, <span class=nv>lastTime</span><span class=o>=</span>1668513036187, <span class=nv>user</span><span class=o>=</span>root, <span class=nv>schema</span><span class=o>=</span>mytest, old <span class=nv>shema</span><span class=o>=</span>mytest, <span class=nv>borrowed</span><span class=o>=</span>false, <span class=nv>fromSlaveDB</span><span class=o>=</span>true, <span class=nv>threadId</span><span class=o>=</span>613, <span class=nv>charset</span><span class=o>=</span>utf8, <span class=nv>txIsolation</span><span class=o>=</span>3, <span class=nv>autocommit</span><span class=o>=</span>true, <span class=nv>attachment</span><span class=o>=</span>null, <span class=nv>respHandler</span><span class=o>=</span>null, <span class=nv>host</span><span class=o>=</span>192.168.11.164, <span class=nv>port</span><span class=o>=</span>3306, <span class=nv>statusSync</span><span class=o>=</span>null, <span class=nv>writeQueue</span><span class=o>=</span>0, <span class=nv>modifiedSQLExecuted</span><span class=o>=</span>false<span class=o>]</span>  <span class=o>(</span>io.mycat.backend.mysql.nio.handler.NewConnectionRespHandler:NewConnectionRespHandler.java:45<span class=o>)</span> 
+INFO   <span class=p>|</span> jvm <span class=m>1</span>    <span class=p>|</span> 2022/11/15 03:50:36 <span class=p>|</span> 2022-11-15 03:50:36,197 <span class=o>[</span>INFO <span class=o>]</span><span class=o>[</span><span class=nv>$_NIOREACTOR</span>-3-RW<span class=o>]</span> connectionAcquired MySQLConnection <span class=o>[</span><span class=nv>id</span><span class=o>=</span>11, <span class=nv>lastTime</span><span class=o>=</span>1668513036187, <span class=nv>user</span><span class=o>=</span>root, <span class=nv>schema</span><span class=o>=</span>mytest, old <span class=nv>shema</span><span class=o>=</span>mytest, <span class=nv>borrowed</span><span class=o>=</span>false, <span class=nv>fromSlaveDB</span><span class=o>=</span>true, <span class=nv>threadId</span><span class=o>=</span>611, <span class=nv>charset</span><span class=o>=</span>utf8, <span class=nv>txIsolation</span><span class=o>=</span>3, <span class=nv>autocommit</span><span class=o>=</span>true, <span class=nv>attachment</span><span class=o>=</span>null, <span class=nv>respHandler</span><span class=o>=</span>null, <span class=nv>host</span><span class=o>=</span>192.168.11.164, <span class=nv>port</span><span class=o>=</span>3306, <span class=nv>statusSync</span><span class=o>=</span>null, <span class=nv>writeQueue</span><span class=o>=</span>0, <span class=nv>modifiedSQLExecuted</span><span class=o>=</span>false<span class=o>]</span>  <span class=o>(</span>io.mycat.backend.mysql.nio.handler.NewConnectionRespHandler:NewConnectionRespHandler.java:45<span class=o>)</span> 
+INFO   <span class=p>|</span> jvm <span class=m>1</span>    <span class=p>|</span> 2022/11/15 03:50:36 <span class=p>|</span> MyCAT Server startup successfully. see logs in logs/mycat.log
+<span class=o>[</span>xushun@localhost logs<span class=o>]</span>$ 
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=使用-mycat></a><h3>使用 mycat</h3><p>在win10上登陆需要和之前一样开放虚拟机centos的8066和9066防火墙。</p><a class=post-dummy-target id=管理端口></a><h4>管理端口</h4><p>使用9066端口登录mycat，进入一个mysql shell，但是它是用来管理mycat的，不进行sql操作：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell>PS C:<span class=se>\U</span>sers<span class=se>\x</span>ushun&gt; mysql -u root -p -h 192.168.131.130 -P <span class=m>9066</span>
+Enter password: ******
+Welcome to the MySQL monitor.  Commands end with <span class=p>;</span> or <span class=se>\g</span>.
+Your MySQL connection id is <span class=m>5</span>
+Server version: 5.6.29-mycat-1.6-RELEASE-20161028204710 MyCat Server <span class=o>(</span>monitor<span class=o>)</span>
+
+Copyright <span class=o>(</span>c<span class=o>)</span> 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type <span class=s1>&#39;help;&#39;</span> or <span class=s1>&#39;\h&#39;</span> <span class=k>for</span> help. Type <span class=s1>&#39;\c&#39;</span> to clear the current input statement.
+
+mysql&gt;
+</code></pre></td></tr></table></div></div><p>注意，<code>(monitor)</code>表示这是一个管理端口，进行监控操作。</p><p>查看支持的命令：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell>mysql&gt; show @@help<span class=p>;</span>
++------------------------------------------+--------------------------------------------+
+<span class=p>|</span> STATEMENT                                <span class=p>|</span> DESCRIPTION                                <span class=p>|</span>
++------------------------------------------+--------------------------------------------+
+<span class=p>|</span> show @@time.current                      <span class=p>|</span> Report current timestamp                   <span class=p>|</span>
+<span class=p>|</span> show @@time.startup                      <span class=p>|</span> Report startup timestamp                   <span class=p>|</span>
+<span class=p>|</span> show @@version                           <span class=p>|</span> Report Mycat Server version                <span class=p>|</span>
+<span class=p>|</span> show @@server                            <span class=p>|</span> Report server status                       <span class=p>|</span>
+<span class=p>|</span> show @@threadpool                        <span class=p>|</span> Report threadPool status                   <span class=p>|</span>
+<span class=p>|</span> show @@database                          <span class=p>|</span> Report databases                           <span class=p>|</span>
+<span class=p>|</span> show @@datanode                          <span class=p>|</span> Report dataNodes                           <span class=p>|</span>
+<span class=p>|</span> show @@datanode where <span class=nv>schema</span> <span class=o>=</span> ?         <span class=p>|</span> Report dataNodes                           <span class=p>|</span>
+<span class=p>|</span> show @@datasource                        <span class=p>|</span> Report dataSources                         <span class=p>|</span>
+<span class=p>|</span> show @@datasource where <span class=nv>dataNode</span> <span class=o>=</span> ?     <span class=p>|</span> Report dataSources                         <span class=p>|</span>
+<span class=p>|</span> show @@datasource.synstatus              <span class=p>|</span> Report datasource data synchronous         <span class=p>|</span>
+<span class=p>|</span> show @@datasource.syndetail where <span class=nv>name</span><span class=o>=</span>? <span class=p>|</span> Report datasource data synchronous detail  <span class=p>|</span>
+<span class=p>|</span> show @@datasource.cluster                <span class=p>|</span> Report datasource galary cluster variables <span class=p>|</span>
+<span class=p>|</span> show @@processor                         <span class=p>|</span> Report processor status                    <span class=p>|</span>
+<span class=p>|</span> show @@command                           <span class=p>|</span> Report commands status                     <span class=p>|</span>
+<span class=p>|</span> show @@connection                        <span class=p>|</span> Report connection status                   <span class=p>|</span>
+<span class=p>|</span> show @@cache                             <span class=p>|</span> Report system cache usage                  <span class=p>|</span>
+... 还有很多
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=数据端口></a><h4>数据端口</h4><p>使用8066端口登录mycat，进入一个mysql shell，可以进行所有的sql操作，就和直接操作mysql数据库一样。（当然使用的是逻辑库表）</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-shell data-lang=shell>PS C:<span class=se>\U</span>sers<span class=se>\x</span>ushun&gt; mysql -u root -p -h 192.168.131.130 -P <span class=m>8066</span>
+Enter password: ******
+Welcome to the MySQL monitor.  Commands end with <span class=p>;</span> or <span class=se>\g</span>.
+Your MySQL connection id is <span class=m>8</span>
+Server version: 5.6.29-mycat-1.6-RELEASE-20161028204710 MyCat Server <span class=o>(</span>OpenCloundDB<span class=o>)</span>
+
+Copyright <span class=o>(</span>c<span class=o>)</span> 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type <span class=s1>&#39;help;&#39;</span> or <span class=s1>&#39;\h&#39;</span> <span class=k>for</span> help. Type <span class=s1>&#39;\c&#39;</span> to clear the current input statement.
+
+mysql&gt;
+</code></pre></td></tr></table></div></div><p>注意，<code>(OpenCloundDB)</code>表示这是数据库，mycat像一朵云一样把底层的mysql数据库给隐藏了起来。</p><a class=post-dummy-target id=验证mycat的使用></a><h4>验证mycat的使用</h4><p>对于不同的操作，写操作应该在centos7虚拟机上的mysql服务器执行，而读操作应该在win10上的mysql服务器执行，如何验证呢？</p><p>答：使用查询日志。</p></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
 <span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
 <span>2022-11-15</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
 <span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fmysql31-%25E8%25AF%25BB%25E5%2586%2599%25E5%2588%2586%25E7%25A6%25BB%2f&text=%e3%80%90MySQL%e3%80%9131%20-%20%e8%af%bb%e5%86%99%e5%88%86%e7%a6%bb&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2fmysql31-%25E8%25AF%25BB%25E5%2586%2599%25E5%2588%2586%25E7%25A6%25BB%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fmysql31-%25E8%25AF%25BB%25E5%2586%2599%25E5%2588%2586%25E7%25A6%25BB%2f&title=%e3%80%90MySQL%e3%80%9131%20-%20%e8%af%bb%e5%86%99%e5%88%86%e7%a6%bb" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/datebase/><i class="fas fa-tag fa-fw"></i>&nbsp;datebase</a>&nbsp;
