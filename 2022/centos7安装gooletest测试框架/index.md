@@ -11,6 +11,7 @@ GoogleTest使用c++14，系统原来的gcc(g++)版本为4.8，需要升级。
 1. `sudo yum install centos-release-scl`
 2. `sudo yum install devtoolset-8-gcc*`，安装gcc8
 3. `scl enable devtoolset-8 bash`，激活对应的devtoolset，可以安装多个版本进行切换
+4. 第三点的方式是临时的，重启bash就失效了，使用这条命令长期生效：`echo "source /opt/rh/devtoolset-8/enable" >>/etc/profile`
 
 ## 安装CMake
 
