@@ -31,6 +31,8 @@ VMwareWorkstation一路安装就完事了。
 
 有可能会出现密钥错误，运行：`rpm --import https://repo.mysql.com/RPM-GPG-KEY-mysql-2022`，再次安装即可。
 
+安装mysql开发包：`sudo yum install mysql-devel`
+
 启动服务：`sudo service mysqld start`
 
 查看是否启动：`netstat -tanp`，看到3306端口的mysqld，成功启动。
