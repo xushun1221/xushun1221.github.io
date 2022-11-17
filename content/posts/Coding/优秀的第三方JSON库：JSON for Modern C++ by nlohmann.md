@@ -68,7 +68,7 @@ void func2() {
     js["msg"]["zhangsan"] = "hello";
     js["msg"]["lisi"] = "hi";
     // 上面两句等同于这一句
-    js["msg"] = {{"zhangsan", "hello"}, {"lisi", "hi"}};
+    js["msg"] = {*{"zhangsan", "hello"*}, *{"lisi", "hi"*}*}; // 网页生成又有问题了 不能用连续的大括号
     cout << js << endl;
     string sendBuf = js.dump();
     cout << sendBuf.c_str() << endl;
@@ -112,9 +112,9 @@ void func3() {
     js["list"] = vec;
     // map
     map<int, string> mp;
-    mp.insert({1, "xiaoming"});
-    mp.insert({2, "awei"});
-    mp.insert({3, "dashan"});
+    mp.insert(*{1, "xiaoming"*}*); // 网页生成又有问题了 不能用连续的大括号
+    mp.insert(*{2, "awei"*}*);
+    mp.insert(*{3, "dashan"*}*);
     js["user"] = mp;
     cout << js << endl;
 }
@@ -173,7 +173,7 @@ void func5() {
     json js;
     js["id"] = {1, 2, 3, 4, 5};
     js["name"] = "zhansan";
-    js["msg"] = {{"zhangsan", "hello"}, {"lisi", "hi"}};
+    js["msg"] = {*{"zhangsan", "hello"*}, *{"lisi", "hi"*}*}; // 网页生成又有问题了 不能用连续的大括号
     string sendBuf = js.dump();
 
     // 反序列化
@@ -234,9 +234,9 @@ void func6() {
     vector<int> vec{1, 3, 5};
     js["list"] = vec;
     map<int, string> mp;
-    mp.insert({1, "xiaoming"});
-    mp.insert({2, "awei"});
-    mp.insert({3, "dashan"});
+    mp.insert(*{1, "xiaoming"*}*); // 网页生成又有问题了 不能用连续的大括号
+    mp.insert(*{2, "awei"*}*);
+    mp.insert(*{3, "dashan"*}*);
     js["user"] = mp;
     string sendBuf = js.dump();
     
