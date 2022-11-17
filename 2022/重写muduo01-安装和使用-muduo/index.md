@@ -3,6 +3,8 @@
 
 ## 安装 muduo
 
+这里是在Ubuntu环境下。
+
 先把muduo和boost的源码下载下来（muduo需要依赖boost）。
 
 ### boost 源码库编译安装
@@ -283,6 +285,19 @@ hello world
 正确回显，测试成功，安装完成。
 
 
+### CentOS7 编译安装 boost + muduo
+
+在centOS7中编译boost，除了gcc之外，还需要两个开发库：`bzip2-devel`和`python-devel`。
+
+安装  
+```shell
+[root@localhost boost_1_69_0]# yum install bzip2 bzip2-devel bzip2-libs python-devel
+.
+.
+.
+```
+
+其他步骤相同。
 
 ## muduo 服务器编程示例
 
