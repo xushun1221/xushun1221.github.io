@@ -1,0 +1,191 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【ChatServer】05 - 网络模块代码 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/chatserver06-%E4%B8%9A%E5%8A%A1%E6%A8%A1%E5%9D%97%E4%B8%8E%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9D%97%E8%A7%A3%E8%80%A6/><link rel=next href=https://xushun1221.github.io/2022/chatserver04-%E9%A1%B9%E7%9B%AE%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84/><link rel=canonical href=https://xushun1221.github.io/2022/chatserver05-%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9D%97%E4%BB%A3%E7%A0%81/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【ChatServer】05 - 网络模块代码"><meta name=twitter:description content="网络模块代码 使用muduo库，构建基于Reactor模型的服务器框架。 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【ChatServer】05 - 网络模块代码","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/chatserver05-%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9D%97%E4%BB%A3%E7%A0%81\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"Linux, muduo","wordcount":358,"url":"https:\/\/xushun1221.github.io\/2022\/chatserver05-%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9D%97%E4%BB%A3%E7%A0%81\/","datePublished":"2022-11-27T00:00:00\x2b00:00","dateModified":"2022-11-27T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【ChatServer】05 - 网络模块代码</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-11-27>2022-11-27</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 358 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/projects/>Projects</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#网络模块代码>网络模块代码</a></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#网络模块代码>网络模块代码</a></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=网络模块代码></a><h2>网络模块代码</h2><p>使用muduo库，构建基于Reactor模型的服务器框架。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=cm>/*
+</span><span class=cm> *  @Filename : ChatServer.hh
+</span><span class=cm> *  @Description : ChatServer Definition
+</span><span class=cm> *  @Datatime : 2022/11/27 15:29:18
+</span><span class=cm> *  @Author : xushun
+</span><span class=cm> */</span>
+<span class=cp>#</span><span class=cp>ifndef __CHATSERVER_HH_</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>define __CHATSERVER_HH_</span><span class=cp>
+</span><span class=cp></span>
+<span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;muduo/net/TcpServer.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;muduo/net/EventLoop.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=k>using</span> <span class=k>namespace</span> <span class=n>muduo</span><span class=p>;</span>
+<span class=k>using</span> <span class=k>namespace</span> <span class=n>muduo</span><span class=o>:</span><span class=o>:</span><span class=n>net</span><span class=p>;</span>
+
+<span class=k>class</span> <span class=nc>ChatServer</span>
+<span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=c1>// init chatserver
+</span><span class=c1></span>    <span class=n>ChatServer</span><span class=p>(</span><span class=n>EventLoop</span> <span class=o>*</span><span class=n>loop</span><span class=p>,</span> <span class=k>const</span> <span class=n>InetAddress</span> <span class=o>&amp;</span><span class=n>listenAddr</span><span class=p>,</span> <span class=k>const</span> <span class=n>string</span> <span class=o>&amp;</span><span class=n>nameArg</span><span class=p>,</span> <span class=kt>uint32_t</span> <span class=n>threadNum</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// start server
+</span><span class=c1></span>    <span class=kt>void</span> <span class=nf>start</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+
+<span class=k>private</span><span class=o>:</span>
+    <span class=c1>// server class in muduo lib
+</span><span class=c1></span>    <span class=n>TcpServer</span> <span class=n>server_</span><span class=p>;</span>
+    <span class=c1>// mainloop
+</span><span class=c1></span>    <span class=n>EventLoop</span> <span class=o>*</span><span class=n>loop_</span><span class=p>;</span>
+
+<span class=k>private</span><span class=o>:</span>
+    <span class=c1>// callback: connection create and shutdown
+</span><span class=c1></span>    <span class=kt>void</span> <span class=n>onConnection</span><span class=p>(</span><span class=k>const</span> <span class=n>TcpConnectionPtr</span> <span class=o>&amp;</span><span class=n>conn</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// callback: user io event
+</span><span class=c1></span>    <span class=kt>void</span> <span class=nf>onMessage</span><span class=p>(</span><span class=k>const</span> <span class=n>TcpConnectionPtr</span> <span class=o>&amp;</span><span class=n>conn</span><span class=p>,</span> <span class=n>Buffer</span> <span class=o>*</span><span class=n>buffer</span><span class=p>,</span> <span class=n>Timestamp</span> <span class=n>time</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+
+<span class=cp>#</span><span class=cp>endif </span><span class=c1>// __CHATSERVER_HH_
+</span></code></pre></td></tr></table></div></div><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=cm>/*
+</span><span class=cm> *  @Filename : ChatServer.cc
+</span><span class=cm> *  @Description : ChatServer Implementation
+</span><span class=cm> *  @Datatime : 2022/11/27 15:38:53
+</span><span class=cm> *  @Author : xushun
+</span><span class=cm> */</span>
+<span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;ChatServer.hh&#34;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;functional&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=k>using</span> <span class=k>namespace</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>placeholders</span><span class=p>;</span>
+
+<span class=n>ChatServer</span><span class=o>:</span><span class=o>:</span><span class=n>ChatServer</span><span class=p>(</span><span class=n>EventLoop</span> <span class=o>*</span><span class=n>loop</span><span class=p>,</span> <span class=k>const</span> <span class=n>InetAddress</span> <span class=o>&amp;</span><span class=n>listenAddr</span><span class=p>,</span> <span class=k>const</span> <span class=n>string</span> <span class=o>&amp;</span><span class=n>nameArg</span><span class=p>,</span> <span class=kt>uint32_t</span> <span class=n>threadNum</span><span class=p>)</span>
+    <span class=o>:</span> <span class=n>server_</span><span class=p>(</span><span class=n>loop</span><span class=p>,</span> <span class=n>listenAddr</span><span class=p>,</span> <span class=n>nameArg</span><span class=p>)</span><span class=p>,</span> <span class=n>loop_</span><span class=p>(</span><span class=n>loop</span><span class=p>)</span>
+<span class=p>{</span>
+    <span class=c1>// register ConnectionCallback
+</span><span class=c1></span>    <span class=n>server_</span><span class=p>.</span><span class=n>setConnectionCallback</span><span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>bind</span><span class=p>(</span><span class=o>&amp;</span><span class=n>ChatServer</span><span class=o>:</span><span class=o>:</span><span class=n>onConnection</span><span class=p>,</span> <span class=k>this</span><span class=p>,</span> <span class=n>_1</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// register MessageCallback
+</span><span class=c1></span>    <span class=n>server_</span><span class=p>.</span><span class=n>setMessageCallback</span><span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>bind</span><span class=p>(</span><span class=o>&amp;</span><span class=n>ChatServer</span><span class=o>:</span><span class=o>:</span><span class=n>onMessage</span><span class=p>,</span> <span class=k>this</span><span class=p>,</span> <span class=n>_1</span><span class=p>,</span> <span class=n>_2</span><span class=p>,</span> <span class=n>_3</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// set thread number: 1 acceptor loop, threadNum - 1 event loop
+</span><span class=c1></span>    <span class=n>server_</span><span class=p>.</span><span class=n>setThreadNum</span><span class=p>(</span><span class=n>threadNum</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>void</span> <span class=n>ChatServer</span><span class=o>:</span><span class=o>:</span><span class=n>start</span><span class=p>(</span><span class=p>)</span>
+<span class=p>{</span>
+    <span class=c1>// start server
+</span><span class=c1></span>    <span class=n>server_</span><span class=p>.</span><span class=n>start</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=kt>void</span> <span class=n>ChatServer</span><span class=o>:</span><span class=o>:</span><span class=n>onConnection</span><span class=p>(</span><span class=k>const</span> <span class=n>TcpConnectionPtr</span> <span class=o>&amp;</span><span class=n>conn</span><span class=p>)</span>
+<span class=p>{</span>
+<span class=p>}</span>
+
+<span class=kt>void</span> <span class=n>ChatServer</span><span class=o>:</span><span class=o>:</span><span class=n>onMessage</span><span class=p>(</span><span class=k>const</span> <span class=n>TcpConnectionPtr</span> <span class=o>&amp;</span><span class=n>conn</span><span class=p>,</span> <span class=n>Buffer</span> <span class=o>*</span><span class=n>buffer</span><span class=p>,</span> <span class=n>Timestamp</span> <span class=n>time</span><span class=p>)</span>
+<span class=p>{</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=cm>/*
+</span><span class=cm>*  @Filename : main.cc
+</span><span class=cm>*  @Description : ChatServer Entry
+</span><span class=cm>*  @Datatime : 2022/11/27 15:53:16
+</span><span class=cm>*  @Author : xushun
+</span><span class=cm>*/</span>
+<span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;ChatServer.hh&#34;</span><span class=cp>
+</span><span class=cp></span>
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=kt>int</span> <span class=n>argc</span><span class=p>,</span> <span class=kt>char</span><span class=o>*</span><span class=o>*</span> <span class=n>argv</span><span class=p>)</span> <span class=p>{</span>
+
+    <span class=n>EventLoop</span> <span class=n>loop</span><span class=p>;</span>
+    <span class=n>InetAddress</span> <span class=n>addr</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>127.0.0.1</span><span class=s>&#34;</span><span class=p>,</span> <span class=mi>6000</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>ChatServer</span> <span class=n>server</span><span class=p>(</span><span class=o>&amp;</span><span class=n>loop</span><span class=p>,</span> <span class=n>addr</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>ChatServer</span><span class=s>&#34;</span><span class=p>,</span> <span class=mi>8</span><span class=p>)</span><span class=p>;</span>
+
+    <span class=n>server</span><span class=p>.</span><span class=n>start</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>loop</span><span class=p>.</span><span class=n>loop</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+<span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
+<span>2022-11-27</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
+<span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fchatserver05-%25E7%25BD%2591%25E7%25BB%259C%25E6%25A8%25A1%25E5%259D%2597%25E4%25BB%25A3%25E7%25A0%2581%2f&text=%e3%80%90ChatServer%e3%80%9105%20-%20%e7%bd%91%e7%bb%9c%e6%a8%a1%e5%9d%97%e4%bb%a3%e7%a0%81&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2fchatserver05-%25E7%25BD%2591%25E7%25BB%259C%25E6%25A8%25A1%25E5%259D%2597%25E4%25BB%25A3%25E7%25A0%2581%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fchatserver05-%25E7%25BD%2591%25E7%25BB%259C%25E6%25A8%25A1%25E5%259D%2597%25E4%25BB%25A3%25E7%25A0%2581%2f&title=%e3%80%90ChatServer%e3%80%9105%20-%20%e7%bd%91%e7%bb%9c%e6%a8%a1%e5%9d%97%e4%bb%a3%e7%a0%81" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/linux/><i class="fas fa-tag fa-fw"></i>&nbsp;Linux</a>&nbsp;
+</span><span class=tag><a href=https://xushun1221.github.io/tags/muduo/><i class="fas fa-tag fa-fw"></i>&nbsp;muduo</a>&nbsp;</span></section><section><span><a href=javascript:window.history.back();>Back</a></span>&nbsp;|&nbsp;<span><a href=https://xushun1221.github.io>Home</a></span></section></div><div class=post-nav><a href=https://xushun1221.github.io/2022/chatserver06-%E4%B8%9A%E5%8A%A1%E6%A8%A1%E5%9D%97%E4%B8%8E%E7%BD%91%E7%BB%9C%E6%A8%A1%E5%9D%97%E8%A7%A3%E8%80%A6/ class=prev rel=prev title="【ChatServer】06 - 业务模块与网络模块解耦"><i class="fas fa-angle-left fa-fw"></i>【ChatServer】06 - 业务模块与网络模块解耦</a>
+<a href=https://xushun1221.github.io/2022/chatserver04-%E9%A1%B9%E7%9B%AE%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84/ class=next rel=next title="【ChatServer】04 - 项目目录结构">【ChatServer】04 - 项目目录结构<i class="fas fa-angle-right fa-fw"></i></a></div><div class=post-comment></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2022</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=https://xushun1221.github.io/about/ target=_blank>xushun</a> | </span>Powered by <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> & <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer">LoveIt</a></div></div></footer></div><a href=# class=dynamic-to-top id=dynamic-to-top data-scroll><span>&nbsp;</span>
+</a><script src=/js/lib/jquery/jquery.slim.min.js></script><script src=/js/lib/lazysizes/lazysizes.min.js></script><script src=/js/lib/smooth-scroll/smooth-scroll.polyfills.min.js></script><script>window.scroll=new SmoothScroll('[data-scroll]',{speed:300,speedAsDuration:true});</script><link rel=stylesheet href=/css/lib/katex/katex.min.css><script src=/js/lib/katex/katex.min.js></script><script defer src=/js/lib/katex/auto-render.min.js></script><link rel=stylesheet href=/css/lib/katex/copy-tex.min.css><script defer src=/js/lib/katex/copy-tex.min.js></script><script defer src=/js/lib/katex/mhchem.min.js></script><script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true},{left:"$",right:"$",display:false},]});});</script><script src=/js/blog.min.js></script></body></html>
