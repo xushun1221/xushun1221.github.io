@@ -5,7 +5,7 @@ tags: [MySQL]
 categories: [Projects]
 ---
 
-mysql-server的主机：CentOS7虚拟机（192.168.131.130）
+mysql-server的主机：CentOS7虚拟机（192.168.131.132） ip不确定，有时候会改变
 
 库名：`chat`
 
