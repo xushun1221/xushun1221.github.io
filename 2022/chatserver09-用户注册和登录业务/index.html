@@ -1,0 +1,160 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【ChatServer】09 - 用户注册和登录业务 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/chatserver04-%E9%A1%B9%E7%9B%AE%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84/><link rel=next href=https://xushun1221.github.io/2022/chatserver08-%E6%95%B0%E6%8D%AE%E5%B1%82%E4%BB%A3%E7%A0%81%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1/><link rel=canonical href=https://xushun1221.github.io/2022/chatserver09-%E7%94%A8%E6%88%B7%E6%B3%A8%E5%86%8C%E5%92%8C%E7%99%BB%E5%BD%95%E4%B8%9A%E5%8A%A1/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【ChatServer】09 - 用户注册和登录业务"><meta name=twitter:description content="用户注册业务 用户注册业务在ChatService中完成registr方法即可。 客户端发送REG_MSG类型的消息，并附上name, passw"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【ChatServer】09 - 用户注册和登录业务","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/chatserver09-%E7%94%A8%E6%88%B7%E6%B3%A8%E5%86%8C%E5%92%8C%E7%99%BB%E5%BD%95%E4%B8%9A%E5%8A%A1\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"Linux, C\x2b\x2b, MySQL","wordcount":737,"url":"https:\/\/xushun1221.github.io\/2022\/chatserver09-%E7%94%A8%E6%88%B7%E6%B3%A8%E5%86%8C%E5%92%8C%E7%99%BB%E5%BD%95%E4%B8%9A%E5%8A%A1\/","datePublished":"2022-11-28T00:00:00\x2b00:00","dateModified":"2022-11-28T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【ChatServer】09 - 用户注册和登录业务</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-11-28>2022-11-28</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 737 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/projects/>Projects</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#用户注册业务>用户注册业务</a></li><li><a href=#用户登录业务>用户登录业务</a></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#用户注册业务>用户注册业务</a></li><li><a href=#用户登录业务>用户登录业务</a></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=用户注册业务></a><h2>用户注册业务</h2><p>用户注册业务在<code>ChatService</code>中完成<code>registr</code>方法即可。</p><p>客户端发送<code>REG_MSG</code>类型的消息，并附上<code>name, password</code>，服务器返回<code>REG_ACK</code>消息，并附上<code>id</code>。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=kt>void</span> <span class=n>ChatService</span><span class=o>:</span><span class=o>:</span><span class=n>registr</span><span class=p>(</span><span class=k>const</span> <span class=n>TcpConnectionPtr</span> <span class=o>&amp;</span><span class=n>conn</span><span class=p>,</span> <span class=n>json</span> <span class=o>&amp;</span><span class=n>js</span><span class=p>,</span> <span class=n>Timestamp</span> <span class=n>time</span><span class=p>)</span>
+<span class=p>{</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>name</span> <span class=o>=</span> <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>name</span><span class=s>&#34;</span><span class=p>]</span><span class=p>;</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>password</span> <span class=o>=</span> <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>password</span><span class=s>&#34;</span><span class=p>]</span><span class=p>;</span>
+
+    <span class=n>User</span> <span class=n>user</span><span class=p>;</span>
+    <span class=n>user</span><span class=p>.</span><span class=n>setName</span><span class=p>(</span><span class=n>name</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>user</span><span class=p>.</span><span class=n>setPassword</span><span class=p>(</span><span class=n>password</span><span class=p>)</span><span class=p>;</span>
+
+    <span class=k>if</span> <span class=p>(</span><span class=n>userModel_</span><span class=p>.</span><span class=n>insert</span><span class=p>(</span><span class=n>user</span><span class=p>)</span><span class=p>)</span> <span class=p>{</span>
+        <span class=c1>// 注册成功 发送响应消息给用户并且告知用户id
+</span><span class=c1></span>        <span class=n>json</span> <span class=n>response</span><span class=p>;</span>
+        <span class=n>response</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>msg_type</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>REG_ACK</span><span class=p>;</span>
+        <span class=n>response</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>errno</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+        <span class=n>response</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>id</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>user</span><span class=p>.</span><span class=n>getId</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>conn</span><span class=o>-</span><span class=o>&gt;</span><span class=n>send</span><span class=p>(</span><span class=n>response</span><span class=p>.</span><span class=n>dump</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+        <span class=c1>// 注册失败
+</span><span class=c1></span>        <span class=n>json</span> <span class=n>response</span><span class=p>;</span>
+        <span class=n>response</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>msg_type</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>REG_ACK</span><span class=p>;</span>
+        <span class=n>response</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>errno</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=mi>1</span><span class=p>;</span>
+        <span class=n>conn</span><span class=o>-</span><span class=o>&gt;</span><span class=n>send</span><span class=p>(</span><span class=n>response</span><span class=p>.</span><span class=n>dump</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div><a class=post-dummy-target id=用户登录业务></a><h2>用户登录业务</h2><p>用户登录业务在<code>ChatService</code>中完成<code>login</code>方法即可。</p><p>客户端发送<code>LOGIN_MSG</code>类型的消息，并附上<code>id, password</code>，服务器返回<code>LOGIN_ACK</code>消息，并附上<code>id, name</code>。</p><p>注意，用户登录成功要在数据库中更改用户当前状态。</p><p>如果用户已登录，则不允许再次登录。如果用户id或密码错误，同样不允许登录。</p><blockquote><p>用户登录成功后，我们需要记录用户id和用于通信的连接(<code>TcpConnectionPtr</code>)，因为如果有其他用户要发送消息给已登录用户，我们需要根据id找到通信连接发送消息。这里使用哈希表实现。<br>注意，使用<code>unordered_map</code>在多线程环境下一定要注意线程安全问题，我们需要使用互斥锁。</p></blockquote><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=kt>void</span> <span class=n>ChatService</span><span class=o>:</span><span class=o>:</span><span class=n>login</span><span class=p>(</span><span class=k>const</span> <span class=n>TcpConnectionPtr</span> <span class=o>&amp;</span><span class=n>conn</span><span class=p>,</span> <span class=n>json</span> <span class=o>&amp;</span><span class=n>js</span><span class=p>,</span> <span class=n>Timestamp</span> <span class=n>time</span><span class=p>)</span>
+<span class=p>{</span>
+    <span class=kt>uint32_t</span> <span class=n>id</span> <span class=o>=</span> <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>id</span><span class=s>&#34;</span><span class=p>]</span><span class=p>.</span><span class=n>get</span><span class=o>&lt;</span><span class=kt>uint32_t</span><span class=o>&gt;</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>password</span> <span class=o>=</span> <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>password</span><span class=s>&#34;</span><span class=p>]</span><span class=p>;</span>
+
+    <span class=n>User</span> <span class=n>user</span> <span class=o>=</span> <span class=n>userModel_</span><span class=p>.</span><span class=n>queryById</span><span class=p>(</span><span class=n>id</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=n>user</span><span class=p>.</span><span class=n>getId</span><span class=p>(</span><span class=p>)</span> <span class=o>!</span><span class=o>=</span> <span class=mi>0</span> <span class=o>&amp;</span><span class=o>&amp;</span> <span class=n>user</span><span class=p>.</span><span class=n>getPassword</span><span class=p>(</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=n>password</span><span class=p>)</span>
+    <span class=p>{</span>
+        <span class=c1>// id存在并且密码正确
+</span><span class=c1></span>        <span class=k>if</span> <span class=p>(</span><span class=n>user</span><span class=p>.</span><span class=n>getState</span><span class=p>(</span><span class=p>)</span> <span class=o>=</span><span class=o>=</span> <span class=sa></span><span class=s>&#34;</span><span class=s>online</span><span class=s>&#34;</span><span class=p>)</span>
+        <span class=p>{</span>
+            <span class=c1>// 该用户已登录 不允许重复登录
+</span><span class=c1></span>            <span class=n>json</span> <span class=n>response</span><span class=p>;</span>
+            <span class=n>response</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>msg_type</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>LOGIN_ACK</span><span class=p>;</span>
+            <span class=n>response</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>err_no</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=mi>2</span><span class=p>;</span>
+            <span class=n>response</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>err_msg</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=sa></span><span class=s>&#34;</span><span class=s>already logged in, donot login again</span><span class=s>&#34;</span><span class=p>;</span>
+            <span class=n>conn</span><span class=o>-</span><span class=o>&gt;</span><span class=n>send</span><span class=p>(</span><span class=n>response</span><span class=p>.</span><span class=n>dump</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=k>else</span>
+        <span class=p>{</span>
+            <span class=c1>// 该用户未登录 登录成功
+</span><span class=c1></span>            <span class=c1>// 登录成功需要记录该用户的连接信息
+</span><span class=c1></span>            <span class=p>{</span>
+                <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>lock_guard</span><span class=o>&lt;</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>mutex</span><span class=o>&gt;</span> <span class=n>lock</span><span class=p>(</span><span class=n>connectionMutex</span><span class=p>)</span><span class=p>;</span>
+                <span class=n>userConnectionMap_</span><span class=p>.</span><span class=n>insert</span><span class=p>(</span><span class=p>{</span><span class=n>id</span><span class=p>,</span> <span class=n>conn</span><span class=p>}</span><span class=p>)</span><span class=p>;</span>
+            <span class=p>}</span>
+
+            <span class=c1>// 登录成功需要更新用户状态信息
+</span><span class=c1></span>            <span class=n>user</span><span class=p>.</span><span class=n>setState</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>online</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+            <span class=n>userModel_</span><span class=p>.</span><span class=n>updateState</span><span class=p>(</span><span class=n>user</span><span class=p>)</span><span class=p>;</span>
+
+            <span class=c1>// 返回响应信息
+</span><span class=c1></span>            <span class=n>json</span> <span class=n>response</span><span class=p>;</span>
+            <span class=n>response</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>msg_type</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>LOGIN_ACK</span><span class=p>;</span>
+            <span class=n>response</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>err_no</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+            <span class=n>response</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>id</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>user</span><span class=p>.</span><span class=n>getId</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+            <span class=n>response</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>name</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>user</span><span class=p>.</span><span class=n>getName</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 返回用户的信息
+</span><span class=c1></span>            <span class=n>conn</span><span class=o>-</span><span class=o>&gt;</span><span class=n>send</span><span class=p>(</span><span class=n>response</span><span class=p>.</span><span class=n>dump</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=k>else</span>
+    <span class=p>{</span>
+        <span class=c1>// 登录失败
+</span><span class=c1></span>        <span class=n>json</span> <span class=n>response</span><span class=p>;</span>
+        <span class=n>response</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>msg_type</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>LOGIN_ACK</span><span class=p>;</span>
+        <span class=n>response</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>err_no</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=mi>1</span><span class=p>;</span>
+        <span class=n>response</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>err_msg</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=sa></span><span class=s>&#34;</span><span class=s>wrong id or password</span><span class=s>&#34;</span><span class=p>;</span>
+        <span class=n>conn</span><span class=o>-</span><span class=o>&gt;</span><span class=n>send</span><span class=p>(</span><span class=n>response</span><span class=p>.</span><span class=n>dump</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+<span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
+<span>2022-11-28</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
+<span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fchatserver09-%25E7%2594%25A8%25E6%2588%25B7%25E6%25B3%25A8%25E5%2586%258C%25E5%2592%258C%25E7%2599%25BB%25E5%25BD%2595%25E4%25B8%259A%25E5%258A%25A1%2f&text=%e3%80%90ChatServer%e3%80%9109%20-%20%e7%94%a8%e6%88%b7%e6%b3%a8%e5%86%8c%e5%92%8c%e7%99%bb%e5%bd%95%e4%b8%9a%e5%8a%a1&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2fchatserver09-%25E7%2594%25A8%25E6%2588%25B7%25E6%25B3%25A8%25E5%2586%258C%25E5%2592%258C%25E7%2599%25BB%25E5%25BD%2595%25E4%25B8%259A%25E5%258A%25A1%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fchatserver09-%25E7%2594%25A8%25E6%2588%25B7%25E6%25B3%25A8%25E5%2586%258C%25E5%2592%258C%25E7%2599%25BB%25E5%25BD%2595%25E4%25B8%259A%25E5%258A%25A1%2f&title=%e3%80%90ChatServer%e3%80%9109%20-%20%e7%94%a8%e6%88%b7%e6%b3%a8%e5%86%8c%e5%92%8c%e7%99%bb%e5%bd%95%e4%b8%9a%e5%8a%a1" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/linux/><i class="fas fa-tag fa-fw"></i>&nbsp;Linux</a>&nbsp;
+</span><span class=tag><a href=https://xushun1221.github.io/tags/c++/><i class="fas fa-tag fa-fw"></i>&nbsp;C++</a>&nbsp;
+</span><span class=tag><a href=https://xushun1221.github.io/tags/mysql/><i class="fas fa-tag fa-fw"></i>&nbsp;MySQL</a>&nbsp;</span></section><section><span><a href=javascript:window.history.back();>Back</a></span>&nbsp;|&nbsp;<span><a href=https://xushun1221.github.io>Home</a></span></section></div><div class=post-nav><a href=https://xushun1221.github.io/2022/chatserver04-%E9%A1%B9%E7%9B%AE%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84/ class=prev rel=prev title="【ChatServer】04 - 项目目录结构"><i class="fas fa-angle-left fa-fw"></i>【ChatServer】04 - 项目目录结构</a>
+<a href=https://xushun1221.github.io/2022/chatserver08-%E6%95%B0%E6%8D%AE%E5%B1%82%E4%BB%A3%E7%A0%81%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1/ class=next rel=next title="【ChatServer】08 - 数据层代码框架设计">【ChatServer】08 - 数据层代码框架设计<i class="fas fa-angle-right fa-fw"></i></a></div><div class=post-comment></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2022</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=https://xushun1221.github.io/about/ target=_blank>xushun</a> | </span>Powered by <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> & <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer">LoveIt</a></div></div></footer></div><a href=# class=dynamic-to-top id=dynamic-to-top data-scroll><span>&nbsp;</span>
+</a><script src=/js/lib/jquery/jquery.slim.min.js></script><script src=/js/lib/lazysizes/lazysizes.min.js></script><script src=/js/lib/smooth-scroll/smooth-scroll.polyfills.min.js></script><script>window.scroll=new SmoothScroll('[data-scroll]',{speed:300,speedAsDuration:true});</script><link rel=stylesheet href=/css/lib/katex/katex.min.css><script src=/js/lib/katex/katex.min.js></script><script defer src=/js/lib/katex/auto-render.min.js></script><link rel=stylesheet href=/css/lib/katex/copy-tex.min.css><script defer src=/js/lib/katex/copy-tex.min.js></script><script defer src=/js/lib/katex/mhchem.min.js></script><script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true},{left:"$",right:"$",display:false},]});});</script><script src=/js/blog.min.js></script></body></html>
