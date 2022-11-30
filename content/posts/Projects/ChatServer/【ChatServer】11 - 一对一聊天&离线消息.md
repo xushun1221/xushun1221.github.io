@@ -1,7 +1,7 @@
 ---
 title: 【ChatServer】11 - 一对一聊天&离线消息
 date: 2022-11-30
-tags: [Linux, C++, muduo, MySQL]
+tags: [Linux, C++, MySQL]
 categories: [Projects]
 ---
 

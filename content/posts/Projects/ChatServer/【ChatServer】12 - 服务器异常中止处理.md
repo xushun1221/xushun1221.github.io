@@ -1,7 +1,7 @@
 ---
 title: 【ChatServer】12 - 服务器异常中止处理
 date: 2022-11-30
-tags: [Linux, C++, MySQL, muduo]
+tags: [Linux, C++, MySQL]
 categories: [Projects]
 ---
 
