@@ -1,0 +1,1122 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【ChatServer】15 - 客户端 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/chatserver11-%E4%B8%80%E5%AF%B9%E4%B8%80%E8%81%8A%E5%A4%A9%E7%A6%BB%E7%BA%BF%E6%B6%88%E6%81%AF/><link rel=canonical href=https://xushun1221.github.io/2022/chatserver15-%E5%AE%A2%E6%88%B7%E7%AB%AF/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【ChatServer】15 - 客户端"><meta name=twitter:description content="简单实现一个基于控制台的客户端，功能比较简单，直接使用系统API和c++11的线程库（pthread底层），不用muduo库了，一个线程读消"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【ChatServer】15 - 客户端","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/chatserver15-%E5%AE%A2%E6%88%B7%E7%AB%AF\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"Linux, C\x2b\x2b","wordcount":2671,"url":"https:\/\/xushun1221.github.io\/2022\/chatserver15-%E5%AE%A2%E6%88%B7%E7%AB%AF\/","datePublished":"2022-12-02T00:00:00\x2b00:00","dateModified":"2022-12-02T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【ChatServer】15 - 客户端</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-12-02>2022-12-02</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 2671 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/projects/>Projects</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile></nav></div></details></div><div class=post-content><p>简单实现一个基于控制台的客户端，功能比较简单，直接使用系统API和c++11的线程库（pthread底层），不用muduo库了，一个线程读消息，一个线程发送消息。</p><p>用户登录后在聊天主界面，可以输入命令进行操作，主线程也会使用一组回调函数来处理各个命令。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>  1
+</span><span class=lnt>  2
+</span><span class=lnt>  3
+</span><span class=lnt>  4
+</span><span class=lnt>  5
+</span><span class=lnt>  6
+</span><span class=lnt>  7
+</span><span class=lnt>  8
+</span><span class=lnt>  9
+</span><span class=lnt> 10
+</span><span class=lnt> 11
+</span><span class=lnt> 12
+</span><span class=lnt> 13
+</span><span class=lnt> 14
+</span><span class=lnt> 15
+</span><span class=lnt> 16
+</span><span class=lnt> 17
+</span><span class=lnt> 18
+</span><span class=lnt> 19
+</span><span class=lnt> 20
+</span><span class=lnt> 21
+</span><span class=lnt> 22
+</span><span class=lnt> 23
+</span><span class=lnt> 24
+</span><span class=lnt> 25
+</span><span class=lnt> 26
+</span><span class=lnt> 27
+</span><span class=lnt> 28
+</span><span class=lnt> 29
+</span><span class=lnt> 30
+</span><span class=lnt> 31
+</span><span class=lnt> 32
+</span><span class=lnt> 33
+</span><span class=lnt> 34
+</span><span class=lnt> 35
+</span><span class=lnt> 36
+</span><span class=lnt> 37
+</span><span class=lnt> 38
+</span><span class=lnt> 39
+</span><span class=lnt> 40
+</span><span class=lnt> 41
+</span><span class=lnt> 42
+</span><span class=lnt> 43
+</span><span class=lnt> 44
+</span><span class=lnt> 45
+</span><span class=lnt> 46
+</span><span class=lnt> 47
+</span><span class=lnt> 48
+</span><span class=lnt> 49
+</span><span class=lnt> 50
+</span><span class=lnt> 51
+</span><span class=lnt> 52
+</span><span class=lnt> 53
+</span><span class=lnt> 54
+</span><span class=lnt> 55
+</span><span class=lnt> 56
+</span><span class=lnt> 57
+</span><span class=lnt> 58
+</span><span class=lnt> 59
+</span><span class=lnt> 60
+</span><span class=lnt> 61
+</span><span class=lnt> 62
+</span><span class=lnt> 63
+</span><span class=lnt> 64
+</span><span class=lnt> 65
+</span><span class=lnt> 66
+</span><span class=lnt> 67
+</span><span class=lnt> 68
+</span><span class=lnt> 69
+</span><span class=lnt> 70
+</span><span class=lnt> 71
+</span><span class=lnt> 72
+</span><span class=lnt> 73
+</span><span class=lnt> 74
+</span><span class=lnt> 75
+</span><span class=lnt> 76
+</span><span class=lnt> 77
+</span><span class=lnt> 78
+</span><span class=lnt> 79
+</span><span class=lnt> 80
+</span><span class=lnt> 81
+</span><span class=lnt> 82
+</span><span class=lnt> 83
+</span><span class=lnt> 84
+</span><span class=lnt> 85
+</span><span class=lnt> 86
+</span><span class=lnt> 87
+</span><span class=lnt> 88
+</span><span class=lnt> 89
+</span><span class=lnt> 90
+</span><span class=lnt> 91
+</span><span class=lnt> 92
+</span><span class=lnt> 93
+</span><span class=lnt> 94
+</span><span class=lnt> 95
+</span><span class=lnt> 96
+</span><span class=lnt> 97
+</span><span class=lnt> 98
+</span><span class=lnt> 99
+</span><span class=lnt>100
+</span><span class=lnt>101
+</span><span class=lnt>102
+</span><span class=lnt>103
+</span><span class=lnt>104
+</span><span class=lnt>105
+</span><span class=lnt>106
+</span><span class=lnt>107
+</span><span class=lnt>108
+</span><span class=lnt>109
+</span><span class=lnt>110
+</span><span class=lnt>111
+</span><span class=lnt>112
+</span><span class=lnt>113
+</span><span class=lnt>114
+</span><span class=lnt>115
+</span><span class=lnt>116
+</span><span class=lnt>117
+</span><span class=lnt>118
+</span><span class=lnt>119
+</span><span class=lnt>120
+</span><span class=lnt>121
+</span><span class=lnt>122
+</span><span class=lnt>123
+</span><span class=lnt>124
+</span><span class=lnt>125
+</span><span class=lnt>126
+</span><span class=lnt>127
+</span><span class=lnt>128
+</span><span class=lnt>129
+</span><span class=lnt>130
+</span><span class=lnt>131
+</span><span class=lnt>132
+</span><span class=lnt>133
+</span><span class=lnt>134
+</span><span class=lnt>135
+</span><span class=lnt>136
+</span><span class=lnt>137
+</span><span class=lnt>138
+</span><span class=lnt>139
+</span><span class=lnt>140
+</span><span class=lnt>141
+</span><span class=lnt>142
+</span><span class=lnt>143
+</span><span class=lnt>144
+</span><span class=lnt>145
+</span><span class=lnt>146
+</span><span class=lnt>147
+</span><span class=lnt>148
+</span><span class=lnt>149
+</span><span class=lnt>150
+</span><span class=lnt>151
+</span><span class=lnt>152
+</span><span class=lnt>153
+</span><span class=lnt>154
+</span><span class=lnt>155
+</span><span class=lnt>156
+</span><span class=lnt>157
+</span><span class=lnt>158
+</span><span class=lnt>159
+</span><span class=lnt>160
+</span><span class=lnt>161
+</span><span class=lnt>162
+</span><span class=lnt>163
+</span><span class=lnt>164
+</span><span class=lnt>165
+</span><span class=lnt>166
+</span><span class=lnt>167
+</span><span class=lnt>168
+</span><span class=lnt>169
+</span><span class=lnt>170
+</span><span class=lnt>171
+</span><span class=lnt>172
+</span><span class=lnt>173
+</span><span class=lnt>174
+</span><span class=lnt>175
+</span><span class=lnt>176
+</span><span class=lnt>177
+</span><span class=lnt>178
+</span><span class=lnt>179
+</span><span class=lnt>180
+</span><span class=lnt>181
+</span><span class=lnt>182
+</span><span class=lnt>183
+</span><span class=lnt>184
+</span><span class=lnt>185
+</span><span class=lnt>186
+</span><span class=lnt>187
+</span><span class=lnt>188
+</span><span class=lnt>189
+</span><span class=lnt>190
+</span><span class=lnt>191
+</span><span class=lnt>192
+</span><span class=lnt>193
+</span><span class=lnt>194
+</span><span class=lnt>195
+</span><span class=lnt>196
+</span><span class=lnt>197
+</span><span class=lnt>198
+</span><span class=lnt>199
+</span><span class=lnt>200
+</span><span class=lnt>201
+</span><span class=lnt>202
+</span><span class=lnt>203
+</span><span class=lnt>204
+</span><span class=lnt>205
+</span><span class=lnt>206
+</span><span class=lnt>207
+</span><span class=lnt>208
+</span><span class=lnt>209
+</span><span class=lnt>210
+</span><span class=lnt>211
+</span><span class=lnt>212
+</span><span class=lnt>213
+</span><span class=lnt>214
+</span><span class=lnt>215
+</span><span class=lnt>216
+</span><span class=lnt>217
+</span><span class=lnt>218
+</span><span class=lnt>219
+</span><span class=lnt>220
+</span><span class=lnt>221
+</span><span class=lnt>222
+</span><span class=lnt>223
+</span><span class=lnt>224
+</span><span class=lnt>225
+</span><span class=lnt>226
+</span><span class=lnt>227
+</span><span class=lnt>228
+</span><span class=lnt>229
+</span><span class=lnt>230
+</span><span class=lnt>231
+</span><span class=lnt>232
+</span><span class=lnt>233
+</span><span class=lnt>234
+</span><span class=lnt>235
+</span><span class=lnt>236
+</span><span class=lnt>237
+</span><span class=lnt>238
+</span><span class=lnt>239
+</span><span class=lnt>240
+</span><span class=lnt>241
+</span><span class=lnt>242
+</span><span class=lnt>243
+</span><span class=lnt>244
+</span><span class=lnt>245
+</span><span class=lnt>246
+</span><span class=lnt>247
+</span><span class=lnt>248
+</span><span class=lnt>249
+</span><span class=lnt>250
+</span><span class=lnt>251
+</span><span class=lnt>252
+</span><span class=lnt>253
+</span><span class=lnt>254
+</span><span class=lnt>255
+</span><span class=lnt>256
+</span><span class=lnt>257
+</span><span class=lnt>258
+</span><span class=lnt>259
+</span><span class=lnt>260
+</span><span class=lnt>261
+</span><span class=lnt>262
+</span><span class=lnt>263
+</span><span class=lnt>264
+</span><span class=lnt>265
+</span><span class=lnt>266
+</span><span class=lnt>267
+</span><span class=lnt>268
+</span><span class=lnt>269
+</span><span class=lnt>270
+</span><span class=lnt>271
+</span><span class=lnt>272
+</span><span class=lnt>273
+</span><span class=lnt>274
+</span><span class=lnt>275
+</span><span class=lnt>276
+</span><span class=lnt>277
+</span><span class=lnt>278
+</span><span class=lnt>279
+</span><span class=lnt>280
+</span><span class=lnt>281
+</span><span class=lnt>282
+</span><span class=lnt>283
+</span><span class=lnt>284
+</span><span class=lnt>285
+</span><span class=lnt>286
+</span><span class=lnt>287
+</span><span class=lnt>288
+</span><span class=lnt>289
+</span><span class=lnt>290
+</span><span class=lnt>291
+</span><span class=lnt>292
+</span><span class=lnt>293
+</span><span class=lnt>294
+</span><span class=lnt>295
+</span><span class=lnt>296
+</span><span class=lnt>297
+</span><span class=lnt>298
+</span><span class=lnt>299
+</span><span class=lnt>300
+</span><span class=lnt>301
+</span><span class=lnt>302
+</span><span class=lnt>303
+</span><span class=lnt>304
+</span><span class=lnt>305
+</span><span class=lnt>306
+</span><span class=lnt>307
+</span><span class=lnt>308
+</span><span class=lnt>309
+</span><span class=lnt>310
+</span><span class=lnt>311
+</span><span class=lnt>312
+</span><span class=lnt>313
+</span><span class=lnt>314
+</span><span class=lnt>315
+</span><span class=lnt>316
+</span><span class=lnt>317
+</span><span class=lnt>318
+</span><span class=lnt>319
+</span><span class=lnt>320
+</span><span class=lnt>321
+</span><span class=lnt>322
+</span><span class=lnt>323
+</span><span class=lnt>324
+</span><span class=lnt>325
+</span><span class=lnt>326
+</span><span class=lnt>327
+</span><span class=lnt>328
+</span><span class=lnt>329
+</span><span class=lnt>330
+</span><span class=lnt>331
+</span><span class=lnt>332
+</span><span class=lnt>333
+</span><span class=lnt>334
+</span><span class=lnt>335
+</span><span class=lnt>336
+</span><span class=lnt>337
+</span><span class=lnt>338
+</span><span class=lnt>339
+</span><span class=lnt>340
+</span><span class=lnt>341
+</span><span class=lnt>342
+</span><span class=lnt>343
+</span><span class=lnt>344
+</span><span class=lnt>345
+</span><span class=lnt>346
+</span><span class=lnt>347
+</span><span class=lnt>348
+</span><span class=lnt>349
+</span><span class=lnt>350
+</span><span class=lnt>351
+</span><span class=lnt>352
+</span><span class=lnt>353
+</span><span class=lnt>354
+</span><span class=lnt>355
+</span><span class=lnt>356
+</span><span class=lnt>357
+</span><span class=lnt>358
+</span><span class=lnt>359
+</span><span class=lnt>360
+</span><span class=lnt>361
+</span><span class=lnt>362
+</span><span class=lnt>363
+</span><span class=lnt>364
+</span><span class=lnt>365
+</span><span class=lnt>366
+</span><span class=lnt>367
+</span><span class=lnt>368
+</span><span class=lnt>369
+</span><span class=lnt>370
+</span><span class=lnt>371
+</span><span class=lnt>372
+</span><span class=lnt>373
+</span><span class=lnt>374
+</span><span class=lnt>375
+</span><span class=lnt>376
+</span><span class=lnt>377
+</span><span class=lnt>378
+</span><span class=lnt>379
+</span><span class=lnt>380
+</span><span class=lnt>381
+</span><span class=lnt>382
+</span><span class=lnt>383
+</span><span class=lnt>384
+</span><span class=lnt>385
+</span><span class=lnt>386
+</span><span class=lnt>387
+</span><span class=lnt>388
+</span><span class=lnt>389
+</span><span class=lnt>390
+</span><span class=lnt>391
+</span><span class=lnt>392
+</span><span class=lnt>393
+</span><span class=lnt>394
+</span><span class=lnt>395
+</span><span class=lnt>396
+</span><span class=lnt>397
+</span><span class=lnt>398
+</span><span class=lnt>399
+</span><span class=lnt>400
+</span><span class=lnt>401
+</span><span class=lnt>402
+</span><span class=lnt>403
+</span><span class=lnt>404
+</span><span class=lnt>405
+</span><span class=lnt>406
+</span><span class=lnt>407
+</span><span class=lnt>408
+</span><span class=lnt>409
+</span><span class=lnt>410
+</span><span class=lnt>411
+</span><span class=lnt>412
+</span><span class=lnt>413
+</span><span class=lnt>414
+</span><span class=lnt>415
+</span><span class=lnt>416
+</span><span class=lnt>417
+</span><span class=lnt>418
+</span><span class=lnt>419
+</span><span class=lnt>420
+</span><span class=lnt>421
+</span><span class=lnt>422
+</span><span class=lnt>423
+</span><span class=lnt>424
+</span><span class=lnt>425
+</span><span class=lnt>426
+</span><span class=lnt>427
+</span><span class=lnt>428
+</span><span class=lnt>429
+</span><span class=lnt>430
+</span><span class=lnt>431
+</span><span class=lnt>432
+</span><span class=lnt>433
+</span><span class=lnt>434
+</span><span class=lnt>435
+</span><span class=lnt>436
+</span><span class=lnt>437
+</span><span class=lnt>438
+</span><span class=lnt>439
+</span><span class=lnt>440
+</span><span class=lnt>441
+</span><span class=lnt>442
+</span><span class=lnt>443
+</span><span class=lnt>444
+</span><span class=lnt>445
+</span><span class=lnt>446
+</span><span class=lnt>447
+</span><span class=lnt>448
+</span><span class=lnt>449
+</span><span class=lnt>450
+</span><span class=lnt>451
+</span><span class=lnt>452
+</span><span class=lnt>453
+</span><span class=lnt>454
+</span><span class=lnt>455
+</span><span class=lnt>456
+</span><span class=lnt>457
+</span><span class=lnt>458
+</span><span class=lnt>459
+</span><span class=lnt>460
+</span><span class=lnt>461
+</span><span class=lnt>462
+</span><span class=lnt>463
+</span><span class=lnt>464
+</span><span class=lnt>465
+</span><span class=lnt>466
+</span><span class=lnt>467
+</span><span class=lnt>468
+</span><span class=lnt>469
+</span><span class=lnt>470
+</span><span class=lnt>471
+</span><span class=lnt>472
+</span><span class=lnt>473
+</span><span class=lnt>474
+</span><span class=lnt>475
+</span><span class=lnt>476
+</span><span class=lnt>477
+</span><span class=lnt>478
+</span><span class=lnt>479
+</span><span class=lnt>480
+</span><span class=lnt>481
+</span><span class=lnt>482
+</span><span class=lnt>483
+</span><span class=lnt>484
+</span><span class=lnt>485
+</span><span class=lnt>486
+</span><span class=lnt>487
+</span><span class=lnt>488
+</span><span class=lnt>489
+</span><span class=lnt>490
+</span><span class=lnt>491
+</span><span class=lnt>492
+</span><span class=lnt>493
+</span><span class=lnt>494
+</span><span class=lnt>495
+</span><span class=lnt>496
+</span><span class=lnt>497
+</span><span class=lnt>498
+</span><span class=lnt>499
+</span><span class=lnt>500
+</span><span class=lnt>501
+</span><span class=lnt>502
+</span><span class=lnt>503
+</span><span class=lnt>504
+</span><span class=lnt>505
+</span><span class=lnt>506
+</span><span class=lnt>507
+</span><span class=lnt>508
+</span><span class=lnt>509
+</span><span class=lnt>510
+</span><span class=lnt>511
+</span><span class=lnt>512
+</span><span class=lnt>513
+</span><span class=lnt>514
+</span><span class=lnt>515
+</span><span class=lnt>516
+</span><span class=lnt>517
+</span><span class=lnt>518
+</span><span class=lnt>519
+</span><span class=lnt>520
+</span><span class=lnt>521
+</span><span class=lnt>522
+</span><span class=lnt>523
+</span><span class=lnt>524
+</span><span class=lnt>525
+</span><span class=lnt>526
+</span><span class=lnt>527
+</span><span class=lnt>528
+</span><span class=lnt>529
+</span><span class=lnt>530
+</span><span class=lnt>531
+</span><span class=lnt>532
+</span><span class=lnt>533
+</span><span class=lnt>534
+</span><span class=lnt>535
+</span><span class=lnt>536
+</span><span class=lnt>537
+</span><span class=lnt>538
+</span><span class=lnt>539
+</span><span class=lnt>540
+</span><span class=lnt>541
+</span><span class=lnt>542
+</span><span class=lnt>543
+</span><span class=lnt>544
+</span><span class=lnt>545
+</span><span class=lnt>546
+</span><span class=lnt>547
+</span><span class=lnt>548
+</span><span class=lnt>549
+</span><span class=lnt>550
+</span><span class=lnt>551
+</span><span class=lnt>552
+</span><span class=lnt>553
+</span><span class=lnt>554
+</span><span class=lnt>555
+</span><span class=lnt>556
+</span><span class=lnt>557
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=cm>/*
+</span><span class=cm> *  @Filename : main.cc
+</span><span class=cm> *  @Description : ChatClient
+</span><span class=cm> *  @Datatime : 2022/12/02 17:00:39
+</span><span class=cm> *  @Author : xushun
+</span><span class=cm> */</span>
+
+<span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;json.hpp&#34;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;Group.hh&#34;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;User.hh&#34;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&#34;public.hh&#34;</span><span class=cp>
+</span><span class=cp></span>
+<span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;vector&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;chrono&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;string&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unordered_map&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;functional&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;atomic&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;thread&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;unistd.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/socket.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;sys/types.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;netinet/in.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;arpa/inet.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;semaphore.h&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=k>using</span> <span class=n>json</span> <span class=o>=</span> <span class=n>nlohmann</span><span class=o>:</span><span class=o>:</span><span class=n>json</span><span class=p>;</span>
+
+<span class=c1>// 当前系统登录用户
+</span><span class=c1></span><span class=n>User</span> <span class=n>gCurrentUser</span><span class=p>;</span>
+<span class=c1>// 当前登录用户的好友列表
+</span><span class=c1></span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>vector</span><span class=o>&lt;</span><span class=n>User</span><span class=o>&gt;</span> <span class=n>gCurrentUserFriendList</span><span class=p>;</span>
+<span class=c1>// 当前登录用户的群组列表
+</span><span class=c1></span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>vector</span><span class=o>&lt;</span><span class=n>Group</span><span class=o>&gt;</span> <span class=n>gCurrentUserGroupList</span><span class=p>;</span>
+<span class=c1>// 控制主菜单页面程序
+</span><span class=c1></span><span class=kt>bool</span> <span class=n>isMainMenuRunning</span> <span class=o>=</span> <span class=nb>false</span><span class=p>;</span>
+<span class=c1>// 用于读写线程通信
+</span><span class=c1></span><span class=n>sem_t</span> <span class=n>rwsem</span><span class=p>;</span>
+<span class=c1>// 记录登录状态
+</span><span class=c1></span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>atomic_bool</span> <span class=n>isLogin</span><span class=p>{</span><span class=nb>false</span><span class=p>}</span><span class=p>;</span>
+
+<span class=c1>// 接收线程
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>readHandler</span><span class=p>(</span><span class=kt>int</span> <span class=n>clientFd</span><span class=p>)</span><span class=p>;</span>
+<span class=c1>// 获取系统时间
+</span><span class=c1></span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>getCurrentTime</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+<span class=c1>// 主聊天页面
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>mainMenu</span><span class=p>(</span><span class=kt>int</span> <span class=n>clientFd</span><span class=p>)</span><span class=p>;</span>
+<span class=c1>// 显示当前用户基本信息
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>showCurrentUserData</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+
+<span class=c1>// chat client   主线程发送数据 子线程接收数据
+</span><span class=c1></span><span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=kt>int</span> <span class=n>argc</span><span class=p>,</span> <span class=kt>char</span> <span class=o>*</span><span class=o>*</span><span class=n>argv</span><span class=p>)</span>
+<span class=p>{</span>
+    <span class=c1>// 命令行参数需要指定服务器的ip和端口
+</span><span class=c1></span>    <span class=k>if</span> <span class=p>(</span><span class=n>argc</span> <span class=o>&lt;</span> <span class=mi>3</span><span class=p>)</span>
+    <span class=p>{</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cerr</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>command invalid! example: ./chatclient 127.0.0.1 6000</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=o>-</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=kt>char</span> <span class=o>*</span><span class=n>ip</span> <span class=o>=</span> <span class=n>argv</span><span class=p>[</span><span class=mi>1</span><span class=p>]</span><span class=p>;</span>
+    <span class=kt>uint16_t</span> <span class=n>port</span> <span class=o>=</span> <span class=n>atoi</span><span class=p>(</span><span class=n>argv</span><span class=p>[</span><span class=mi>2</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// client socket
+</span><span class=c1></span>    <span class=kt>int</span> <span class=n>clientFd</span> <span class=o>=</span> <span class=n>socket</span><span class=p>(</span><span class=n>AF_INET</span><span class=p>,</span> <span class=n>SOCK_STREAM</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=o>-</span><span class=mi>1</span> <span class=o>=</span><span class=o>=</span> <span class=n>clientFd</span><span class=p>)</span>
+    <span class=p>{</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cerr</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>socket create error</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=o>-</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=c1>// server addr
+</span><span class=c1></span>    <span class=n>sockaddr_in</span> <span class=n>serverAddr</span><span class=p>;</span>
+    <span class=n>memset</span><span class=p>(</span><span class=o>&amp;</span><span class=n>serverAddr</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>sockaddr_in</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>serverAddr</span><span class=p>.</span><span class=n>sin_family</span> <span class=o>=</span> <span class=n>AF_INET</span><span class=p>;</span>
+    <span class=n>serverAddr</span><span class=p>.</span><span class=n>sin_port</span> <span class=o>=</span> <span class=n>htons</span><span class=p>(</span><span class=n>port</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>serverAddr</span><span class=p>.</span><span class=n>sin_addr</span><span class=p>.</span><span class=n>s_addr</span> <span class=o>=</span> <span class=n>inet_addr</span><span class=p>(</span><span class=n>ip</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// connect server
+</span><span class=c1></span>    <span class=k>if</span> <span class=p>(</span><span class=o>-</span><span class=mi>1</span> <span class=o>=</span><span class=o>=</span> <span class=n>connect</span><span class=p>(</span><span class=n>clientFd</span><span class=p>,</span> <span class=p>(</span><span class=n>sockaddr</span> <span class=o>*</span><span class=p>)</span><span class=o>&amp;</span><span class=n>serverAddr</span><span class=p>,</span> <span class=k>sizeof</span><span class=p>(</span><span class=n>sockaddr_in</span><span class=p>)</span><span class=p>)</span><span class=p>)</span>
+    <span class=p>{</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cerr</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>connect server error</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+        <span class=n>close</span><span class=p>(</span><span class=n>clientFd</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>exit</span><span class=p>(</span><span class=o>-</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=c1>// 初始化读写线程通信用的信号量
+</span><span class=c1></span>    <span class=n>sem_init</span><span class=p>(</span><span class=o>&amp;</span><span class=n>rwsem</span><span class=p>,</span> <span class=mi>0</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 启动子线程 接收服务器发来的数据
+</span><span class=c1></span>    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=kr>thread</span> <span class=n>readThread</span><span class=p>(</span><span class=n>readHandler</span><span class=p>,</span> <span class=n>clientFd</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>readThread</span><span class=p>.</span><span class=n>detach</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+
+    <span class=c1>// 主线程用于接收用户输入 发送数据到服务器
+</span><span class=c1></span>    <span class=k>for</span> <span class=p>(</span><span class=p>;</span><span class=p>;</span><span class=p>)</span>
+    <span class=p>{</span>
+        <span class=c1>// show menu
+</span><span class=c1></span>        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>========================</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>1. login</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>2. register</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>3. quit</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>========================</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>choice:</span><span class=s>&#34;</span><span class=p>;</span>
+        <span class=c1>// select function
+</span><span class=c1></span>        <span class=kt>int</span> <span class=n>choice</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cin</span> <span class=o>&gt;</span><span class=o>&gt;</span> <span class=n>choice</span><span class=p>;</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cin</span><span class=p>.</span><span class=n>get</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 吃掉回车
+</span><span class=c1></span>        <span class=c1>// 执行功能选项
+</span><span class=c1></span>        <span class=k>switch</span> <span class=p>(</span><span class=n>choice</span><span class=p>)</span>
+        <span class=p>{</span>
+        <span class=k>case</span> <span class=mi>1</span><span class=o>:</span> <span class=c1>// login
+</span><span class=c1></span>        <span class=p>{</span>
+            <span class=kt>uint32_t</span> <span class=n>id</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>
+            <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>password</span><span class=p>;</span>
+            <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>userid: </span><span class=s>&#34;</span><span class=p>;</span>
+            <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cin</span> <span class=o>&gt;</span><span class=o>&gt;</span> <span class=n>id</span><span class=p>;</span>
+            <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cin</span><span class=p>.</span><span class=n>get</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 吃掉回车
+</span><span class=c1></span>            <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>password: </span><span class=s>&#34;</span><span class=p>;</span>
+            <span class=n>getline</span><span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cin</span><span class=p>,</span> <span class=n>password</span><span class=p>)</span><span class=p>;</span>
+
+            <span class=n>json</span> <span class=n>js</span><span class=p>;</span>
+            <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>msg_type</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>LOGIN_MSG</span><span class=p>;</span>
+            <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>id</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>id</span><span class=p>;</span>
+            <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>password</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>password</span><span class=p>;</span>
+            <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>request</span> <span class=o>=</span> <span class=n>js</span><span class=p>.</span><span class=n>dump</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+
+            <span class=n>isLogin</span> <span class=o>=</span> <span class=nb>false</span><span class=p>;</span>
+            <span class=kt>int</span> <span class=n>n</span> <span class=o>=</span> <span class=n>send</span><span class=p>(</span><span class=n>clientFd</span><span class=p>,</span> <span class=n>request</span><span class=p>.</span><span class=n>c_str</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>strlen</span><span class=p>(</span><span class=n>request</span><span class=p>.</span><span class=n>c_str</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=o>+</span> <span class=mi>1</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+            <span class=k>if</span> <span class=p>(</span><span class=n>n</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span>
+            <span class=p>{</span>
+                <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cerr</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>send login message error: </span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>request</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+            <span class=p>}</span>
+            <span class=c1>// 等待信号量 子线程处理完登录响应消息会通知
+</span><span class=c1></span>            <span class=n>sem_wait</span><span class=p>(</span><span class=o>&amp;</span><span class=n>rwsem</span><span class=p>)</span><span class=p>;</span>
+            <span class=k>if</span> <span class=p>(</span><span class=n>isLogin</span><span class=p>)</span>
+            <span class=p>{</span>
+                <span class=c1>// 登录成功 进入聊天主菜单
+</span><span class=c1></span>                <span class=n>isMainMenuRunning</span> <span class=o>=</span> <span class=nb>true</span><span class=p>;</span>
+                <span class=n>mainMenu</span><span class=p>(</span><span class=n>clientFd</span><span class=p>)</span><span class=p>;</span>
+            <span class=p>}</span>
+            <span class=k>break</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=k>case</span> <span class=mi>2</span><span class=o>:</span> <span class=c1>// register
+</span><span class=c1></span>        <span class=p>{</span>
+            <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>name</span><span class=p>;</span>
+            <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>password</span><span class=p>;</span>
+            <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>username: </span><span class=s>&#34;</span><span class=p>;</span>
+            <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>getline</span><span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cin</span><span class=p>,</span> <span class=n>name</span><span class=p>)</span><span class=p>;</span>
+            <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>password: </span><span class=s>&#34;</span><span class=p>;</span>
+            <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>getline</span><span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cin</span><span class=p>,</span> <span class=n>password</span><span class=p>)</span><span class=p>;</span>
+
+            <span class=n>json</span> <span class=n>js</span><span class=p>;</span>
+            <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>msg_type</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>REG_MSG</span><span class=p>;</span>
+            <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>name</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>name</span><span class=p>;</span>
+            <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>password</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>password</span><span class=p>;</span>
+            <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>request</span> <span class=o>=</span> <span class=n>js</span><span class=p>.</span><span class=n>dump</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+            <span class=kt>int</span> <span class=n>n</span> <span class=o>=</span> <span class=n>send</span><span class=p>(</span><span class=n>clientFd</span><span class=p>,</span> <span class=n>request</span><span class=p>.</span><span class=n>c_str</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>strlen</span><span class=p>(</span><span class=n>request</span><span class=p>.</span><span class=n>c_str</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=o>+</span> <span class=mi>1</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+            <span class=k>if</span> <span class=p>(</span><span class=n>n</span> <span class=o>=</span><span class=o>=</span> <span class=o>-</span><span class=mi>1</span><span class=p>)</span>
+            <span class=p>{</span>
+                <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cerr</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>send register message error: </span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>request</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+            <span class=p>}</span>
+            <span class=c1>// 等待信号量 子线程处理完注册响应消息会通知
+</span><span class=c1></span>            <span class=n>sem_wait</span><span class=p>(</span><span class=o>&amp;</span><span class=n>rwsem</span><span class=p>)</span><span class=p>;</span>
+            <span class=k>break</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=k>case</span> <span class=mi>3</span><span class=o>:</span> <span class=c1>// quit
+</span><span class=c1></span>        <span class=p>{</span>
+            <span class=n>close</span><span class=p>(</span><span class=n>clientFd</span><span class=p>)</span><span class=p>;</span>
+            <span class=n>sem_destroy</span><span class=p>(</span><span class=o>&amp;</span><span class=n>rwsem</span><span class=p>)</span><span class=p>;</span>
+            <span class=n>exit</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=k>default</span><span class=o>:</span>
+        <span class=p>{</span>
+            <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cerr</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>invalid input!</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+            <span class=k>break</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+
+    <span class=k>return</span> <span class=mi>0</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=c1>// 处理注册响应的逻辑
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>doRegResponse</span><span class=p>(</span><span class=n>json</span> <span class=o>&amp;</span><span class=n>responsejs</span><span class=p>)</span>
+<span class=p>{</span>
+    <span class=k>if</span> <span class=p>(</span><span class=mi>0</span> <span class=o>!</span><span class=o>=</span> <span class=n>responsejs</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>err_no</span><span class=s>&#34;</span><span class=p>]</span><span class=p>.</span><span class=n>get</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=p>(</span><span class=p>)</span><span class=p>)</span>
+    <span class=p>{</span>
+        <span class=c1>// 注册失败
+</span><span class=c1></span>        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cerr</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>register fail: name already exist!</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>else</span>
+    <span class=p>{</span>
+        <span class=c1>// 注册成功
+</span><span class=c1></span>        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>register success, userid is: </span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>responsejs</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>id</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>, donot forget it!</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=p>}</span>
+
+<span class=c1>// 处理登录响应的逻辑
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>doLoginResponse</span><span class=p>(</span><span class=n>json</span> <span class=o>&amp;</span><span class=n>responsejs</span><span class=p>)</span>
+<span class=p>{</span>
+    <span class=k>if</span> <span class=p>(</span><span class=mi>0</span> <span class=o>!</span><span class=o>=</span> <span class=n>responsejs</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>err_no</span><span class=s>&#34;</span><span class=p>]</span><span class=p>.</span><span class=n>get</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=p>(</span><span class=p>)</span><span class=p>)</span>
+    <span class=p>{</span>
+        <span class=c1>// 登录失败 服务器会返回失败原因
+</span><span class=c1></span>        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cerr</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>responsejs</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>err_msg</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+        <span class=n>isLogin</span> <span class=o>=</span> <span class=nb>false</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>else</span>
+    <span class=p>{</span>
+        <span class=c1>// 登录成功
+</span><span class=c1></span>        <span class=c1>// 记录当前用户
+</span><span class=c1></span>        <span class=n>gCurrentUser</span><span class=p>.</span><span class=n>setId</span><span class=p>(</span><span class=n>responsejs</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>id</span><span class=s>&#34;</span><span class=p>]</span><span class=p>.</span><span class=n>get</span><span class=o>&lt;</span><span class=kt>uint32_t</span><span class=o>&gt;</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+        <span class=n>gCurrentUser</span><span class=p>.</span><span class=n>setName</span><span class=p>(</span><span class=n>responsejs</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>name</span><span class=s>&#34;</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+        <span class=c1>// 记录当前用户好友列表
+</span><span class=c1></span>        <span class=k>if</span> <span class=p>(</span><span class=n>responsejs</span><span class=p>.</span><span class=n>contains</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>friend_list</span><span class=s>&#34;</span><span class=p>)</span><span class=p>)</span>
+        <span class=p>{</span>
+            <span class=n>gCurrentUserFriendList</span><span class=p>.</span><span class=n>clear</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+            <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>vector</span><span class=o>&lt;</span><span class=n>json</span><span class=o>&gt;</span> <span class=n>vecFrd</span> <span class=o>=</span> <span class=n>responsejs</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>friend_list</span><span class=s>&#34;</span><span class=p>]</span><span class=p>;</span>
+            <span class=k>for</span> <span class=p>(</span><span class=n>json</span> <span class=o>&amp;</span><span class=nl>ujs</span> <span class=p>:</span> <span class=n>vecFrd</span><span class=p>)</span>
+            <span class=p>{</span>
+                <span class=n>User</span> <span class=n>user</span><span class=p>;</span>
+                <span class=n>user</span><span class=p>.</span><span class=n>setId</span><span class=p>(</span><span class=n>ujs</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>id</span><span class=s>&#34;</span><span class=p>]</span><span class=p>.</span><span class=n>get</span><span class=o>&lt;</span><span class=kt>uint32_t</span><span class=o>&gt;</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+                <span class=n>user</span><span class=p>.</span><span class=n>setName</span><span class=p>(</span><span class=n>ujs</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>name</span><span class=s>&#34;</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+                <span class=n>user</span><span class=p>.</span><span class=n>setState</span><span class=p>(</span><span class=n>ujs</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>state</span><span class=s>&#34;</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+                <span class=n>gCurrentUserFriendList</span><span class=p>.</span><span class=n>push_back</span><span class=p>(</span><span class=n>user</span><span class=p>)</span><span class=p>;</span>
+            <span class=p>}</span>
+        <span class=p>}</span>
+        <span class=c1>// 记录当前群组列表
+</span><span class=c1></span>        <span class=k>if</span> <span class=p>(</span><span class=n>responsejs</span><span class=p>.</span><span class=n>contains</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>group_list</span><span class=s>&#34;</span><span class=p>)</span><span class=p>)</span>
+        <span class=p>{</span>
+            <span class=n>gCurrentUserGroupList</span><span class=p>.</span><span class=n>clear</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+            <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>vector</span><span class=o>&lt;</span><span class=n>json</span><span class=o>&gt;</span> <span class=n>vecGrp</span> <span class=o>=</span> <span class=n>responsejs</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>group_list</span><span class=s>&#34;</span><span class=p>]</span><span class=p>;</span>
+            <span class=k>for</span> <span class=p>(</span><span class=n>json</span> <span class=o>&amp;</span><span class=nl>gjs</span> <span class=p>:</span> <span class=n>vecGrp</span><span class=p>)</span>
+            <span class=p>{</span>
+                <span class=n>Group</span> <span class=n>group</span><span class=p>;</span>
+                <span class=n>group</span><span class=p>.</span><span class=n>setId</span><span class=p>(</span><span class=n>gjs</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>groupid</span><span class=s>&#34;</span><span class=p>]</span><span class=p>.</span><span class=n>get</span><span class=o>&lt;</span><span class=kt>uint32_t</span><span class=o>&gt;</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+                <span class=n>group</span><span class=p>.</span><span class=n>setName</span><span class=p>(</span><span class=n>gjs</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>groupname</span><span class=s>&#34;</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+                <span class=n>group</span><span class=p>.</span><span class=n>setDesc</span><span class=p>(</span><span class=n>gjs</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>groupdesc</span><span class=s>&#34;</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+
+                <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>vector</span><span class=o>&lt;</span><span class=n>json</span><span class=o>&gt;</span> <span class=n>vecUsr</span> <span class=o>=</span> <span class=n>gjs</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>users</span><span class=s>&#34;</span><span class=p>]</span><span class=p>;</span>
+                <span class=k>for</span> <span class=p>(</span><span class=n>json</span> <span class=o>&amp;</span><span class=nl>ujs</span> <span class=p>:</span> <span class=n>vecUsr</span><span class=p>)</span>
+                <span class=p>{</span>
+                    <span class=n>GroupUser</span> <span class=n>user</span><span class=p>;</span>
+                    <span class=n>user</span><span class=p>.</span><span class=n>setId</span><span class=p>(</span><span class=n>ujs</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>id</span><span class=s>&#34;</span><span class=p>]</span><span class=p>.</span><span class=n>get</span><span class=o>&lt;</span><span class=kt>uint32_t</span><span class=o>&gt;</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+                    <span class=n>user</span><span class=p>.</span><span class=n>setName</span><span class=p>(</span><span class=n>ujs</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>name</span><span class=s>&#34;</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+                    <span class=n>user</span><span class=p>.</span><span class=n>setState</span><span class=p>(</span><span class=n>ujs</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>state</span><span class=s>&#34;</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+                    <span class=n>user</span><span class=p>.</span><span class=n>setRole</span><span class=p>(</span><span class=n>ujs</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>role</span><span class=s>&#34;</span><span class=p>]</span><span class=p>)</span><span class=p>;</span>
+                    <span class=n>group</span><span class=p>.</span><span class=n>getUsers</span><span class=p>(</span><span class=p>)</span><span class=p>.</span><span class=n>push_back</span><span class=p>(</span><span class=n>user</span><span class=p>)</span><span class=p>;</span>
+                <span class=p>}</span>
+                <span class=n>gCurrentUserGroupList</span><span class=p>.</span><span class=n>push_back</span><span class=p>(</span><span class=n>group</span><span class=p>)</span><span class=p>;</span>
+            <span class=p>}</span>
+        <span class=p>}</span>
+        <span class=c1>// 显示当前用户的基本信息
+</span><span class=c1></span>        <span class=n>showCurrentUserData</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=c1>// 显示当前用户的离线消息  个人消息和群组消息
+</span><span class=c1></span>        <span class=k>if</span> <span class=p>(</span><span class=n>responsejs</span><span class=p>.</span><span class=n>contains</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>offline_msg</span><span class=s>&#34;</span><span class=p>)</span><span class=p>)</span>
+        <span class=p>{</span>
+            <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>vector</span><span class=o>&lt;</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=o>&gt;</span> <span class=n>vecMsg</span> <span class=o>=</span> <span class=n>responsejs</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>offline_msg</span><span class=s>&#34;</span><span class=p>]</span><span class=p>;</span>
+            <span class=k>for</span> <span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=o>&amp;</span><span class=nl>msg</span> <span class=p>:</span> <span class=n>vecMsg</span><span class=p>)</span>
+            <span class=p>{</span>
+                <span class=n>json</span> <span class=n>js</span> <span class=o>=</span> <span class=n>json</span><span class=o>:</span><span class=o>:</span><span class=n>parse</span><span class=p>(</span><span class=n>msg</span><span class=p>)</span><span class=p>;</span>
+                <span class=k>if</span> <span class=p>(</span><span class=n>PEER_CHAT_MSG</span> <span class=o>=</span><span class=o>=</span> <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>msg_type</span><span class=s>&#34;</span><span class=p>]</span><span class=p>.</span><span class=n>get</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=p>(</span><span class=p>)</span><span class=p>)</span>
+                <span class=p>{</span>
+                    <span class=c1>// 个人消息 time [id]name said: xxxx
+</span><span class=c1></span>                    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>time</span><span class=s>&#34;</span><span class=p>]</span><span class=p>.</span><span class=n>get</span><span class=o>&lt;</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=o>&gt;</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> [</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>id</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>]</span><span class=s>&#34;</span>
+                              <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>name</span><span class=s>&#34;</span><span class=p>]</span><span class=p>.</span><span class=n>get</span><span class=o>&lt;</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=o>&gt;</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> said: </span><span class=s>&#34;</span>
+                              <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>msg_content</span><span class=s>&#34;</span><span class=p>]</span><span class=p>.</span><span class=n>get</span><span class=o>&lt;</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=o>&gt;</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+                <span class=p>}</span>
+                <span class=k>else</span>
+                <span class=p>{</span>
+                    <span class=c1>// 群组消息 time [Ggroupid][userid]username said: xxxx
+</span><span class=c1></span>                    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>time</span><span class=s>&#34;</span><span class=p>]</span><span class=p>.</span><span class=n>get</span><span class=o>&lt;</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=o>&gt;</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> [G</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>groupid</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>]</span><span class=s>&#34;</span>
+                              <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>[</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>userid</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>username</span><span class=s>&#34;</span><span class=p>]</span><span class=p>.</span><span class=n>get</span><span class=o>&lt;</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=o>&gt;</span><span class=p>(</span><span class=p>)</span>
+                              <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> said: </span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>msg_content</span><span class=s>&#34;</span><span class=p>]</span><span class=p>.</span><span class=n>get</span><span class=o>&lt;</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=o>&gt;</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+                <span class=p>}</span>
+            <span class=p>}</span>
+        <span class=p>}</span>
+        <span class=n>isLogin</span> <span class=o>=</span> <span class=nb>true</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=p>}</span>
+
+<span class=kt>void</span> <span class=nf>readHandler</span><span class=p>(</span><span class=kt>int</span> <span class=n>clientFd</span><span class=p>)</span>
+<span class=p>{</span>
+    <span class=k>for</span> <span class=p>(</span><span class=p>;</span><span class=p>;</span><span class=p>)</span>
+    <span class=p>{</span>
+        <span class=kt>char</span> <span class=n>buffer</span><span class=p>[</span><span class=mi>4096</span><span class=p>]</span> <span class=o>=</span> <span class=p>{</span><span class=mi>0</span><span class=p>}</span><span class=p>;</span>
+        <span class=kt>int</span> <span class=n>n</span> <span class=o>=</span> <span class=n>recv</span><span class=p>(</span><span class=n>clientFd</span><span class=p>,</span> <span class=n>buffer</span><span class=p>,</span> <span class=mi>4096</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 阻塞
+</span><span class=c1></span>        <span class=k>if</span> <span class=p>(</span><span class=o>-</span><span class=mi>1</span> <span class=o>=</span><span class=o>=</span> <span class=n>n</span> <span class=o>|</span><span class=o>|</span> <span class=mi>0</span> <span class=o>=</span><span class=o>=</span> <span class=n>n</span><span class=p>)</span>
+        <span class=p>{</span>
+            <span class=n>close</span><span class=p>(</span><span class=n>clientFd</span><span class=p>)</span><span class=p>;</span>
+            <span class=n>exit</span><span class=p>(</span><span class=o>-</span><span class=mi>1</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=c1>// 接收chatserver的数据
+</span><span class=c1></span>        <span class=n>json</span> <span class=n>js</span> <span class=o>=</span> <span class=n>json</span><span class=o>:</span><span class=o>:</span><span class=n>parse</span><span class=p>(</span><span class=n>buffer</span><span class=p>)</span><span class=p>;</span>
+        <span class=kt>int</span> <span class=n>msgType</span> <span class=o>=</span> <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>msg_type</span><span class=s>&#34;</span><span class=p>]</span><span class=p>.</span><span class=n>get</span><span class=o>&lt;</span><span class=kt>int</span><span class=o>&gt;</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>PEER_CHAT_MSG</span> <span class=o>=</span><span class=o>=</span> <span class=n>msgType</span><span class=p>)</span>
+        <span class=p>{</span>
+            <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>time</span><span class=s>&#34;</span><span class=p>]</span><span class=p>.</span><span class=n>get</span><span class=o>&lt;</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=o>&gt;</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> [</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>id</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>]</span><span class=s>&#34;</span>
+                      <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>name</span><span class=s>&#34;</span><span class=p>]</span><span class=p>.</span><span class=n>get</span><span class=o>&lt;</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=o>&gt;</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> said: </span><span class=s>&#34;</span>
+                      <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>msg_content</span><span class=s>&#34;</span><span class=p>]</span><span class=p>.</span><span class=n>get</span><span class=o>&lt;</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=o>&gt;</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+            <span class=k>continue</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>GROUP_CHAT_MSG</span> <span class=o>=</span><span class=o>=</span> <span class=n>msgType</span><span class=p>)</span>
+        <span class=p>{</span>
+            <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>time</span><span class=s>&#34;</span><span class=p>]</span><span class=p>.</span><span class=n>get</span><span class=o>&lt;</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=o>&gt;</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> [G</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>groupid</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>]</span><span class=s>&#34;</span>
+                      <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>[</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>userid</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>username</span><span class=s>&#34;</span><span class=p>]</span><span class=p>.</span><span class=n>get</span><span class=o>&lt;</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=o>&gt;</span><span class=p>(</span><span class=p>)</span>
+                      <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> said: </span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>msg_content</span><span class=s>&#34;</span><span class=p>]</span><span class=p>.</span><span class=n>get</span><span class=o>&lt;</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=o>&gt;</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+            <span class=k>continue</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>LOGIN_ACK</span> <span class=o>=</span><span class=o>=</span> <span class=n>msgType</span><span class=p>)</span>
+        <span class=p>{</span>
+            <span class=n>doLoginResponse</span><span class=p>(</span><span class=n>js</span><span class=p>)</span><span class=p>;</span>
+            <span class=c1>// 通知主线程 登录响应处理完成
+</span><span class=c1></span>            <span class=n>sem_post</span><span class=p>(</span><span class=o>&amp;</span><span class=n>rwsem</span><span class=p>)</span><span class=p>;</span>
+            <span class=k>continue</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>REG_ACK</span> <span class=o>=</span><span class=o>=</span> <span class=n>msgType</span><span class=p>)</span>
+        <span class=p>{</span>
+            <span class=n>doRegResponse</span><span class=p>(</span><span class=n>js</span><span class=p>)</span><span class=p>;</span>
+            <span class=c1>// 通知主线程 注册响应处理完成
+</span><span class=c1></span>            <span class=n>sem_post</span><span class=p>(</span><span class=o>&amp;</span><span class=n>rwsem</span><span class=p>)</span><span class=p>;</span>
+            <span class=k>continue</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+<span class=p>}</span>
+
+<span class=kt>void</span> <span class=nf>showCurrentUserData</span><span class=p>(</span><span class=p>)</span>
+<span class=p>{</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>======================login user======================</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>current login user =&gt; id:</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>gCurrentUser</span><span class=p>.</span><span class=n>getId</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> name:</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>gCurrentUser</span><span class=p>.</span><span class=n>getName</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>----------------------friend list---------------------</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=o>!</span><span class=n>gCurrentUserFriendList</span><span class=p>.</span><span class=n>empty</span><span class=p>(</span><span class=p>)</span><span class=p>)</span>
+    <span class=p>{</span>
+        <span class=k>for</span> <span class=p>(</span><span class=n>User</span> <span class=o>&amp;</span><span class=nl>user</span> <span class=p>:</span> <span class=n>gCurrentUserFriendList</span><span class=p>)</span>
+        <span class=p>{</span>
+            <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>user</span><span class=p>.</span><span class=n>getId</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> </span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>user</span><span class=p>.</span><span class=n>getName</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> </span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>user</span><span class=p>.</span><span class=n>getState</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>----------------------group list----------------------</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=o>!</span><span class=n>gCurrentUserGroupList</span><span class=p>.</span><span class=n>empty</span><span class=p>(</span><span class=p>)</span><span class=p>)</span>
+    <span class=p>{</span>
+        <span class=k>for</span> <span class=p>(</span><span class=n>Group</span> <span class=o>&amp;</span><span class=nl>group</span> <span class=p>:</span> <span class=n>gCurrentUserGroupList</span><span class=p>)</span>
+        <span class=p>{</span>
+            <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>group</span><span class=p>.</span><span class=n>getId</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> </span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>group</span><span class=p>.</span><span class=n>getName</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> </span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>group</span><span class=p>.</span><span class=n>getDesc</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+            <span class=k>for</span> <span class=p>(</span><span class=n>GroupUser</span> <span class=o>&amp;</span><span class=nl>user</span> <span class=p>:</span> <span class=n>group</span><span class=p>.</span><span class=n>getUsers</span><span class=p>(</span><span class=p>)</span><span class=p>)</span>
+            <span class=p>{</span>
+                <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>user</span><span class=p>.</span><span class=n>getId</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> </span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>user</span><span class=p>.</span><span class=n>getName</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> </span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>user</span><span class=p>.</span><span class=n>getState</span><span class=p>(</span><span class=p>)</span>
+                          <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> </span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>user</span><span class=p>.</span><span class=n>getRole</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+            <span class=p>}</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>======================================================</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>getCurrentTime</span><span class=p>(</span><span class=p>)</span>
+<span class=p>{</span>
+    <span class=k>auto</span> <span class=n>tt</span> <span class=o>=</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>chrono</span><span class=o>:</span><span class=o>:</span><span class=n>system_clock</span><span class=o>:</span><span class=o>:</span><span class=n>to_time_t</span><span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>chrono</span><span class=o>:</span><span class=o>:</span><span class=n>system_clock</span><span class=o>:</span><span class=o>:</span><span class=n>now</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>struct</span> <span class=nc>tm</span> <span class=o>*</span><span class=n>ptm</span> <span class=o>=</span> <span class=n>localtime</span><span class=p>(</span><span class=o>&amp;</span><span class=n>tt</span><span class=p>)</span><span class=p>;</span>
+    <span class=kt>char</span> <span class=n>date</span><span class=p>[</span><span class=mi>60</span><span class=p>]</span> <span class=o>=</span> <span class=p>{</span><span class=mi>0</span><span class=p>}</span><span class=p>;</span>
+    <span class=n>sprintf</span><span class=p>(</span><span class=n>date</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>%d-%02d-%02d %02d:%02d:%02d</span><span class=s>&#34;</span><span class=p>,</span>
+            <span class=p>(</span><span class=kt>int</span><span class=p>)</span><span class=n>ptm</span><span class=o>-</span><span class=o>&gt;</span><span class=n>tm_year</span> <span class=o>+</span> <span class=mi>1900</span><span class=p>,</span> <span class=p>(</span><span class=kt>int</span><span class=p>)</span><span class=n>ptm</span><span class=o>-</span><span class=o>&gt;</span><span class=n>tm_mon</span> <span class=o>+</span> <span class=mi>1</span><span class=p>,</span> <span class=p>(</span><span class=kt>int</span><span class=p>)</span><span class=n>ptm</span><span class=o>-</span><span class=o>&gt;</span><span class=n>tm_mday</span><span class=p>,</span>
+            <span class=p>(</span><span class=kt>int</span><span class=p>)</span><span class=n>ptm</span><span class=o>-</span><span class=o>&gt;</span><span class=n>tm_hour</span><span class=p>,</span> <span class=p>(</span><span class=kt>int</span><span class=p>)</span><span class=n>ptm</span><span class=o>-</span><span class=o>&gt;</span><span class=n>tm_min</span><span class=p>,</span> <span class=p>(</span><span class=kt>int</span><span class=p>)</span><span class=n>ptm</span><span class=o>-</span><span class=o>&gt;</span><span class=n>tm_sec</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>return</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=p>(</span><span class=n>date</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+
+<span class=c1>// &#34;help&#34; command handler
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>help</span><span class=p>(</span><span class=kt>int</span> <span class=n>fd</span> <span class=o>=</span> <span class=mi>0</span><span class=p>,</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>str</span> <span class=o>=</span> <span class=sa></span><span class=s>&#34;</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+<span class=c1>// &#34;chat&#34; command handler
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>peerchat</span><span class=p>(</span><span class=kt>int</span><span class=p>,</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=p>)</span><span class=p>;</span>
+<span class=c1>// &#34;addfriend&#34; command handler
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>addfriend</span><span class=p>(</span><span class=kt>int</span><span class=p>,</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=p>)</span><span class=p>;</span>
+<span class=c1>// &#34;creategroup&#34; command handler
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>creategroup</span><span class=p>(</span><span class=kt>int</span><span class=p>,</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=p>)</span><span class=p>;</span>
+<span class=c1>// &#34;joingroup&#34; command handler
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>joingroup</span><span class=p>(</span><span class=kt>int</span><span class=p>,</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=p>)</span><span class=p>;</span>
+<span class=c1>// &#34;groupchat&#34; command handler
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>groupchat</span><span class=p>(</span><span class=kt>int</span><span class=p>,</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=p>)</span><span class=p>;</span>
+<span class=c1>// &#34;logout&#34; command handler
+</span><span class=c1></span><span class=kt>void</span> <span class=nf>logout</span><span class=p>(</span><span class=kt>int</span><span class=p>,</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=p>)</span><span class=p>;</span>
+
+<span class=c1>// 客户端支持的命令列表
+</span><span class=c1></span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>unordered_map</span><span class=o>&lt;</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=p>,</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=o>&gt;</span> <span class=n>commandMap</span> <span class=o>=</span>
+    <span class=p>{</span>
+        <span class=p>{</span><span class=sa></span><span class=s>&#34;</span><span class=s>help</span><span class=s>&#34;</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>       show all command,   fmt&gt; help</span><span class=s>&#34;</span><span class=p>}</span><span class=p>,</span>
+        <span class=p>{</span><span class=sa></span><span class=s>&#34;</span><span class=s>peerchat</span><span class=s>&#34;</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>   peer to peer chat,  fmt&gt; peerchat:{friendid}:{message content}</span><span class=s>&#34;</span><span class=p>}</span><span class=p>,</span>
+        <span class=p>{</span><span class=sa></span><span class=s>&#34;</span><span class=s>addfriend</span><span class=s>&#34;</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>  add a friend by id, fmt&gt; addfriend:{friendid}</span><span class=s>&#34;</span><span class=p>}</span><span class=p>,</span>
+        <span class=p>{</span><span class=sa></span><span class=s>&#34;</span><span class=s>creategroup</span><span class=s>&#34;</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>create a group,     fmt&gt; creategroup:{groupname}:{groupdesc}</span><span class=s>&#34;</span><span class=p>}</span><span class=p>,</span>
+        <span class=p>{</span><span class=sa></span><span class=s>&#34;</span><span class=s>joingroup</span><span class=s>&#34;</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>  join a group by id, fmt&gt; joingroup:{groupid}</span><span class=s>&#34;</span><span class=p>}</span><span class=p>,</span>
+        <span class=p>{</span><span class=sa></span><span class=s>&#34;</span><span class=s>groupchat</span><span class=s>&#34;</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>  group chat,         fmt&gt; groupchat:{groupid}:{message content}</span><span class=s>&#34;</span><span class=p>}</span><span class=p>,</span>
+        <span class=p>{</span><span class=sa></span><span class=s>&#34;</span><span class=s>logout</span><span class=s>&#34;</span><span class=p>,</span> <span class=sa></span><span class=s>&#34;</span><span class=s>     log out,            fmt&gt; logout</span><span class=s>&#34;</span><span class=p>}</span><span class=p>}</span><span class=p>;</span>
+
+<span class=c1>// 客户端命令处理回调
+</span><span class=c1></span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>unordered_map</span><span class=o>&lt;</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=p>,</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>function</span><span class=o>&lt;</span><span class=kt>void</span><span class=p>(</span><span class=kt>int</span><span class=p>,</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=p>)</span><span class=o>&gt;</span><span class=o>&gt;</span> <span class=n>commandHandlerMap</span> <span class=o>=</span>
+    <span class=p>{</span>
+        <span class=p>{</span><span class=sa></span><span class=s>&#34;</span><span class=s>help</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>help</span><span class=p>}</span><span class=p>,</span>
+        <span class=p>{</span><span class=sa></span><span class=s>&#34;</span><span class=s>peerchat</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>peerchat</span><span class=p>}</span><span class=p>,</span>
+        <span class=p>{</span><span class=sa></span><span class=s>&#34;</span><span class=s>addfriend</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>addfriend</span><span class=p>}</span><span class=p>,</span>
+        <span class=p>{</span><span class=sa></span><span class=s>&#34;</span><span class=s>creategroup</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>creategroup</span><span class=p>}</span><span class=p>,</span>
+        <span class=p>{</span><span class=sa></span><span class=s>&#34;</span><span class=s>joingroup</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>joingroup</span><span class=p>}</span><span class=p>,</span>
+        <span class=p>{</span><span class=sa></span><span class=s>&#34;</span><span class=s>groupchat</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>groupchat</span><span class=p>}</span><span class=p>,</span>
+        <span class=p>{</span><span class=sa></span><span class=s>&#34;</span><span class=s>logout</span><span class=s>&#34;</span><span class=p>,</span> <span class=n>logout</span><span class=p>}</span><span class=p>}</span><span class=p>;</span>
+
+<span class=kt>void</span> <span class=nf>mainMenu</span><span class=p>(</span><span class=kt>int</span> <span class=n>clientFd</span><span class=p>)</span>
+<span class=p>{</span>
+    <span class=c1>// 显示help菜单
+</span><span class=c1></span>    <span class=n>help</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>buffer</span><span class=p>;</span>
+    <span class=k>while</span> <span class=p>(</span><span class=n>isMainMenuRunning</span><span class=p>)</span>
+    <span class=p>{</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>gCurrentUser</span><span class=p>.</span><span class=n>getName</span><span class=p>(</span><span class=p>)</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>&gt; </span><span class=s>&#34;</span><span class=p>;</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>getline</span><span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cin</span><span class=p>,</span> <span class=n>buffer</span><span class=p>)</span><span class=p>;</span>
+        <span class=c1>// 存命令
+</span><span class=c1></span>        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>command</span><span class=p>;</span>
+        <span class=kt>int</span> <span class=n>idx</span> <span class=o>=</span> <span class=n>buffer</span><span class=p>.</span><span class=n>find</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>:</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>if</span> <span class=p>(</span><span class=o>-</span><span class=mi>1</span> <span class=o>=</span><span class=o>=</span> <span class=n>idx</span><span class=p>)</span>
+        <span class=p>{</span>
+            <span class=n>command</span> <span class=o>=</span> <span class=n>buffer</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=k>else</span>
+        <span class=p>{</span>
+            <span class=n>command</span> <span class=o>=</span> <span class=n>buffer</span><span class=p>.</span><span class=n>substr</span><span class=p>(</span><span class=mi>0</span><span class=p>,</span> <span class=n>idx</span><span class=p>)</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=k>auto</span> <span class=n>itr</span> <span class=o>=</span> <span class=n>commandHandlerMap</span><span class=p>.</span><span class=n>find</span><span class=p>(</span><span class=n>command</span><span class=p>)</span><span class=p>;</span>
+        <span class=k>if</span> <span class=p>(</span><span class=n>itr</span> <span class=o>=</span><span class=o>=</span> <span class=n>commandHandlerMap</span><span class=p>.</span><span class=n>end</span><span class=p>(</span><span class=p>)</span><span class=p>)</span>
+        <span class=p>{</span>
+            <span class=c1>// 错误的命令
+</span><span class=c1></span>            <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cerr</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>invalid input command!</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+            <span class=k>continue</span><span class=p>;</span>
+        <span class=p>}</span>
+        <span class=c1>// 调用命令对应的回调 mainMenu封闭 新功能无需修改
+</span><span class=c1></span>        <span class=n>itr</span><span class=o>-</span><span class=o>&gt;</span><span class=n>second</span><span class=p>(</span><span class=n>clientFd</span><span class=p>,</span> <span class=n>buffer</span><span class=p>.</span><span class=n>substr</span><span class=p>(</span><span class=n>idx</span> <span class=o>+</span> <span class=mi>1</span><span class=p>,</span> <span class=n>buffer</span><span class=p>.</span><span class=n>size</span><span class=p>(</span><span class=p>)</span> <span class=o>-</span> <span class=n>idx</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=p>}</span>
+
+<span class=kt>void</span> <span class=nf>help</span><span class=p>(</span><span class=kt>int</span><span class=p>,</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=p>)</span>
+<span class=p>{</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>command list &gt;&gt;&gt;</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+    <span class=k>for</span> <span class=p>(</span><span class=k>auto</span><span class=o>&amp;</span> <span class=nl>itr</span> <span class=p>:</span> <span class=n>commandMap</span><span class=p>)</span>
+    <span class=p>{</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>itr</span><span class=p>.</span><span class=n>first</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s> : </span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>itr</span><span class=p>.</span><span class=n>second</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+<span class=p>}</span>
+<span class=kt>void</span> <span class=nf>peerchat</span><span class=p>(</span><span class=kt>int</span> <span class=n>clientFd</span><span class=p>,</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>buffer</span><span class=p>)</span>
+<span class=p>{</span>
+    <span class=c1>// {friendid}:{message content}
+</span><span class=c1></span>    <span class=kt>int</span> <span class=n>idx</span> <span class=o>=</span> <span class=n>buffer</span><span class=p>.</span><span class=n>find</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>:</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=o>-</span><span class=mi>1</span> <span class=o>=</span><span class=o>=</span> <span class=n>idx</span><span class=p>)</span>
+    <span class=p>{</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cerr</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>peerchat format invalid!</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+        <span class=k>return</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=kt>int</span> <span class=n>friendid</span> <span class=o>=</span> <span class=n>atoi</span><span class=p>(</span><span class=n>buffer</span><span class=p>.</span><span class=n>substr</span><span class=p>(</span><span class=mi>0</span><span class=p>,</span> <span class=n>idx</span><span class=p>)</span><span class=p>.</span><span class=n>c_str</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>message</span> <span class=o>=</span> <span class=n>buffer</span><span class=p>.</span><span class=n>substr</span><span class=p>(</span><span class=n>idx</span> <span class=o>+</span> <span class=mi>1</span><span class=p>,</span> <span class=n>buffer</span><span class=p>.</span><span class=n>size</span><span class=p>(</span><span class=p>)</span> <span class=o>-</span> <span class=n>idx</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>json</span> <span class=n>js</span><span class=p>;</span>
+    <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>msg_type</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>PEER_CHAT_MSG</span><span class=p>;</span>
+    <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>id</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>gCurrentUser</span><span class=p>.</span><span class=n>getId</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>name</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>gCurrentUser</span><span class=p>.</span><span class=n>getName</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>to</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>friendid</span><span class=p>;</span>
+    <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>msg_content</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>message</span><span class=p>;</span>
+    <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>time</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>getCurrentTime</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>request</span> <span class=o>=</span> <span class=n>js</span><span class=p>.</span><span class=n>dump</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>n</span> <span class=o>=</span> <span class=n>send</span><span class=p>(</span><span class=n>clientFd</span><span class=p>,</span> <span class=n>request</span><span class=p>.</span><span class=n>c_str</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>strlen</span><span class=p>(</span><span class=n>request</span><span class=p>.</span><span class=n>c_str</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=o>+</span> <span class=mi>1</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=o>-</span><span class=mi>1</span> <span class=o>=</span><span class=o>=</span> <span class=n>n</span><span class=p>)</span>
+    <span class=p>{</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cerr</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>send peerchat message error -&gt; </span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>request</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=p>}</span>
+<span class=kt>void</span> <span class=nf>addfriend</span><span class=p>(</span><span class=kt>int</span> <span class=n>clientFd</span><span class=p>,</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>buffer</span><span class=p>)</span>
+<span class=p>{</span>
+    <span class=c1>// {friendid}
+</span><span class=c1></span>    <span class=kt>uint32_t</span> <span class=n>friendid</span> <span class=o>=</span> <span class=n>atoi</span><span class=p>(</span><span class=n>buffer</span><span class=p>.</span><span class=n>c_str</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>json</span> <span class=n>js</span><span class=p>;</span>
+    <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>msg_type</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>ADD_FRIEND_MSG</span><span class=p>;</span>
+    <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>userid</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>gCurrentUser</span><span class=p>.</span><span class=n>getId</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>friendid</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>friendid</span><span class=p>;</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>request</span> <span class=o>=</span> <span class=n>js</span><span class=p>.</span><span class=n>dump</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>n</span> <span class=o>=</span> <span class=n>send</span><span class=p>(</span><span class=n>clientFd</span><span class=p>,</span> <span class=n>request</span><span class=p>.</span><span class=n>c_str</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>strlen</span><span class=p>(</span><span class=n>request</span><span class=p>.</span><span class=n>c_str</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=o>+</span> <span class=mi>1</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=o>-</span><span class=mi>1</span> <span class=o>=</span><span class=o>=</span> <span class=n>n</span><span class=p>)</span>
+    <span class=p>{</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cerr</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>send addfriend message error -&gt; </span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>request</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=p>}</span>
+<span class=kt>void</span> <span class=nf>creategroup</span><span class=p>(</span><span class=kt>int</span> <span class=n>clientFd</span><span class=p>,</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>buffer</span><span class=p>)</span>
+<span class=p>{</span>
+    <span class=c1>// {groupname}:{groupdesc}
+</span><span class=c1></span>    <span class=kt>int</span> <span class=n>idx</span> <span class=o>=</span> <span class=n>buffer</span><span class=p>.</span><span class=n>find</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>:</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=o>-</span><span class=mi>1</span> <span class=o>=</span><span class=o>=</span> <span class=n>idx</span><span class=p>)</span>
+    <span class=p>{</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cerr</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>creategroup format invalid!</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+        <span class=k>return</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>groupname</span> <span class=o>=</span> <span class=n>buffer</span><span class=p>.</span><span class=n>substr</span><span class=p>(</span><span class=mi>0</span><span class=p>,</span> <span class=n>idx</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>groupdesc</span> <span class=o>=</span> <span class=n>buffer</span><span class=p>.</span><span class=n>substr</span><span class=p>(</span><span class=n>idx</span> <span class=o>+</span> <span class=mi>1</span><span class=p>,</span> <span class=n>buffer</span><span class=p>.</span><span class=n>size</span><span class=p>(</span><span class=p>)</span> <span class=o>-</span> <span class=n>idx</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>json</span> <span class=n>js</span><span class=p>;</span>
+    <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>msg_type</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>CREATE_GROUP_MSG</span><span class=p>;</span>
+    <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>userid</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>gCurrentUser</span><span class=p>.</span><span class=n>getId</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>groupname</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>groupname</span><span class=p>;</span>
+    <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>groupdesc</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>groupdesc</span><span class=p>;</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>request</span> <span class=o>=</span> <span class=n>js</span><span class=p>.</span><span class=n>dump</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>n</span> <span class=o>=</span> <span class=n>send</span><span class=p>(</span><span class=n>clientFd</span><span class=p>,</span> <span class=n>request</span><span class=p>.</span><span class=n>c_str</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>strlen</span><span class=p>(</span><span class=n>request</span><span class=p>.</span><span class=n>c_str</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=o>+</span> <span class=mi>1</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=o>-</span><span class=mi>1</span> <span class=o>=</span><span class=o>=</span> <span class=n>n</span><span class=p>)</span>
+    <span class=p>{</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cerr</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>send creategroup message error -&gt; </span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>request</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=p>}</span>
+<span class=kt>void</span> <span class=nf>joingroup</span><span class=p>(</span><span class=kt>int</span> <span class=n>clientFd</span><span class=p>,</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>buffer</span><span class=p>)</span>
+<span class=p>{</span>
+    <span class=c1>// {groupid}
+</span><span class=c1></span>    <span class=kt>uint32_t</span> <span class=n>groupid</span> <span class=o>=</span> <span class=n>atoi</span><span class=p>(</span><span class=n>buffer</span><span class=p>.</span><span class=n>c_str</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>json</span> <span class=n>js</span><span class=p>;</span>
+    <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>msg_type</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>JOIN_GROUP_MSG</span><span class=p>;</span>
+    <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>userid</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>gCurrentUser</span><span class=p>.</span><span class=n>getId</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>groupid</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>groupid</span><span class=p>;</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>request</span> <span class=o>=</span> <span class=n>js</span><span class=p>.</span><span class=n>dump</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>n</span> <span class=o>=</span> <span class=n>send</span><span class=p>(</span><span class=n>clientFd</span><span class=p>,</span> <span class=n>request</span><span class=p>.</span><span class=n>c_str</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>strlen</span><span class=p>(</span><span class=n>request</span><span class=p>.</span><span class=n>c_str</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=o>+</span> <span class=mi>1</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=o>-</span><span class=mi>1</span> <span class=o>=</span><span class=o>=</span> <span class=n>n</span><span class=p>)</span>
+    <span class=p>{</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cerr</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>send joingroup message error -&gt; </span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>request</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=p>}</span>
+<span class=kt>void</span> <span class=nf>groupchat</span><span class=p>(</span><span class=kt>int</span> <span class=n>clientFd</span><span class=p>,</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>buffer</span><span class=p>)</span>
+<span class=p>{</span>
+    <span class=c1>// {groupid}:{message content}
+</span><span class=c1></span>    <span class=kt>int</span> <span class=n>idx</span> <span class=o>=</span> <span class=n>buffer</span><span class=p>.</span><span class=n>find</span><span class=p>(</span><span class=sa></span><span class=s>&#34;</span><span class=s>:</span><span class=s>&#34;</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=o>-</span><span class=mi>1</span> <span class=o>=</span><span class=o>=</span> <span class=n>idx</span><span class=p>)</span>
+    <span class=p>{</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cerr</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>groupchat format invalid!</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=kt>uint32_t</span> <span class=n>groupid</span> <span class=o>=</span> <span class=n>atoi</span><span class=p>(</span><span class=n>buffer</span><span class=p>.</span><span class=n>substr</span><span class=p>(</span><span class=mi>0</span><span class=p>,</span> <span class=n>idx</span><span class=p>)</span><span class=p>.</span><span class=n>c_str</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>message</span> <span class=o>=</span> <span class=n>buffer</span><span class=p>.</span><span class=n>substr</span><span class=p>(</span><span class=n>idx</span> <span class=o>+</span> <span class=mi>1</span><span class=p>,</span> <span class=n>buffer</span><span class=p>.</span><span class=n>size</span><span class=p>(</span><span class=p>)</span> <span class=o>-</span> <span class=n>idx</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>json</span> <span class=n>js</span><span class=p>;</span>
+    <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>msg_type</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>GROUP_CHAT_MSG</span><span class=p>;</span>
+    <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>userid</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>gCurrentUser</span><span class=p>.</span><span class=n>getId</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>username</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>gCurrentUser</span><span class=p>.</span><span class=n>getName</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>groupid</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>groupid</span><span class=p>;</span>
+    <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>msg_content</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>message</span><span class=p>;</span>
+    <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>time</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>getCurrentTime</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>request</span> <span class=o>=</span> <span class=n>js</span><span class=p>.</span><span class=n>dump</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>n</span> <span class=o>=</span> <span class=n>send</span><span class=p>(</span><span class=n>clientFd</span><span class=p>,</span> <span class=n>request</span><span class=p>.</span><span class=n>c_str</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>strlen</span><span class=p>(</span><span class=n>request</span><span class=p>.</span><span class=n>c_str</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=o>+</span> <span class=mi>1</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=o>-</span><span class=mi>1</span> <span class=o>=</span><span class=o>=</span> <span class=n>n</span><span class=p>)</span>
+    <span class=p>{</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cerr</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>send groupchat message error -&gt; </span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>request</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=p>}</span>
+<span class=kt>void</span> <span class=nf>logout</span><span class=p>(</span><span class=kt>int</span> <span class=n>clientFd</span><span class=p>,</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>buffer</span><span class=p>)</span>
+<span class=p>{</span>
+    <span class=n>json</span> <span class=n>js</span><span class=p>;</span>
+    <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>msg_type</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>LOGOUT_MSG</span><span class=p>;</span>
+    <span class=n>js</span><span class=p>[</span><span class=sa></span><span class=s>&#34;</span><span class=s>id</span><span class=s>&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>gCurrentUser</span><span class=p>.</span><span class=n>getId</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>request</span> <span class=o>=</span> <span class=n>js</span><span class=p>.</span><span class=n>dump</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=kt>int</span> <span class=n>n</span> <span class=o>=</span> <span class=n>send</span><span class=p>(</span><span class=n>clientFd</span><span class=p>,</span> <span class=n>request</span><span class=p>.</span><span class=n>c_str</span><span class=p>(</span><span class=p>)</span><span class=p>,</span> <span class=n>strlen</span><span class=p>(</span><span class=n>request</span><span class=p>.</span><span class=n>c_str</span><span class=p>(</span><span class=p>)</span><span class=p>)</span> <span class=o>+</span> <span class=mi>1</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span><span class=p>;</span>
+    <span class=k>if</span> <span class=p>(</span><span class=o>-</span><span class=mi>1</span> <span class=o>=</span><span class=o>=</span> <span class=n>n</span><span class=p>)</span>
+    <span class=p>{</span>
+        <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cerr</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>send logout message error -&gt; </span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>request</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span>
+    <span class=p>}</span>
+    <span class=k>else</span>
+    <span class=p>{</span>
+        <span class=n>isMainMenuRunning</span> <span class=o>=</span> <span class=nb>false</span><span class=p>;</span>
+    <span class=p>}</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+<span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
+<span>2022-12-02</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
+<span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fchatserver15-%25E5%25AE%25A2%25E6%2588%25B7%25E7%25AB%25AF%2f&text=%e3%80%90ChatServer%e3%80%9115%20-%20%e5%ae%a2%e6%88%b7%e7%ab%af&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2fchatserver15-%25E5%25AE%25A2%25E6%2588%25B7%25E7%25AB%25AF%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fchatserver15-%25E5%25AE%25A2%25E6%2588%25B7%25E7%25AB%25AF%2f&title=%e3%80%90ChatServer%e3%80%9115%20-%20%e5%ae%a2%e6%88%b7%e7%ab%af" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/linux/><i class="fas fa-tag fa-fw"></i>&nbsp;Linux</a>&nbsp;
+</span><span class=tag><a href=https://xushun1221.github.io/tags/c++/><i class="fas fa-tag fa-fw"></i>&nbsp;C++</a>&nbsp;</span></section><section><span><a href=javascript:window.history.back();>Back</a></span>&nbsp;|&nbsp;<span><a href=https://xushun1221.github.io>Home</a></span></section></div><div class=post-nav><a href=https://xushun1221.github.io/2022/chatserver11-%E4%B8%80%E5%AF%B9%E4%B8%80%E8%81%8A%E5%A4%A9%E7%A6%BB%E7%BA%BF%E6%B6%88%E6%81%AF/ class=prev rel=prev title="【ChatServer】11 - 一对一聊天&离线消息"><i class="fas fa-angle-left fa-fw"></i>【ChatServer】11 - 一对一聊天&离线消息</a></div><div class=post-comment></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2022</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=https://xushun1221.github.io/about/ target=_blank>xushun</a> | </span>Powered by <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> & <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer">LoveIt</a></div></div></footer></div><a href=# class=dynamic-to-top id=dynamic-to-top data-scroll><span>&nbsp;</span>
+</a><script src=/js/lib/jquery/jquery.slim.min.js></script><script src=/js/lib/lazysizes/lazysizes.min.js></script><script src=/js/lib/smooth-scroll/smooth-scroll.polyfills.min.js></script><script>window.scroll=new SmoothScroll('[data-scroll]',{speed:300,speedAsDuration:true});</script><link rel=stylesheet href=/css/lib/katex/katex.min.css><script src=/js/lib/katex/katex.min.js></script><script defer src=/js/lib/katex/auto-render.min.js></script><link rel=stylesheet href=/css/lib/katex/copy-tex.min.css><script defer src=/js/lib/katex/copy-tex.min.js></script><script defer src=/js/lib/katex/mhchem.min.js></script><script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true},{left:"$",right:"$",display:false},]});});</script><script src=/js/blog.min.js></script></body></html>
