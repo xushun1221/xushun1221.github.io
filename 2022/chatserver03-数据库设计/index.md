@@ -44,7 +44,7 @@ mysql-server的主机：CentOS7虚拟机（192.168.131.132） ip不确定，有�
 
 |字段|类型|说明|约束|
 |---|---|---|---|
-|userid|INT UNSIGNED|用户id|NOT NULL, PRIMARY KEY|
+|userid|INT UNSIGNED|用户id|NOT NULL|
 |message|VARCHAR(500)|离线消息（JSON）|NOT NULL|
 
 
@@ -82,7 +82,7 @@ ENGINE=INNODB,
 DEFAULT CHARSET=UTF8;
 
 CREATE TABLE offlinemessage(
-userid INT UNSIGNED PRIMARY KEY NOT NULL,
+userid INT UNSIGNED NOT NULL,
 message VARCHAR(500) NOT NULL)
 ENGINE=INNODB,
 DEFAULT CHARSET=UTF8;
