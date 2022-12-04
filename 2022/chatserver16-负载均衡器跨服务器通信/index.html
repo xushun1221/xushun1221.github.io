@@ -1,0 +1,123 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【ChatServer】16 - 负载均衡器、跨服务器通信 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2022/chatserver15-%E5%AE%A2%E6%88%B7%E7%AB%AF/><link rel=canonical href=https://xushun1221.github.io/2022/chatserver16-%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%99%A8%E8%B7%A8%E6%9C%8D%E5%8A%A1%E5%99%A8%E9%80%9A%E4%BF%A1/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【ChatServer】16 - 负载均衡器、跨服务器通信"><meta name=twitter:description content="负载均衡器 对于单服务器而言，能够提供的并发服务量大概2万左右，如果需要更多的并发量，就需要多台服务器组成集群。 这就需要负载均衡器了，它将客户"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【ChatServer】16 - 负载均衡器、跨服务器通信","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2022\/chatserver16-%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%99%A8%E8%B7%A8%E6%9C%8D%E5%8A%A1%E5%99%A8%E9%80%9A%E4%BF%A1\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"Linux, C\x2b\x2b, Nginx, Redis","wordcount":1390,"url":"https:\/\/xushun1221.github.io\/2022\/chatserver16-%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E5%99%A8%E8%B7%A8%E6%9C%8D%E5%8A%A1%E5%99%A8%E9%80%9A%E4%BF%A1\/","datePublished":"2022-12-03T00:00:00\x2b00:00","dateModified":"2022-12-03T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【ChatServer】16 - 负载均衡器、跨服务器通信</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2022-12-03>2022-12-03</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 1390 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/projects/>Projects</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#负载均衡器>负载均衡器</a></li><li><a href=#跨服务器通信>跨服务器通信</a></li><li><a href=#nginx-tcp负载均衡配置>Nginx TCP负载均衡配置</a><ul><li><a href=#安装-nginx>安装 Nginx</a></li><li><a href=#配置tcp负载均衡器>配置TCP负载均衡器</a></li></ul></li><li><a href=#redis-基于发布-订阅的消息队列>Redis 基于发布-订阅的消息队列</a><ul><li><a href=#redis-安装>Redis 安装</a></li><li><a href=#消息队列逻辑>消息队列逻辑</a></li><li><a href=#redis客户端编程>Redis客户端编程</a></li></ul></li><li><a href=#发布-订阅功能实现>发布-订阅功能实现</a></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#负载均衡器>负载均衡器</a></li><li><a href=#跨服务器通信>跨服务器通信</a></li><li><a href=#nginx-tcp负载均衡配置>Nginx TCP负载均衡配置</a><ul><li><a href=#安装-nginx>安装 Nginx</a></li><li><a href=#配置tcp负载均衡器>配置TCP负载均衡器</a></li></ul></li><li><a href=#redis-基于发布-订阅的消息队列>Redis 基于发布-订阅的消息队列</a><ul><li><a href=#redis-安装>Redis 安装</a></li><li><a href=#消息队列逻辑>消息队列逻辑</a></li><li><a href=#redis客户端编程>Redis客户端编程</a></li></ul></li><li><a href=#发布-订阅功能实现>发布-订阅功能实现</a></li></ul></nav></div></details></div><div class=post-content><a class=post-dummy-target id=负载均衡器></a><h2>负载均衡器</h2><p>对于单服务器而言，能够提供的并发服务量大概2万左右，如果需要更多的并发量，就需要多台服务器组成集群。</p><p>这就需要负载均衡器了，它将客户端请求通过负载均衡器发送到不同的服务器上。</p><a class=post-dummy-target id=跨服务器通信></a><h2>跨服务器通信</h2><p>如果两个客户端分别连接到不同的服务器上，如果这两个客户端需要进行通信，如果不引入中间件，那么势必要在服务器之间建立TCP通信。</p><p>这样的设计也会导致各个服务器之间耦合度太高，不利于系统扩展，占用大量的socket资源，各服务器之间的带宽压力很大，绝不是一个好的设计。</p><p>集群部署的服务器之间进行通信，最好的方式就是引入中间件消息队列，解耦多个服务器，使整个系统低耦合，提高服务响应能力，节省带宽资源。</p><p>在我们的这个项目中使用基于发布-订阅模式的Redis。</p><a class=post-dummy-target id=nginx-tcp负载均衡配置></a><h2>Nginx TCP负载均衡配置</h2><a class=post-dummy-target id=安装-nginx></a><h3>安装 Nginx</h3><p>下载并解压<code>nginx-1.12.2.tar.gz</code>。</p><p><code>configure --with-stream</code>，加入TCP负载均衡器模块。</p><p><code>sudo make</code></p><p><code>sudo make install</code></p><p>安装在<code>/usr/local/nginx</code>下，可执行文件在<code>sbin</code>目录中，配置文件在<code>conf/nginx.conf</code>中。</p><a class=post-dummy-target id=配置tcp负载均衡器></a><h3>配置TCP负载均衡器</h3><p>在配置文件中添加：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-fallback data-lang=fallback># tcp
+stream {
+    upstream MyServer {
+        server 127.0.0.1:6000 weight=1 max_fails=3 fail timeout=30s;
+        server 127.0.0.1:6001 weight=1 max_fails=3 fail timeout=30s;
+    }
+    server {
+        listen 8000;
+        proxy_pass MyServer;
+    }
+}
+</code></pre></td></tr></table></div></div><p><code>MyServer</code>就是工作服务器，添加服务器时在后面继续写就行。 这里已经添加了两个服务器，分别在6000和6001端口上。
+这里使用的是<code>8000</code>端口，服务器发送请求就使用这个端口。</p><p><code>nginx -s reload</code>，平滑重启，重新加载配置文件并启动新添加的服务器。<br><code>nginx -s stop</code>，停止。</p><p>启动：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-bash data-lang=bash><span class=o>[</span>xushun@localhost chat<span class=o>]</span>$ sudo /usr/local/nginx/sbin/nginx
+<span class=o>[</span>sudo<span class=o>]</span> password <span class=k>for</span> xushun: 
+</code></pre></td></tr></table></div></div><p>测试一下，开两个服务器，然后开几个客户端连接8000端口，可以看到两个服务器都有输出。</p><a class=post-dummy-target id=redis-基于发布-订阅的消息队列></a><h2>Redis 基于发布-订阅的消息队列</h2><a class=post-dummy-target id=redis-安装></a><h3>Redis 安装</h3><p>下载解压<code>redis-6.2.7.tar.gz</code></p><p><code>make</code>编译</p><p><code>sudo make PREFIX=/usr/local/redis install</code>安装</p><p><code>/usr/local/redis/bin/redis-server</code>启动。</p><a class=post-dummy-target id=消息队列逻辑></a><h3>消息队列逻辑</h3><ol><li>当某个客户端登录到某个服务器上时，该服务器应该以该客户的id作为通道号，在redis上订阅消息。</li><li>如果服务器收到发送给某个客户的消息时，如果该客户连接不在该服务器上（在另一个服务器上），则以目标客户的id作为通道号，发送消息到redis上，另一个服务器就会收到这条客户消息。</li></ol><a class=post-dummy-target id=redis客户端编程></a><h3>Redis客户端编程</h3><p>C++对应的编程接口是<code>hiredis</code>，直接下载源码<code>https://github.com/redis/hiredis/archive/refs/tags/v1.1.0.tar.gz</code>。</p><p><code>make</code></p><p><code>sudo make install</code></p><p>动态库在<code>/usr/local/lib</code>下。</p><p><code>sudo ldconfig /usr/local/lib</code>刷新缓存。</p><a class=post-dummy-target id=发布-订阅功能实现></a><h2>发布-订阅功能实现</h2><p>对于和Redis进行交互的模块，我们也封装一个<code>Redis</code>类来实现。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=cm>/*
+</span><span class=cm> *  @Filename : Redis.hh
+</span><span class=cm> *  @Description : Definition of Redis
+</span><span class=cm> *  @Datatime : 2022/12/04 17:01:48
+</span><span class=cm> *  @Author : xushun
+</span><span class=cm> */</span>
+<span class=cp>#</span><span class=cp>ifndef __REDIS_HH_</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>define __REDIS_HH_</span><span class=cp>
+</span><span class=cp></span>
+<span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;hiredis/hiredis.h&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;functional&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;thread&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=k>class</span> <span class=nc>Redis</span>
+<span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=n>Redis</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=o>~</span><span class=n>Redis</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+
+    <span class=c1>// 连接redis服务器
+</span><span class=c1></span>    <span class=kt>bool</span> <span class=nf>connect</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 向指定channel发布消息
+</span><span class=c1></span>    <span class=kt>bool</span> <span class=nf>publish</span><span class=p>(</span><span class=kt>uint32_t</span> <span class=n>channel</span><span class=p>,</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span> <span class=n>message</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 向指定channel订阅消息
+</span><span class=c1></span>    <span class=kt>bool</span> <span class=nf>subscribe</span><span class=p>(</span><span class=kt>uint32_t</span> <span class=n>channel</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 向指定channel取消订阅消息
+</span><span class=c1></span>    <span class=kt>bool</span> <span class=nf>unsubscribe</span><span class=p>(</span><span class=kt>uint32_t</span> <span class=n>channel</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 在独立线程中接收该订阅通道中的消息
+</span><span class=c1></span>    <span class=kt>void</span> <span class=nf>observerChannelMessage</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=c1>// 初始化向业务层上报通道消息的回调对象
+</span><span class=c1></span>    <span class=kt>void</span> <span class=nf>initNotifyHandler</span><span class=p>(</span><span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>function</span><span class=o>&lt;</span><span class=kt>void</span><span class=p>(</span><span class=kt>uint32_t</span><span class=p>,</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=p>)</span><span class=o>&gt;</span> <span class=n>fn</span><span class=p>)</span><span class=p>;</span>
+
+<span class=k>private</span><span class=o>:</span>
+    <span class=c1>// hiredis同步上下文对象 相当于一个redisclient
+</span><span class=c1></span>    <span class=c1>// 负责publish消息
+</span><span class=c1></span>    <span class=n>redisContext</span> <span class=o>*</span><span class=n>publishContext_</span><span class=p>;</span>
+    <span class=c1>// subscribe消息
+</span><span class=c1></span>    <span class=n>redisContext</span> <span class=o>*</span><span class=n>subscribeContext_</span><span class=p>;</span>
+    <span class=c1>// 回调方法 收到订阅的消息 给服务层上报
+</span><span class=c1></span>    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>function</span><span class=o>&lt;</span><span class=kt>void</span><span class=p>(</span><span class=kt>uint32_t</span><span class=p>,</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>string</span><span class=p>)</span><span class=o>&gt;</span> <span class=n>notifyMessageHandler_</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+
+<span class=cp>#</span><span class=cp>endif </span><span class=c1>// __REDIS_HH_
+</span></code></pre></td></tr></table></div></div></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+<span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
+<span>2022-12-03</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
+<span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fchatserver16-%25E8%25B4%259F%25E8%25BD%25BD%25E5%259D%2587%25E8%25A1%25A1%25E5%2599%25A8%25E8%25B7%25A8%25E6%259C%258D%25E5%258A%25A1%25E5%2599%25A8%25E9%2580%259A%25E4%25BF%25A1%2f&text=%e3%80%90ChatServer%e3%80%9116%20-%20%e8%b4%9f%e8%bd%bd%e5%9d%87%e8%a1%a1%e5%99%a8%e3%80%81%e8%b7%a8%e6%9c%8d%e5%8a%a1%e5%99%a8%e9%80%9a%e4%bf%a1&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2022%2fchatserver16-%25E8%25B4%259F%25E8%25BD%25BD%25E5%259D%2587%25E8%25A1%25A1%25E5%2599%25A8%25E8%25B7%25A8%25E6%259C%258D%25E5%258A%25A1%25E5%2599%25A8%25E9%2580%259A%25E4%25BF%25A1%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2022%2fchatserver16-%25E8%25B4%259F%25E8%25BD%25BD%25E5%259D%2587%25E8%25A1%25A1%25E5%2599%25A8%25E8%25B7%25A8%25E6%259C%258D%25E5%258A%25A1%25E5%2599%25A8%25E9%2580%259A%25E4%25BF%25A1%2f&title=%e3%80%90ChatServer%e3%80%9116%20-%20%e8%b4%9f%e8%bd%bd%e5%9d%87%e8%a1%a1%e5%99%a8%e3%80%81%e8%b7%a8%e6%9c%8d%e5%8a%a1%e5%99%a8%e9%80%9a%e4%bf%a1" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/linux/><i class="fas fa-tag fa-fw"></i>&nbsp;Linux</a>&nbsp;
+</span><span class=tag><a href=https://xushun1221.github.io/tags/c++/><i class="fas fa-tag fa-fw"></i>&nbsp;C++</a>&nbsp;
+</span><span class=tag><a href=https://xushun1221.github.io/tags/nginx/><i class="fas fa-tag fa-fw"></i>&nbsp;Nginx</a>&nbsp;
+</span><span class=tag><a href=https://xushun1221.github.io/tags/redis/><i class="fas fa-tag fa-fw"></i>&nbsp;Redis</a>&nbsp;</span></section><section><span><a href=javascript:window.history.back();>Back</a></span>&nbsp;|&nbsp;<span><a href=https://xushun1221.github.io>Home</a></span></section></div><div class=post-nav><a href=https://xushun1221.github.io/2022/chatserver15-%E5%AE%A2%E6%88%B7%E7%AB%AF/ class=prev rel=prev title="【ChatServer】15 - 客户端"><i class="fas fa-angle-left fa-fw"></i>【ChatServer】15 - 客户端</a></div><div class=post-comment></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2022</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=https://xushun1221.github.io/about/ target=_blank>xushun</a> | </span>Powered by <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> & <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer">LoveIt</a></div></div></footer></div><a href=# class=dynamic-to-top id=dynamic-to-top data-scroll><span>&nbsp;</span>
+</a><script src=/js/lib/jquery/jquery.slim.min.js></script><script src=/js/lib/lazysizes/lazysizes.min.js></script><script src=/js/lib/smooth-scroll/smooth-scroll.polyfills.min.js></script><script>window.scroll=new SmoothScroll('[data-scroll]',{speed:300,speedAsDuration:true});</script><link rel=stylesheet href=/css/lib/katex/katex.min.css><script src=/js/lib/katex/katex.min.js></script><script defer src=/js/lib/katex/auto-render.min.js></script><link rel=stylesheet href=/css/lib/katex/copy-tex.min.css><script defer src=/js/lib/katex/copy-tex.min.js></script><script defer src=/js/lib/katex/mhchem.min.js></script><script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true},{left:"$",right:"$",display:false},]});});</script><script src=/js/blog.min.js></script></body></html>
