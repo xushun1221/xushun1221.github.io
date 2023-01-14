@@ -1,0 +1,128 @@
+<!doctype html><html lang=en><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>【设计模式】03 - 代理模式 | XuShun's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=robots content="noodp"><meta name=Description content="XuShun的个人博客，记录学习和生活。"><link rel=prev href=https://xushun1221.github.io/2023/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F01-%E5%8D%95%E4%BE%8B%E6%A8%A1%E5%BC%8F/><link rel=canonical href=https://xushun1221.github.io/2023/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F03-%E4%BB%A3%E7%90%86%E6%A8%A1%E5%BC%8F/><link rel="shortcut icon" type=image/x-icon href=/favicon.ico><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/site.webmanifest><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><meta name=msapplication-TileColor content="#da532c"><meta name=theme-color content="#ffffff"><meta name=twitter:card content="summary"><meta name=twitter:title content="【设计模式】03 - 代理模式"><meta name=twitter:description content="代理模式、装饰器模式、适配器模式等，不同于创建型的模式，它们属于结构型模式，主要关注类和对象的组合，功能的使用。 代理模式 代理模式是这样一种模"><script type=application/ld+json>{"@context":"http://schema.org","@type":"BlogPosting","headline":"【设计模式】03 - 代理模式","mainEntityOfPage":{"@type":"WebPage","@id":"https:\/\/xushun1221.github.io\/2023\/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F03-%E4%BB%A3%E7%90%86%E6%A8%A1%E5%BC%8F\/"},"image":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/cover.png","width":800,"height":600},"genre":"posts","keywords":"C\x2b\x2b, 设计模式","wordcount":759,"url":"https:\/\/xushun1221.github.io\/2023\/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F03-%E4%BB%A3%E7%90%86%E6%A8%A1%E5%BC%8F\/","datePublished":"2023-01-11T00:00:00\x2b00:00","dateModified":"2023-01-11T00:00:00\x2b00:00","license":"This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher":{"@type":"Organization","name":"xushun","logo":{"@type":"ImageObject","url":"https:\/\/xushun1221.github.io\/logo.png","width":127,"height":40}},"description":""}</script><link rel=stylesheet href=/css/style.min.css><link rel=stylesheet href=/css/lib/fontawesome-free/all.min.css></head><body><script>window.isDark=(window.localStorage&&window.localStorage.getItem('theme'))==='dark';window.isDark&&document.body.classList.add('dark-theme');</script><div class=wrapper><nav class=navbar><div class=top-scroll-bar></div><div class=navbar-container><div class="navbar-header animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=navbar-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><nav class=navbar-mobile><div class=top-scroll-bar></div><div class=navbar-container><div class=navbar-header><div class="navbar-header-title animated bounceIn"><a href=https://xushun1221.github.io>XuShun's Blog</a></div><div class=menu-toggle id=menu-toggle><span></span><span></span><span></span></div></div><div class=navbar-menu id=mobile-menu><a class=menu-item href=https://xushun1221.github.io/posts>Posts</a><a class=menu-item href=https://xushun1221.github.io/tags>Tags</a><a class=menu-item href=https://xushun1221.github.io/categories>Categories</a><a class=menu-item href=https://xushun1221.github.io/about>About</a><a href=javascript:void(0); class=theme-switch><i class="fas fa-adjust fa-rotate-180 fa-fw" title="Switch Theme"></i></a></div></div></nav><main class=main><div class=container><article class=page><h1 class="post-title animated flipInX">【设计模式】03 - 代理模式</h1><div class=post-meta><i class="far fa-calendar-alt fa-fw"></i>published on&nbsp;<time datetime=2023-01-11>2023-01-11</time>&nbsp;
+<i class="fas fa-pencil-alt fa-fw"></i>about 759 words&nbsp;<span class=post-category><i class="far fa-folder fa-fw"></i>included in&nbsp;<a href=https://xushun1221.github.io/categories/coding/>Coding</a>&nbsp;</span></div><div class=post-toc id=post-toc><h2 class=post-toc-title>Contents</h2><div class=post-toc-content><nav id=TableOfContents><ul><li><a href=#代理模式>代理模式</a></li></ul></nav></div></div><div class=post-toc-mobile id=post-toc-mobile><details><summary><div class=post-toc-title><span>Contents</span>
+<span><i class="details icon fas fa-angle-down"></i></span></div></summary><div class=post-toc-content><nav id=TableOfContentsMobile><ul><li><a href=#代理模式>代理模式</a></li></ul></nav></div></details></div><div class=post-content><p>代理模式、装饰器模式、适配器模式等，不同于创建型的模式，它们属于<strong>结构型模式</strong>，主要关注类和对象的组合，功能的使用。</p><a class=post-dummy-target id=代理模式></a><h2>代理模式</h2><p>代理模式是这样一种模式，功能由委托类来实现，而代理类的作用是控制委托类对象的访问权限。</p><p>举个例子，有个电影网站，电影有三种类型，免费的、vip的、需要观影券的，观看这三种电影的功能函数由委托类实现，而对于委托类的访问权限则由代理类控制。如果用户是一个游客，那么他通过游客的代理类来访问委托类的功能，他只能调用免费电影观看功能。如果他是vip，他就通过vip的代理类来访问委托类的功能，他可以看免费电影和vip电影。</p><p>代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span><span class=lnt>59
+</span><span class=lnt>60
+</span></code></pre></td><td class=lntd><pre class=chroma><code class=language-cpp data-lang=cpp><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;iostream&gt;</span><span class=cp>
+</span><span class=cp></span><span class=cp>#</span><span class=cp>include</span> <span class=cpf>&lt;memory&gt;</span><span class=cp>
+</span><span class=cp></span>
+<span class=c1>// 抽象类
+</span><span class=c1></span><span class=k>class</span> <span class=nc>VideoSite</span>
+<span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=k>virtual</span> <span class=kt>void</span> <span class=n>freeMovie</span><span class=p>(</span><span class=p>)</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>   <span class=c1>// 观看免费电影
+</span><span class=c1></span>    <span class=k>virtual</span> <span class=kt>void</span> <span class=nf>vipMovie</span><span class=p>(</span><span class=p>)</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span>    <span class=c1>// 观看vip电影
+</span><span class=c1></span>    <span class=k>virtual</span> <span class=kt>void</span> <span class=nf>ticketMovie</span><span class=p>(</span><span class=p>)</span> <span class=o>=</span> <span class=mi>0</span><span class=p>;</span> <span class=c1>// 观看需要观影券的电影
+</span><span class=c1></span><span class=p>}</span><span class=p>;</span>
+
+<span class=c1>// 委托类 实现功能
+</span><span class=c1></span><span class=k>class</span> <span class=nc>FixBugVideoSite</span>
+<span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=k>virtual</span> <span class=kt>void</span> <span class=n>freeMovie</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>观看免费电影</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+    <span class=k>virtual</span> <span class=kt>void</span> <span class=nf>vipMovie</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>观看vip电影</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+    <span class=k>virtual</span> <span class=kt>void</span> <span class=nf>ticketMovie</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>观看需要观影券的电影</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+<span class=p>}</span><span class=p>;</span>
+
+<span class=c1>// 代理类 游客通过该类访问freeMovie()功能
+</span><span class=c1></span><span class=k>class</span> <span class=nc>FreeVideoSiteProxy</span> <span class=o>:</span> <span class=k>public</span> <span class=n>VideoSite</span>
+<span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=k>virtual</span> <span class=kt>void</span> <span class=n>freeMovie</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>pVideo</span><span class=p>.</span><span class=n>freeMovie</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=p>}</span> <span class=c1>// 只能看免费电影
+</span><span class=c1></span>    <span class=k>virtual</span> <span class=kt>void</span> <span class=nf>vipMovie</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>您不是vip用户 无法观看vip电影</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+    <span class=k>virtual</span> <span class=kt>void</span> <span class=nf>ticketMovie</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>您没有观影券 无法观看该电影</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+
+<span class=k>private</span><span class=o>:</span>
+    <span class=c1>// 组合委托类 通过委托类访问观影的功能函数
+</span><span class=c1></span>    <span class=n>FixBugVideoSite</span> <span class=n>pVideo</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+
+<span class=c1>// 代理类 vip通过该类访问freeMovie()和vipMovie()功能
+</span><span class=c1></span><span class=k>class</span> <span class=nc>VipVideoSiteProxy</span> <span class=o>:</span> <span class=k>public</span> <span class=n>VideoSite</span>
+<span class=p>{</span>
+<span class=k>public</span><span class=o>:</span>
+    <span class=k>virtual</span> <span class=kt>void</span> <span class=n>freeMovie</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>pVideo</span><span class=p>.</span><span class=n>freeMovie</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=p>}</span>
+    <span class=k>virtual</span> <span class=kt>void</span> <span class=nf>vipMovie</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>pVideo</span><span class=p>.</span><span class=n>vipMovie</span><span class=p>(</span><span class=p>)</span><span class=p>;</span> <span class=p>}</span>
+    <span class=k>virtual</span> <span class=kt>void</span> <span class=nf>ticketMovie</span><span class=p>(</span><span class=p>)</span> <span class=p>{</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>cout</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=sa></span><span class=s>&#34;</span><span class=s>您没有观影券 无法观看该电影</span><span class=s>&#34;</span> <span class=o>&lt;</span><span class=o>&lt;</span> <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>endl</span><span class=p>;</span> <span class=p>}</span>
+
+<span class=k>private</span><span class=o>:</span>
+    <span class=n>FixBugVideoSite</span> <span class=n>pVideo</span><span class=p>;</span>
+<span class=p>}</span><span class=p>;</span>
+
+<span class=kt>int</span> <span class=nf>main</span><span class=p>(</span><span class=kt>int</span> <span class=n>argc</span><span class=p>,</span> <span class=kt>char</span> <span class=o>*</span><span class=o>*</span><span class=n>argv</span><span class=p>)</span>
+<span class=p>{</span>
+    <span class=c1>// 游客和vip用户使用不同的代理类来访问观影功能
+</span><span class=c1></span>    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>unique_ptr</span><span class=o>&lt;</span><span class=n>VideoSite</span><span class=o>&gt;</span> <span class=n>p1</span><span class=p>(</span><span class=k>new</span> <span class=n>FreeVideoSiteProxy</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span> <span class=c1>// 游客代理
+</span><span class=c1></span>    <span class=n>std</span><span class=o>:</span><span class=o>:</span><span class=n>unique_ptr</span><span class=o>&lt;</span><span class=n>VideoSite</span><span class=o>&gt;</span> <span class=n>p2</span><span class=p>(</span><span class=k>new</span> <span class=n>VipVideoSiteProxy</span><span class=p>(</span><span class=p>)</span><span class=p>)</span><span class=p>;</span>  <span class=c1>// vip代理
+</span><span class=c1></span>
+    <span class=n>p1</span><span class=o>-</span><span class=o>&gt;</span><span class=n>freeMovie</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>p1</span><span class=o>-</span><span class=o>&gt;</span><span class=n>vipMovie</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>p1</span><span class=o>-</span><span class=o>&gt;</span><span class=n>ticketMovie</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    
+    <span class=n>p2</span><span class=o>-</span><span class=o>&gt;</span><span class=n>freeMovie</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>p2</span><span class=o>-</span><span class=o>&gt;</span><span class=n>vipMovie</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+    <span class=n>p2</span><span class=o>-</span><span class=o>&gt;</span><span class=n>ticketMovie</span><span class=p>(</span><span class=p>)</span><span class=p>;</span>
+<span class=p>}</span>
+</code></pre></td></tr></table></div></div></div><div class=post-copyright id=post-footer><p class=copyright-item><span>Author:&nbsp;</span>
+<span>xushun</span></p><p class=copyright-item><span>Updated on:&nbsp;</span>
+<span>2023-01-11</span></p><p class=copyright-item><span>Share on:&nbsp;</span>
+<span><a href="//twitter.com/share?url=https%3a%2f%2fxushun1221.github.io%2f2023%2f%25E8%25AE%25BE%25E8%25AE%25A1%25E6%25A8%25A1%25E5%25BC%258F03-%25E4%25BB%25A3%25E7%2590%2586%25E6%25A8%25A1%25E5%25BC%258F%2f&text=%e3%80%90%e8%ae%be%e8%ae%a1%e6%a8%a1%e5%bc%8f%e3%80%9103%20-%20%e4%bb%a3%e7%90%86%e6%a8%a1%e5%bc%8f&via=" target=_blank title="Share on Twitter"><i class="fab fa-twitter fa-fw"></i></a><a href="//www.facebook.com/sharer/sharer.php?u=https%3a%2f%2fxushun1221.github.io%2f2023%2f%25E8%25AE%25BE%25E8%25AE%25A1%25E6%25A8%25A1%25E5%25BC%258F03-%25E4%25BB%25A3%25E7%2590%2586%25E6%25A8%25A1%25E5%25BC%258F%2f" target=_blank title="Share on Facebook"><i class="fab fa-facebook-square fa-fw"></i></a><a href="//reddit.com/submit?url=https%3a%2f%2fxushun1221.github.io%2f2023%2f%25E8%25AE%25BE%25E8%25AE%25A1%25E6%25A8%25A1%25E5%25BC%258F03-%25E4%25BB%25A3%25E7%2590%2586%25E6%25A8%25A1%25E5%25BC%258F%2f&title=%e3%80%90%e8%ae%be%e8%ae%a1%e6%a8%a1%e5%bc%8f%e3%80%9103%20-%20%e4%bb%a3%e7%90%86%e6%a8%a1%e5%bc%8f" target=_blank title="Share on Reddit"><i class="fab fa-reddit fa-fw"></i></a></span></p><p class=copyright-item></p><p class=copyright-item></p></div><br><div class=post-info-more><section><span class=tag><a href=https://xushun1221.github.io/tags/c++/><i class="fas fa-tag fa-fw"></i>&nbsp;C++</a>&nbsp;
+</span><span class=tag><a href=https://xushun1221.github.io/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/><i class="fas fa-tag fa-fw"></i>&nbsp;设计模式</a>&nbsp;</span></section><section><span><a href=javascript:window.history.back();>Back</a></span>&nbsp;|&nbsp;<span><a href=https://xushun1221.github.io>Home</a></span></section></div><div class=post-nav><a href=https://xushun1221.github.io/2023/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F01-%E5%8D%95%E4%BE%8B%E6%A8%A1%E5%BC%8F/ class=prev rel=prev title="【设计模式】01 - 单例模式"><i class="fas fa-angle-left fa-fw"></i>【设计模式】01 - 单例模式</a></div><div class=post-comment></div></article></div></main><footer class=footer><div class=copyright><div class=copyright-line><i class="far fa-copyright fa-fw"></i><span itemprop=copyrightYear>2022 - 2023</span><span class=author itemprop=copyrightHolder>&nbsp;<a href=https://xushun1221.github.io/about/ target=_blank>xushun</a> | </span>Powered by <a href=https://gohugo.io/ target=_blank rel="external nofollow noopener noreffer">Hugo</a> & <a href=https://github.com/dillonzq/LoveIt target=_blank rel="external nofollow noopener noreffer">LoveIt</a></div></div></footer></div><a href=# class=dynamic-to-top id=dynamic-to-top data-scroll><span>&nbsp;</span>
+</a><script src=/js/lib/jquery/jquery.slim.min.js></script><script src=/js/lib/lazysizes/lazysizes.min.js></script><script src=/js/lib/smooth-scroll/smooth-scroll.polyfills.min.js></script><script>window.scroll=new SmoothScroll('[data-scroll]',{speed:300,speedAsDuration:true});</script><link rel=stylesheet href=/css/lib/katex/katex.min.css><script src=/js/lib/katex/katex.min.js></script><script defer src=/js/lib/katex/auto-render.min.js></script><link rel=stylesheet href=/css/lib/katex/copy-tex.min.css><script defer src=/js/lib/katex/copy-tex.min.js></script><script defer src=/js/lib/katex/mhchem.min.js></script><script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"\\(",right:"\\)",display:false},{left:"\\[",right:"\\]",display:true},{left:"$",right:"$",display:false},]});});</script><script src=/js/blog.min.js></script></body></html>
